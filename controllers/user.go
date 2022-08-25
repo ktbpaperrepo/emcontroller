@@ -15,7 +15,7 @@ func (c *UserController) Get() {
 }
 
 func (c *UserController) AddUser() {
-	c.TplName = "user.html"
+	c.TplName = "userAdd.html"
 }
 
 func (c *UserController) DoAddUser() {
@@ -31,4 +31,36 @@ func (c *UserController) DoAddUser() {
 	logs.Info("value: %v-----type: %T", hobby, hobby)
 
 	c.Ctx.WriteString("User center" + strconv.Itoa(id) + username + password)
+}
+
+func (c *UserController) EditUser() {
+	c.TplName = "userEdit.html"
+}
+
+type User struct {
+	ID       string   `form:"id" json:"id1"`
+	Username string   `form:"username" json:"username1"`
+	Password string   `form:"password" json:"password1"`
+	Hobby    []string `form:"hobby" json:"hobby1"`
+}
+
+func (c *UserController) DoEditUser() {
+	u := User{}
+	if err := c.ParseForm(&u); err != nil {
+		c.Ctx.WriteString("post error")
+		return
+	}
+	logs.Info("%#v", u)
+	c.Ctx.WriteString("parse form successful")
+}
+
+func (c *UserController) GetUser() {
+	u := User{
+		ID:       "3232",
+		Username: "abc",
+		Password: "1234",
+		Hobby:    []string{"1", "2"},
+	}
+	c.Data["json"] = u
+	c.ServeJSON()
 }
