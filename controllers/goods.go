@@ -1,10 +1,12 @@
 package controllers
 
 import (
+	"encoding/xml"
 	"fmt"
 	"strconv"
 
 	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/logs"
 )
 
 type GoodsController struct {
@@ -22,8 +24,8 @@ func (c *GoodsController) DoAdd() { // post
 }
 
 type Product struct {
-	Title   string `form:"title"`
-	Content string `form:"content"`
+	Title   string `form:"title" xml:"title" json:"title"`
+	Content string `form:"content" xml:"content" json:"content"`
 }
 
 func (c *GoodsController) DoEdit() { // put
@@ -44,4 +46,20 @@ func (c *GoodsController) DoDelete() { // delete
 		c.Ctx.WriteString("parameter error")
 	}
 	c.Ctx.WriteString("execute delete operation----" + strconv.Itoa(id))
+}
+
+// need conf/app.conf: copyrequestbody = true
+func (c *GoodsController) Xml() { // delete
+	str := string(c.Ctx.Input.RequestBody)
+	logs.Info(str)
+
+	p := Product{}
+
+	if err := xml.Unmarshal(c.Ctx.Input.RequestBody, &p); err != nil {
+		c.Ctx.WriteString(fmt.Sprintf("error: %s\n", err.Error()))
+		c.Data["json"] = err.Error()
+	} else {
+		c.Data["json"] = p
+	}
+	c.ServeJSON()
 }
