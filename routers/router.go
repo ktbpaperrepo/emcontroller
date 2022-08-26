@@ -24,4 +24,10 @@ func init() {
 	beego.Router("/goods/edit", &controllers.GoodsController{}, "put:DoEdit")
 	beego.Router("/goods/delete", &controllers.GoodsController{}, "delete:DoDelete")
 	beego.Router("/goods/xml", &controllers.GoodsController{}, "post:Xml")
+
+	// dynamic router: http://localhost:20000/api/1231asf
+	beego.Router("/api/:id", &controllers.ApiController{}, "get:Get")
+
+	// http://localhost:20000/cms_12.html
+	beego.Router("/cms_:id([0-9]+).html", &controllers.CmsController{}, "get:Get")
 }
