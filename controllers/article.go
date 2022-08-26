@@ -11,7 +11,8 @@ type ArticleController struct {
 }
 
 func (c *ArticleController) Get() {
-	c.Ctx.WriteString("News list")
+	c.Data["title"] = "hello article"
+	c.TplName = "article.html"
 }
 
 func (c *ArticleController) AddArticle() {
