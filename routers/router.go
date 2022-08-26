@@ -30,4 +30,10 @@ func init() {
 
 	// http://localhost:20000/cms_12.html
 	beego.Router("/cms_:id([0-9]+).html", &controllers.CmsController{}, "get:Get")
+
+	beego.Router("/login", &controllers.LoginController{}, "get:Get")
+	beego.Router("/doLogin", &controllers.LoginController{}, "post:DoLogin")
+
+	beego.Router("/register", &controllers.RegisterController{}, "get:Get")
+	beego.Router("/doRegister", &controllers.RegisterController{}, "post:DoRegister")
 }
