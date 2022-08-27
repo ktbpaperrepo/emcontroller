@@ -6,6 +6,8 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
+
+	"emcontroller/models"
 )
 
 type ArticleController struct {
@@ -58,4 +60,11 @@ func (c *ArticleController) EditArticle() {
 	}
 	logs.Info("The id2 is: %T %v", id2, id2)
 	c.Ctx.WriteString(fmt.Sprintf("Edit News: %v %d", id, id2))
+}
+
+func (c *ArticleController) Add() {
+	unix := 1599880013
+	str := models.UnixToDate(unix)
+	c.Ctx.WriteString("news add --- " + str)
+
 }

@@ -93,5 +93,8 @@ func (c *MainController) Get() {
 	c.Data["n1"] = 12
 	c.Data["n2"] = 6
 
+	// 12. use self-defined template functions
+	c.Data["unix"] = 1587880013
+
 	c.TplName = "index.tpl"
 }

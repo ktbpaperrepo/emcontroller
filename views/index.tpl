@@ -120,5 +120,8 @@
     <h2>11. define template outside</h2>
     {{template "/public/footer.html" .}}
 
+    <h2>// 12. use self-defined template functions</h2>
+    <p>{{.unix | unixToDate}}</p>
+
 </body>
 </html>
