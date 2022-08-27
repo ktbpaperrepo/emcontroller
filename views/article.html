@@ -6,17 +6,64 @@
         content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>Document</title>
+
+<!--  <link rel="stylesheet" href="/static/css/index.css">-->
+  {{assets_css "/static/css/index.css"}}
+
+<!--    <script src="/static/js/base.js"></script>-->
+  {{assets_js "/static/js/base.js"}}
 </head>
 <body>
 
     {{template "/public/header.html" .}}
 
-    <p>This is the content area of the article.</p>
-    <p>This is the content area of the article.</p>
-    <p>This is the content area of the article.</p>
-    <p>This is the content area of the article.</p>
-    <p>This is the content area of the article.</p>
-    <p>This is the content area of the article.</p>
+    <p>
+        {{.now}}
+    </p>
+
+    <p>
+        {{date .now "Y-m-d H:i:s"}}
+    </p>
+
+    <br>
+    <p>
+        {{substr .title 0 4}}
+    </p>
+
+    <p>
+        {{substr .title 5 13}}
+    </p>
+
+    <p>{{.html}}</p>
+
+    <p>{{.html | html2str}}</p>
+    <p>{{html2str .html}}</p>
+
+    <p>{{.html | str2html}}</p>
+    <p>{{str2html .html}}</p>
+
+    <p>{{htmlquote .html}}</p>
+
+    <h2>get the content from conf</h2>
+    {{config "String" "httpport" "hahaha"}}
+    {{config "String" "appname" "hahaha"}}
+    {{config "String" "appname1" "hahaha"}}
+
+    <h2>Get map object data</h2>
+    <p>{{map_get .userinfo "username"}}</p>
+    <p>{{map_get .userinfo "age"}}</p>
+    <p>{{map_get .userinfo "a" "c"}}</p>
+
+    <h2>Self-defined template function</h2>
+    <p>{{.title | hi}}</p>
+
+    <p>{{.unix}}</p>
+    <p>{{.unix | unixToDate}}</p>
+
+    <h2>business logic cut string</h2>
+    {{.str}}
+
+
 
     {{template "/public/footer.html" .}}
 </body>

@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 )
@@ -12,6 +14,31 @@ type ArticleController struct {
 
 func (c *ArticleController) Get() {
 	c.Data["title"] = "hello article"
+
+	now := time.Now()
+	fmt.Println(now)
+	c.Data["now"] = now
+
+	c.Data["title"] = "This is a list of the article"
+
+	c.Data["html"] = "<h2>This h2 is rendered by the backend</h2>"
+
+	userinfo := make(map[string]interface{})
+	userinfo["username"] = "Zhang San"
+	userinfo["age"] = 20
+	userinfo["a"] = map[string]float64{
+		"c": 4,
+	}
+	c.Data["userinfo"] = userinfo
+	c.Data["unix"] = 1587880013
+
+	// cut string
+	var str string = "This is an article list"
+	slice := []rune(str)
+	fmt.Println(slice)
+	fmt.Println(string(slice[5:]))
+	c.Data["str"] = string(slice[5:10])
+
 	c.TplName = "article.html"
 }
 
