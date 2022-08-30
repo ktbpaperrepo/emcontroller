@@ -1,16 +1,17 @@
 <!doctype html>
-<html lang="en" xmlns="http://www.w3.org/1999/html">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport"
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Document</title>
+    <title>Service</title>
+
+    <link rel="stylesheet" href="/static/css/style.css">
+
 </head>
 <body>
-    <h3>This is a goods module</h3>
-    <br>
-    <p>Title: {{.mytitle}}</p>
-    <p>{{.num}}</p>
+    {{template "/public/header.tpl" .}}
+    <h2>Service</h2>
 </body>
 </html>

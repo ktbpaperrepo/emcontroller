@@ -5,15 +5,17 @@
     <meta name="viewport"
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Login Page</title>
+    <title>Upload Success</title>
+
+    <link rel="stylesheet" href="/static/css/style.css">
+
+    <meta http-equiv="refresh" content="3; url=/service" />
+
 </head>
 <body>
-    <h2>Login Page</h2>
-    <form action="/doLogin" method="post">
-        Username: <input type="text" name="username"> <br><br>
-        Password: <input type="password" name="password"> <br><br>
+    {{template "/public/header.tpl" .}}
+    <h2>Upload Success</h2>
+    <h3>Redirect to Service page after 3 seconds</h3>
 
-        <input type="submit" value="Login">
-    </form>
 </body>
 </html>
