@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"fmt"
+
 	"github.com/astaxie/beego"
 
 	"emcontroller/models"
