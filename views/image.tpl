@@ -24,10 +24,11 @@
     </form>
 
     <br>
-    <h3>Existing Images:</h3>
+    <h3>Existing Images</h3>
     <table border = 1>
+        <tr> <th>RepoTag</th> </tr>
         {{range $keyImage, $image := .imageList}}
-            <tr> <th>{{$image}}</th> </tr>
+            <tr> <td>{{$image}}</td> </tr>
         {{end}}
     </table>
 
