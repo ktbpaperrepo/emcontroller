@@ -9,6 +9,7 @@
 
     <link rel="stylesheet" href="/static/css/style.css">
 
+    <script src="/static/js/application.js"></script>
 </head>
 <body>
     {{template "/public/header.tpl" .}}
@@ -27,7 +28,7 @@
     <ul>
         {{range $key, $app := .applicationList}}
         <li>
-            {{$app.Name}}
+            {{$app}} <button type="button" onclick="deleteApp('{{$app}}')">Delete</button>
         </li>
         {{end}}
 

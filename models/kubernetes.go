@@ -3,10 +3,10 @@ package models
 import (
 	"context"
 	"fmt"
-
 	"github.com/astaxie/beego"
 	v1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -56,6 +56,23 @@ func CreateDeployment(d *v1.Deployment) (*v1.Deployment, error) {
 	return createdDeployment, err
 }
 
+func DeleteDeployment(namespace, name string) error {
+	ctx := context.Background()
+	//deletePolicy := metav1.DeletePropagationForeground
+	err := kubernetesClient.AppsV1().Deployments(namespace).Delete(ctx, name, metav1.DeleteOptions{
+		//PropagationPolicy: &deletePolicy,
+	})
+	if err != nil && errors.IsNotFound(err) {
+		beego.Info(fmt.Printf("Deployment %s/%s not found: %s, do nothing", namespace, name, err.Error()))
+		return nil
+	}
+	if err != nil {
+		beego.Error(fmt.Printf("Delete deployment %s/%s error: %s", namespace, name, err.Error()))
+		return err
+	}
+	return nil
+}
+
 func CreateService(s *apiv1.Service) (*apiv1.Service, error) {
 	ctx := context.Background()
 	createdService, err := kubernetesClient.CoreV1().Services(s.Namespace).Create(ctx, s, metav1.CreateOptions{})
@@ -63,4 +80,21 @@ func CreateService(s *apiv1.Service) (*apiv1.Service, error) {
 		beego.Error(fmt.Printf("Create service %s/%s error: %s", s.Namespace, s.Name, err.Error()))
 	}
 	return createdService, err
+}
+
+func DeleteService(namespace, name string) error {
+	ctx := context.Background()
+	//deletePolicy := metav1.DeletePropagationForeground
+	err := kubernetesClient.CoreV1().Services(namespace).Delete(ctx, name, metav1.DeleteOptions{
+		//PropagationPolicy: &deletePolicy,
+	})
+	if err != nil && errors.IsNotFound(err) {
+		beego.Info(fmt.Printf("Service %s/%s not found: %s, do nothing", namespace, name, err.Error()))
+		return nil
+	}
+	if err != nil {
+		beego.Error(fmt.Printf("Delete service %s/%s error: %s", namespace, name, err.Error()))
+		return err
+	}
+	return nil
 }

@@ -108,6 +108,7 @@ func TagImage(idOrRepoTag, imageName, targetTag string) (string, error) {
 
 // push the image from the Docker Engine to the Docker Registry
 // curl  -v -X POST http://192.168.100.36:19998/v1.41/images/192.168.100.36:5000/helloworld:latest/push -H "X-Registry-Auth: eyJ1c2VybmFtZSI6InN0cmluZyIsInBhc3N3b3JkIjoic3RyaW5nIiwiZW1haWwiOiJzdHJpbmciLCJzZXJ2ZXJhZGRyZXNzIjoic3RyaW5nIn0K"
+// the auth is the base64 of '{"username":"string","password":"string","email":"string","serveraddress":"string"}'
 func PushImage(repoTag string) (string, error) {
 	ctx := context.Background()
 	respBody, err := cli.ImagePush(ctx, repoTag, types.ImagePushOptions{RegistryAuth: "eyJ1c2VybmFtZSI6InN0cmluZyIsInBhc3N3b3JkIjoic3RyaW5nIiwiZW1haWwiOiJzdHJpbmciLCJzZXJ2ZXJhZGRyZXNzIjoic3RyaW5nIn0K"})

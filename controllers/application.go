@@ -33,10 +33,39 @@ func (c *ApplicationController) Get() {
 	applications, err := models.ListDeployment(models.KubernetesNamespace)
 	if err != nil {
 		beego.Error(fmt.Sprintf("error: %s", err.Error()))
-		c.Data["applicationList"] = []v1.Deployment{}
+		c.Data["applicationList"] = []string{}
 	}
-	c.Data["applicationList"] = applications
+	var appList []string
+	for _, app := range applications {
+		var appName string
+		appName = strings.TrimSuffix(app.Name, models.DeploymentSuffix)
+		appList = append(appList, appName)
+	}
+
+	c.Data["applicationList"] = appList
 	c.TplName = "application.tpl"
+}
+
+func (c *ApplicationController) DeleteApp() {
+	appName := c.Ctx.Input.Param(":appName")
+	deployName := appName + models.DeploymentSuffix
+	svcName := appName + models.ServiceSuffix
+
+	beego.Info(fmt.Sprintf("Delete deployment [%s/%s]", models.KubernetesNamespace, deployName))
+	if err := models.DeleteDeployment(models.KubernetesNamespace, deployName); err != nil {
+		beego.Error(fmt.Printf("Delete deployment [%s/%s] error: %s", models.KubernetesNamespace, deployName, err.Error()))
+		return
+	}
+	beego.Info(fmt.Sprintf("Successful! Delete deployment [%s/%s]", models.KubernetesNamespace, deployName))
+
+	beego.Info(fmt.Sprintf("Delete service [%s/%s]", models.KubernetesNamespace, svcName))
+	if err := models.DeleteService(models.KubernetesNamespace, svcName); err != nil {
+		beego.Error(fmt.Printf("Delete deployment [%s/%s] error: %s", models.KubernetesNamespace, svcName, err.Error()))
+		return
+	}
+	beego.Info(fmt.Sprintf("Successful! Delete service [%s/%s]", models.KubernetesNamespace, svcName))
+
+	c.Ctx.ResponseWriter.WriteHeader(200)
 }
 
 func (c *ApplicationController) NewApplication() {
@@ -180,7 +209,7 @@ func (c *ApplicationController) DoNewApplication() {
 
 	deployment := &v1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      appName + "-deployment",
+			Name:      appName + models.DeploymentSuffix,
 			Namespace: models.KubernetesNamespace,
 		},
 		Spec: v1.DeploymentSpec{
@@ -236,7 +265,7 @@ func (c *ApplicationController) DoNewApplication() {
 	// service of this application
 	service := &apiv1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      appName + "-service",
+			Name:      appName + models.ServiceSuffix,
 			Namespace: models.KubernetesNamespace,
 		},
 		Spec: apiv1.ServiceSpec{

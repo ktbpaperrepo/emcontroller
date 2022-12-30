@@ -12,6 +12,8 @@ const (
 	RequestTimeout        time.Duration = 5 * time.Minute
 	KubernetesNamespace   string        = "default"
 	defaultKubeConfigPath string        = "/root/.kube/config"
+	DeploymentSuffix      string        = "-deployment"
+	ServiceSuffix         string        = "-service"
 )
 
 var (

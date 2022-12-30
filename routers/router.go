@@ -12,6 +12,7 @@ func init() {
 	beego.Router("/upload", &controllers.ImageController{}, "post:Upload")
 
 	beego.Router("/application", &controllers.ApplicationController{}, "get:Get")
+	beego.Router("/application/:appName", &controllers.ApplicationController{}, "delete:DeleteApp")
 	beego.Router("/newApplication", &controllers.ApplicationController{}, "get:NewApplication")
 	beego.Router("/doNewApplication", &controllers.ApplicationController{}, "post:DoNewApplication")
 
