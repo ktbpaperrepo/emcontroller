@@ -2,10 +2,11 @@ package controllers
 
 import (
 	"fmt"
-
-	"github.com/astaxie/beego"
+	"golang.org/x/crypto/ssh"
+	"time"
 
 	"emcontroller/models"
+	"github.com/astaxie/beego"
 )
 
 type ImageController struct {
@@ -13,13 +14,71 @@ type ImageController struct {
 }
 
 func (c *ImageController) Get() {
-	images, err := models.ListRepoTags()
+	repositories, err := models.GetCatalog()
 	if err != nil {
-		beego.Error(fmt.Sprintf("error: %s", err.Error()))
-		c.Data["imageList"] = []string{}
+		beego.Error(fmt.Sprintf("GetCatalog error: %s", err.Error()))
 	}
-	c.Data["imageList"] = images
+
+	var repoTags map[string][]string = make(map[string][]string)
+	for _, repo := range repositories {
+		tags, err := models.ListTags(repo)
+		if err != nil {
+			beego.Error(fmt.Sprintf("Repository %s, ListTags error: %s", repo, err.Error()))
+		}
+		repoTags[repo] = tags
+	}
+
+	c.Data["dockerRegistry"] = models.DockerRegistry
+	c.Data["imageList"] = repoTags
 	c.TplName = "image.tpl"
+}
+
+// DeleteRepo delete a repository
+func (c *ImageController) DeleteRepo() {
+	repo := c.Ctx.Input.Param(":repo")
+
+	beego.Info(fmt.Sprintf("Delete repository [%s]", repo))
+
+	// use ssh to delete repository on docker registry
+	dockerRegistryIP := beego.AppConfig.String("dockerRegistryIP")
+	sshPort := 22
+	sshUser := "root"
+	sshPassword := beego.AppConfig.String("dockerRegiRootPasswd")
+
+	config := &ssh.ClientConfig{
+		Timeout:         5 * time.Second,
+		User:            sshUser,
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Auth:            []ssh.AuthMethod{ssh.Password(sshPassword)},
+	}
+
+	sshClient, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", dockerRegistryIP, sshPort), config)
+	if err != nil {
+		beego.Error(fmt.Sprintf("Create ssh client fail: error: %s", err.Error()))
+	}
+	defer sshClient.Close()
+
+	// delete repository folder
+	if _, err := models.SshOneCommand(sshClient, fmt.Sprintf("docker exec registry rm -rf /var/lib/registry/docker/registry/v2/repositories/%s", repo)); err != nil {
+		beego.Error("ssh error: %s, exit", err.Error())
+		return
+	}
+
+	// collect garbage
+	if _, err := models.SshOneCommand(sshClient, "docker exec registry bin/registry garbage-collect /etc/docker/registry/config.yml"); err != nil {
+		beego.Error("ssh error: %s, exit", err.Error())
+		return
+	}
+
+	// restart docker
+	if _, err := models.SshOneCommand(sshClient, "docker restart registry"); err != nil {
+		beego.Error("ssh error: %s, exit", err.Error())
+		return
+	}
+
+	beego.Info(fmt.Sprintf("Successful! Delete repository [%s]", repo))
+
+	c.Ctx.ResponseWriter.WriteHeader(200)
 }
 
 func (c *ImageController) Upload() {

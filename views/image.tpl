@@ -9,6 +9,8 @@
 
     <link rel="stylesheet" href="/static/css/style.css">
 
+    <script src="/static/js/image.js"></script>
+
 </head>
 <body>
     {{template "/public/header.tpl" .}}
@@ -25,10 +27,19 @@
 
     <br>
     <h3>Existing Images</h3>
+    {{$dockerRepo := .dockerRegistry}}
     <table border = 1>
-        <tr> <th>RepoTag</th> </tr>
-        {{range $keyImage, $image := .imageList}}
-            <tr> <td>{{$image}}</td> </tr>
+        <tr> <th></th> <th>Repositories</th> <th>RepoTags</th> </tr>
+        {{range $repo, $tags := .imageList}}
+            <tr>
+                <td><button type="button" onclick="deleteRepo('{{$repo}}')">Delete</button></td>
+                <td>{{$repo}}</td>
+                <td>
+                    {{range $idx, $tag := $tags}}
+                        {{$dockerRepo}}/{{$repo}}:{{$tag}} <br>
+                    {{end}}
+                </td>
+            </tr>
         {{end}}
     </table>
 

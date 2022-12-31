@@ -46,6 +46,7 @@ func (c *ApplicationController) Get() {
 	c.TplName = "application.tpl"
 }
 
+// DeleteApp delete the deployment and service of the application
 func (c *ApplicationController) DeleteApp() {
 	appName := c.Ctx.Input.Param(":appName")
 	deployName := appName + models.DeploymentSuffix
