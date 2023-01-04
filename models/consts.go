@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	ControllerName        string        = "Edge and Multi-cloud Controller"
+	ControllerName        string        = "Multi-Cloud Manager"
 	UploadDir             string        = "upload/"
 	RequestTimeout        time.Duration = 5 * time.Minute
 	KubernetesNamespace   string        = "default"

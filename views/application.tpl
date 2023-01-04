@@ -25,14 +25,31 @@
 
     <br>
     <h3>Existing Applications</h3>
-    <ul>
-        {{range $key, $app := .applicationList}}
-        <li>
-            {{$app}} <button type="button" onclick="deleteApp('{{$app}}')">Delete</button>
-        </li>
-        {{end}}
 
-    </ul>
+    <table border = 1>
+        <tr> <th></th> <th>App Name</th> <th>Internal Access</th> <th>External Access</th> </tr>
+        {{range $appIdx, $app := .applicationList}}
+        <tr>
+            <td><button type="button" onclick="deleteApp('{{$app.AppName}}')">Delete</button></td>
+            <td>{{$app.AppName}}</td>
+            <td>
+                {{if not (eq $app.ClusterIP "" "None") }}
+                    {{range $idx, $svcPort := $app.SvcPort}}
+                    {{$app.SvcName}}:{{$svcPort}} <br>
+                    {{$app.ClusterIP}}:{{$svcPort}} <br>
+                    {{end}}
+                {{end}}
+            </td>
+            <td>
+                {{if ne $app.NodePortIP ""}}
+                    {{range $idx, $nodePort := $app.NodePort}}
+                    {{$app.NodePortIP}}:{{$nodePort}} <br>
+                    {{end}}
+                {{end}}
+            </td>
+        </tr>
+        {{end}}
+    </table>
 
 </body>
 </html>

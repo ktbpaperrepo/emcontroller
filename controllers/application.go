@@ -29,17 +29,53 @@ type ApplicationController struct {
 	beego.Controller
 }
 
+type AppInfo struct {
+	AppName    string
+	SvcName    string
+	DeployName string
+	ClusterIP  string
+	NodePortIP string
+	SvcPort    []string
+	NodePort   []string
+}
+
 func (c *ApplicationController) Get() {
 	applications, err := models.ListDeployment(models.KubernetesNamespace)
 	if err != nil {
 		beego.Error(fmt.Sprintf("error: %s", err.Error()))
-		c.Data["applicationList"] = []string{}
+		c.Data["applicationList"] = []AppInfo{}
 	}
-	var appList []string
+	var appList []AppInfo
 	for _, app := range applications {
-		var appName string
+		var thisApp AppInfo
+		var appName, svcName string
 		appName = strings.TrimSuffix(app.Name, models.DeploymentSuffix)
-		appList = append(appList, appName)
+		svcName = appName + models.ServiceSuffix
+
+		thisApp.AppName = appName
+		thisApp.SvcName = svcName
+		thisApp.DeployName = app.Name
+
+		svc, _ := models.GetService(models.KubernetesNamespace, svcName)
+		if svc != nil {
+			thisApp.ClusterIP = svc.Spec.ClusterIP
+			if svc.Spec.Type == apiv1.ServiceTypeNodePort {
+				thisApp.NodePortIP = beego.AppConfig.String("k8sMasterIP")
+			} else {
+				thisApp.NodePortIP = ""
+			}
+			for _, port := range svc.Spec.Ports {
+				thisApp.SvcPort = append(thisApp.SvcPort, strconv.FormatInt(int64(port.Port), 10))
+				thisApp.NodePort = append(thisApp.NodePort, strconv.FormatInt(int64(port.NodePort), 10))
+			}
+		} else {
+			thisApp.ClusterIP = ""
+			thisApp.NodePortIP = ""
+			thisApp.SvcPort = []string{}
+			thisApp.NodePort = []string{}
+		}
+
+		appList = append(appList, thisApp)
 	}
 
 	c.Data["applicationList"] = appList
@@ -264,36 +300,37 @@ func (c *ApplicationController) DoNewApplication() {
 	beego.Info(fmt.Sprintf("Deployment %s/%s created successful.", createdDeployment.Namespace, createdDeployment.Name))
 
 	// service of this application
-	service := &apiv1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      appName + models.ServiceSuffix,
-			Namespace: models.KubernetesNamespace,
-		},
-		Spec: apiv1.ServiceSpec{
-			Selector: labels,
-			Type:     apiv1.ServiceTypeClusterIP,
-			Ports:    servicePorts,
-		},
-	}
-	if hasNodePort {
-		service.Spec.Type = apiv1.ServiceTypeNodePort
-	}
+	if len(servicePorts) != 0 {
+		service := &apiv1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      appName + models.ServiceSuffix,
+				Namespace: models.KubernetesNamespace,
+			},
+			Spec: apiv1.ServiceSpec{
+				Selector: labels,
+				Type:     apiv1.ServiceTypeClusterIP,
+				Ports:    servicePorts,
+			},
+		}
+		if hasNodePort {
+			service.Spec.Type = apiv1.ServiceTypeNodePort
+		}
 
-	beego.Info(fmt.Sprintf("Create service [%#v]", service))
-	beego.Info(fmt.Sprintf(""))
-	serviceJson, err := json.Marshal(service)
-	if err != nil {
-		beego.Error(fmt.Sprintf("Json Marshal error: %s", err.Error()))
-	}
-	beego.Info(fmt.Sprintf("Create service (json) [%s]", string(serviceJson)))
+		beego.Info(fmt.Sprintf("Create service [%#v]", service))
+		beego.Info(fmt.Sprintf(""))
+		serviceJson, err := json.Marshal(service)
+		if err != nil {
+			beego.Error(fmt.Sprintf("Json Marshal error: %s", err.Error()))
+		}
+		beego.Info(fmt.Sprintf("Create service (json) [%s]", string(serviceJson)))
 
-	createdService, err := models.CreateService(service)
-	if err != nil {
-		beego.Error(fmt.Printf("Create service [%#v] error: %s", service, err.Error()))
-		return
+		createdService, err := models.CreateService(service)
+		if err != nil {
+			beego.Error(fmt.Printf("Create service [%#v] error: %s", service, err.Error()))
+			return
+		}
+		beego.Info(fmt.Sprintf("Service %s/%s created successful.", createdService.Namespace, createdService.Name))
 	}
-	beego.Info(fmt.Sprintf("Service %s/%s created successful.", createdService.Namespace, createdService.Name))
-
 	c.TplName = "newAppSuccess.tpl"
 }
 

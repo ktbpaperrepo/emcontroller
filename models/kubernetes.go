@@ -98,3 +98,17 @@ func DeleteService(namespace, name string) error {
 	}
 	return nil
 }
+
+func GetService(namespace, name string) (*apiv1.Service, error) {
+	ctx := context.Background()
+	service, err := kubernetesClient.CoreV1().Services(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil && errors.IsNotFound(err) {
+		beego.Info(fmt.Printf("Service %s/%s not found: %s", namespace, name, err.Error()))
+		return nil, nil
+	}
+	if err != nil {
+		beego.Error(fmt.Printf("Get service %s/%s error: %s", namespace, name, err.Error()))
+		return nil, err
+	}
+	return service, nil
+}

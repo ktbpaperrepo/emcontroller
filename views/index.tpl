@@ -12,7 +12,7 @@
 </head>
 <body>
     {{template "/public/header.tpl" .}}
-    <h2>{{.Website}}</h2>
+    <h2 style="text-align:center">{{.Website}}</h2>
 
 </body>
 </html>
