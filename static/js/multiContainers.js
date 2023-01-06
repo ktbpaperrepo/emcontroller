@@ -6,20 +6,20 @@ let containerIndex = 0;
 function generateContainerHTML() {
     return `
 <div id="container${containerIndex}">
-    <p>Container ${containerIndex+1}</p>
-    Container Name: <input type="text" name="container${containerIndex}Name"> <br><br>
+    <p id="containerTitle${containerIndex}">Container ${containerIndex+1}</p>
+    Name: <input type="text" name="container${containerIndex}Name"> <br><br>
     Image RepoTag: <input type="text" name="container${containerIndex}Image"> <br><br>
     Resources requests:
     <ul>
         <li>Memory: <input type="text" name="container${containerIndex}RequestMemory"></li>
         <li>CPU: <input type="text" name="container${containerIndex}RequestCPU"></li>
-        <li>Ephemeral Storag: <input type="text" name="container${containerIndex}RequestEphemeralStorage"></li>
+        <li>Storage: <input type="text" name="container${containerIndex}RequestEphemeralStorage"></li>
     </ul>
     Resources Limits:
     <ul>
         <li>Memory: <input type="text" name="container${containerIndex}LimitMemory"></li>
         <li>CPU: <input type="text" name="container${containerIndex}LimitCPU"></li>
-        <li>Ephemeral Storag: <input type="text" name="container${containerIndex}LimitEphemeralStorage"></li>
+        <li>Storage: <input type="text" name="container${containerIndex}LimitEphemeralStorage"></li>
     </ul>
     Commands:
     <!--submit the Command Number-->
@@ -205,3 +205,19 @@ function deleteElement(elementID) {
     return true;
 }
 
+// should be executed on load of Basic new application
+function initBasic() {
+    addContainer();
+
+    // delete the unnecessary container title
+    let containerTitle = document.getElementById(`containerTitle${containerIndex-1}`)
+    if (containerTitle != null) {
+        containerTitle.remove();
+    }
+
+}
+
+// should be executed on load of Advanced new application
+function initAdvanced() {
+    addContainer();
+}

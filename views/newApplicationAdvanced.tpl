@@ -13,7 +13,7 @@
     <script src="/static/js/multiContainers.js"></script>
 
 </head>
-<body>
+<body onload="initAdvanced()">
     <a href="/application">
         <button>Back</button>
     </a>
@@ -26,7 +26,7 @@
 
         <!--submit the container Number-->
         <input type="hidden" id="containerNum" name="containerNumber" value="0">
-
+        <br>
         <b>Containers in each replica:</b>
         <br>
         <br id="containerStart">

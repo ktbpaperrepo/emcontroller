@@ -106,13 +106,28 @@ func (c *ApplicationController) DeleteApp() {
 }
 
 func (c *ApplicationController) NewApplication() {
-
-	c.TplName = "newApplication.tpl"
+	mode := c.GetString("mode")
+	beego.Info("New application mode:", mode)
+	// Basic mode can cover most scenarios. Advanced mode support more configurations.
+	var tplname string
+	switch mode {
+	case "basic":
+		tplname = "newApplicationBasic.tpl"
+	case "advanced":
+		tplname = "newApplicationAdvanced.tpl"
+	default:
+		tplname = "newApplicationBasic.tpl"
+	}
+	c.TplName = tplname
 }
 
 // for an application, we need to create a Deployment and a Service for it
 func (c *ApplicationController) DoNewApplication() {
 	appName := c.GetString("name")
+	if appName == "" { // in basic mode, appName is containerName
+		beego.Info("basic new application mode, set app name as container name")
+		appName = c.GetString("container0Name")
+	}
 	replicas, err := c.GetInt32("replicas")
 	if err != nil {
 		beego.Error(fmt.Sprintf("Get replicas error: %s", err.Error()))
