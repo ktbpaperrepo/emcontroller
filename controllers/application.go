@@ -37,6 +37,24 @@ type AppInfo struct {
 	NodePortIP string
 	SvcPort    []string
 	NodePort   []string
+	Status     string
+}
+
+// a method to check whether the application is running
+func appRunning(app v1.Deployment) bool {
+	if *app.Spec.Replicas != app.Status.Replicas {
+		return false
+	}
+	if *app.Spec.Replicas != app.Status.UpdatedReplicas {
+		return false
+	}
+	if *app.Spec.Replicas != app.Status.ReadyReplicas {
+		return false
+	}
+	if *app.Spec.Replicas != app.Status.AvailableReplicas {
+		return false
+	}
+	return true
 }
 
 func (c *ApplicationController) Get() {
@@ -55,6 +73,13 @@ func (c *ApplicationController) Get() {
 		thisApp.AppName = appName
 		thisApp.SvcName = svcName
 		thisApp.DeployName = app.Name
+
+		// set the status of this app
+		if appRunning(app) {
+			thisApp.Status = "Stable Running"
+		} else {
+			thisApp.Status = "Not Stable"
+		}
 
 		svc, _ := models.GetService(models.KubernetesNamespace, svcName)
 		if svc != nil {

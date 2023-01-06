@@ -14,7 +14,7 @@
 <body>
     {{template "/public/header.tpl" .}}
     <h2>Create Application Success</h2>
-    <h3>Redirect to Service page after 3 seconds</h3>
+    <h3>Redirect to Application page after 3 seconds</h3>
 
 </body>
 </html>

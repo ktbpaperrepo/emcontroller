@@ -29,7 +29,7 @@
     <h3>Existing Applications</h3>
 
     <table border = 1>
-        <tr> <th></th> <th>App Name</th> <th>Internal Access</th> <th>External Access</th> </tr>
+        <tr> <th></th> <th>App Name</th> <th>Internal Access</th> <th>External Access</th> <th>Status</th> </tr>
         {{range $appIdx, $app := .applicationList}}
         <tr>
             <td><button type="button" onclick="deleteApp('{{$app.AppName}}')">Delete</button></td>
@@ -49,6 +49,7 @@
                     {{end}}
                 {{end}}
             </td>
+            <td>{{$app.Status}}</td>
         </tr>
         {{end}}
     </table>

@@ -9,13 +9,13 @@
 
     <link rel="stylesheet" href="/static/css/style.css">
 
-    <meta http-equiv="refresh" content="3; url=/application" />
+    <meta http-equiv="refresh" content="3; url=/image" />
 
 </head>
 <body>
     {{template "/public/header.tpl" .}}
     <h2>Upload Success</h2>
-    <h3>Redirect to Service page after 3 seconds</h3>
+    <h3>Redirect to Image page after 3 seconds</h3>
 
 </body>
 </html>
