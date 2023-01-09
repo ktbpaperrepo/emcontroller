@@ -200,6 +200,13 @@ func (c *ApplicationController) DoNewApplication() {
 		}
 		beego.Info(fmt.Sprintf("Container [%d] has [%d] args.", i, ArgNum))
 
+		envNum, err := c.GetInt(fmt.Sprintf("container%dEnvNumber", i))
+		if err != nil {
+			beego.Error(fmt.Sprintf("Get environment variables Number error: %s", err.Error()))
+			return
+		}
+		beego.Info(fmt.Sprintf("Container [%d] has [%d] environment variables.", i, envNum))
+
 		PortNum, err := c.GetInt(fmt.Sprintf("container%dPortNumber", i))
 		if err != nil {
 			beego.Error(fmt.Sprintf("Get Port Number error: %s", err.Error()))
@@ -219,6 +226,17 @@ func (c *ApplicationController) DoNewApplication() {
 			thisArg := c.GetString(fmt.Sprintf("container%dArg%d", i, j))
 			beego.Info(fmt.Sprintf("Container [%d], Arg [%d]: [%s].", i, j, thisArg))
 			thisContainer.Args = append(thisContainer.Args, thisArg)
+		}
+
+		// get environment variables
+		for j := 0; j < envNum; j++ {
+			thisEnvName := c.GetString(fmt.Sprintf("container%dEnv%dName", i, j))
+			thisEnvValue := c.GetString(fmt.Sprintf("container%dEnv%dValue", i, j))
+			beego.Info(fmt.Sprintf("Container [%d], Env [%d]: [%s=%s].", i, j, thisEnvName, thisEnvValue))
+			thisContainer.Env = append(thisContainer.Env, apiv1.EnvVar{
+				Name:  thisEnvName,
+				Value: thisEnvValue,
+			})
 		}
 
 		// get ports

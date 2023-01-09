@@ -35,6 +35,13 @@ function generateContainerHTML() {
         <button id="container${containerIndex}AddArgButton" type="button" onclick="addArg('container${containerIndex}')">Add</button>
         <button id="container${containerIndex}DeleteArgButton" type="button" onclick="deleteArg('container${containerIndex}')">Delete</button>
     </ul>
+    Environment Variables:
+    <!--submit the environment variables Number-->
+    <input type="hidden" id="container${containerIndex}EnvNum" name="container${containerIndex}EnvNumber" value="0">
+    <ul id="container${containerIndex}Envs">
+        <button id="container${containerIndex}AddEnvButton" type="button" onclick="addEnv('container${containerIndex}')">Add</button>
+        <button id="container${containerIndex}DeleteEnvButton" type="button" onclick="deleteEnv('container${containerIndex}')">Delete</button>
+    </ul>
     Ports:
     <!--submit the Port Number-->
     <input type="hidden" id="container${containerIndex}PortNum" name="container${containerIndex}PortNumber" value="0">
@@ -67,6 +74,15 @@ function generateArgHTML(containerElementID) {
     `;
 }
 
+function generateEnvHTML(containerElementID) {
+    let container = document.getElementById(containerElementID);
+    return `
+        <li id="${containerElementID}Env${container.envIndex}">
+            Name: <input type="text" name="${containerElementID}Env${container.envIndex}Name"> Value: <input type="text" name="${containerElementID}Env${container.envIndex}Value">
+        </li>
+    `;
+}
+
 function generatePortHTML(containerElementID) {
     let container = document.getElementById(containerElementID);
     return `
@@ -90,6 +106,7 @@ function addContainer() {
     let newContainer = document.getElementById(`container${containerIndex}`);
     newContainer.commandIndex = 0;
     newContainer.argIndex = 0;
+    newContainer.envIndex = 0;
     newContainer.portIndex = 0;
 
     let deleteContainerButton = document.getElementById("deleteContainerButton");
@@ -167,6 +184,33 @@ function deleteArg(containerElementID) {
     // update the arg Number of this container in a form input for submission
     let argNum = document.getElementById(`${containerElementID}ArgNum`);
     argNum.setAttribute('value', String(container.argIndex));
+}
+
+function addEnv(containerElementID) {
+    let container = document.getElementById(containerElementID);
+    let envHTML = generateEnvHTML(containerElementID);
+    let addEnvButton = document.getElementById(`${containerElementID}AddEnvButton`);
+    addEnvButton.insertAdjacentHTML('beforebegin', envHTML);
+    container.envIndex++;
+
+    // update the env Number of this container in a form input for submission
+    let envNum = document.getElementById(`${containerElementID}EnvNum`);
+    envNum.setAttribute('value', String(container.envIndex));
+}
+
+function deleteEnv(containerElementID) {
+    let container = document.getElementById(containerElementID);
+    let lastEnvElementID = container.envIndex - 1;
+    if (lastEnvElementID < 0) {
+        return;
+    }
+    let lastEnv = document.getElementById(`${containerElementID}Env${lastEnvElementID}`);
+    lastEnv.remove();
+    container.envIndex--;
+
+    // update the env Number of this container in a form input for submission
+    let envNum = document.getElementById(`${containerElementID}EnvNum`);
+    envNum.setAttribute('value', String(container.envIndex));
 }
 
 function addPort(containerElementID) {
