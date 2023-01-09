@@ -42,6 +42,13 @@ function generateContainerHTML() {
         <button id="container${containerIndex}AddEnvButton" type="button" onclick="addEnv('container${containerIndex}')">Add</button>
         <button id="container${containerIndex}DeleteEnvButton" type="button" onclick="deleteEnv('container${containerIndex}')">Delete</button>
     </ul>
+    Mount VM paths into the container:
+    <!--submit the mount Number-->
+    <input type="hidden" id="container${containerIndex}MountNum" name="container${containerIndex}MountNumber" value="0">
+    <ul id="container${containerIndex}Mounts">
+        <button id="container${containerIndex}AddMountButton" type="button" onclick="addMount('container${containerIndex}')">Add</button>
+        <button id="container${containerIndex}DeleteMountButton" type="button" onclick="deleteMount('container${containerIndex}')">Delete</button>
+    </ul>
     Ports:
     <!--submit the Port Number-->
     <input type="hidden" id="container${containerIndex}PortNum" name="container${containerIndex}PortNumber" value="0">
@@ -83,6 +90,15 @@ function generateEnvHTML(containerElementID) {
     `;
 }
 
+function generateMountHTML(containerElementID) {
+    let container = document.getElementById(containerElementID);
+    return `
+        <li id="${containerElementID}Mount${container.mountIndex}">
+            VM Path: <input type="text" name="${containerElementID}Mount${container.mountIndex}VM"> Container Path: <input type="text" name="${containerElementID}Mount${container.mountIndex}Container">
+        </li>
+    `;
+}
+
 function generatePortHTML(containerElementID) {
     let container = document.getElementById(containerElementID);
     return `
@@ -107,6 +123,7 @@ function addContainer() {
     newContainer.commandIndex = 0;
     newContainer.argIndex = 0;
     newContainer.envIndex = 0;
+    newContainer.mountIndex = 0;
     newContainer.portIndex = 0;
 
     let deleteContainerButton = document.getElementById("deleteContainerButton");
@@ -211,6 +228,33 @@ function deleteEnv(containerElementID) {
     // update the env Number of this container in a form input for submission
     let envNum = document.getElementById(`${containerElementID}EnvNum`);
     envNum.setAttribute('value', String(container.envIndex));
+}
+
+function addMount(containerElementID) {
+    let container = document.getElementById(containerElementID);
+    let mountHTML = generateMountHTML(containerElementID);
+    let addMountButton = document.getElementById(`${containerElementID}AddMountButton`);
+    addMountButton.insertAdjacentHTML('beforebegin', mountHTML);
+    container.mountIndex++;
+
+    // update the mount Number of this container in a form input for submission
+    let mountNum = document.getElementById(`${containerElementID}MountNum`);
+    mountNum.setAttribute('value', String(container.mountIndex));
+}
+
+function deleteMount(containerElementID) {
+    let container = document.getElementById(containerElementID);
+    let lastMountElementID = container.mountIndex - 1;
+    if (lastMountElementID < 0) {
+        return;
+    }
+    let lastMount = document.getElementById(`${containerElementID}Mount${lastMountElementID}`);
+    lastMount.remove();
+    container.mountIndex--;
+
+    // update the mount Number of this container in a form input for submission
+    let mountNum = document.getElementById(`${containerElementID}MountNum`);
+    mountNum.setAttribute('value', String(container.mountIndex));
 }
 
 function addPort(containerElementID) {

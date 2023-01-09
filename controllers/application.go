@@ -175,7 +175,41 @@ func (c *ApplicationController) DoNewApplication() {
 
 	var hasNodePort bool
 
+	// make volume configuration in a pod
+	beego.Info("make volume configuration in a pod")
+	var volumeP2N map[string]string = make(map[string]string) // a map from VM paths to volume names
+	var volumes []apiv1.Volume                                // put this slice into deployment template
+	for i := 0; i < containerNum; i++ {
+		mountNum, err := c.GetInt(fmt.Sprintf("container%dMountNumber", i))
+		if err != nil {
+			beego.Error(fmt.Sprintf("make volume configuration, Get mount Number error: %s", err.Error()))
+			return
+		}
+		beego.Info(fmt.Sprintf("make volume configuration, Container [%d] has [%d] mount items.", i, mountNum))
+
+		for j := 0; j < mountNum; j++ {
+			thisVMPath := c.GetString(fmt.Sprintf("container%dMount%dVM", i, j))
+			if _, exist := volumeP2N[thisVMPath]; !exist {
+				thisVolumeName := "volume" + strconv.Itoa(len(volumeP2N))
+				beego.Info(fmt.Sprintf("add volume name: [%s], VM path: [%s]", thisVolumeName, thisVMPath))
+				volumeP2N[thisVMPath] = thisVolumeName
+
+				var hostPathType apiv1.HostPathType = apiv1.HostPathDirectoryOrCreate
+				volumes = append(volumes, apiv1.Volume{
+					Name: thisVolumeName,
+					VolumeSource: apiv1.VolumeSource{
+						HostPath: &apiv1.HostPathVolumeSource{
+							Path: thisVMPath,
+							Type: &hostPathType,
+						},
+					},
+				})
+			}
+		}
+	}
+
 	// get the configuration of every container
+	beego.Info("make containers configuration")
 	var containers []apiv1.Container
 	for i := 0; i < containerNum; i++ {
 		var thisContainer apiv1.Container = apiv1.Container{
@@ -207,6 +241,13 @@ func (c *ApplicationController) DoNewApplication() {
 		}
 		beego.Info(fmt.Sprintf("Container [%d] has [%d] environment variables.", i, envNum))
 
+		mountNum, err := c.GetInt(fmt.Sprintf("container%dMountNumber", i))
+		if err != nil {
+			beego.Error(fmt.Sprintf("Get mount Number error: %s", err.Error()))
+			return
+		}
+		beego.Info(fmt.Sprintf("Container [%d] has [%d] mount items.", i, mountNum))
+
 		PortNum, err := c.GetInt(fmt.Sprintf("container%dPortNumber", i))
 		if err != nil {
 			beego.Error(fmt.Sprintf("Get Port Number error: %s", err.Error()))
@@ -236,6 +277,23 @@ func (c *ApplicationController) DoNewApplication() {
 			thisContainer.Env = append(thisContainer.Env, apiv1.EnvVar{
 				Name:  thisEnvName,
 				Value: thisEnvValue,
+			})
+		}
+
+		// get mount items
+		for j := 0; j < mountNum; j++ {
+			thisVMPath := c.GetString(fmt.Sprintf("container%dMount%dVM", i, j))
+			thisContainerPath := c.GetString(fmt.Sprintf("container%dMount%dContainer", i, j))
+			volumeName, found := volumeP2N[thisVMPath]
+			if !found {
+				beego.Error(fmt.Sprintf("Container [%d], mount [%d]: VM Path [%s], Container Path [%s], cannot found volume name.", i, j, thisVMPath, thisContainerPath))
+			} else {
+				beego.Info(fmt.Sprintf("Container [%d], mount [%d]: VM Path [%s], Container Path [%s], volume name [%s].", i, j, thisVMPath, thisContainerPath, volumeName))
+			}
+
+			thisContainer.VolumeMounts = append(thisContainer.VolumeMounts, apiv1.VolumeMount{
+				Name:      volumeName,
+				MountPath: thisContainerPath,
 			})
 		}
 
@@ -325,6 +383,7 @@ func (c *ApplicationController) DoNewApplication() {
 				},
 				Spec: apiv1.PodSpec{
 					Containers: containers,
+					Volumes:    volumes,
 					Affinity: &apiv1.Affinity{
 						PodAntiAffinity: &apiv1.PodAntiAffinity{
 							RequiredDuringSchedulingIgnoredDuringExecution: []apiv1.PodAffinityTerm{
