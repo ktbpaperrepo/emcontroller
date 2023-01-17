@@ -14,6 +14,10 @@ const (
 	defaultKubeConfigPath string        = "/root/.kube/config"
 	DeploymentSuffix      string        = "-deployment"
 	ServiceSuffix         string        = "-service"
+
+	// type of clouds
+	OpenstackIaas string = "openstack"
+	ProxmoxIaas   string = "proxmox"
 )
 
 var (
