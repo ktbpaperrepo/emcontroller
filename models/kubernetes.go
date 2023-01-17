@@ -14,12 +14,13 @@ import (
 
 var kubernetesClient *kubernetes.Clientset
 
-func init() {
+func InitKubernetesClient() {
 	// default kubeconfig path
 	if KubeConfigPath == "" {
 		KubeConfigPath = defaultKubeConfigPath
 	}
 	kubernetesClient = initKubernetesClient()
+	beego.Info("Kubernetes client initialized.")
 }
 
 func initKubernetesClient() *kubernetes.Clientset {

@@ -9,6 +9,7 @@ import (
 
 // go test $GOPATH/src/emcontroller/models/ --run TestListDeployment -v
 func TestListDeployment(t *testing.T) {
+	InitKubernetesClient()
 	testCases := []struct {
 		name          string
 		namespace     string

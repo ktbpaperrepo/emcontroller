@@ -14,7 +14,7 @@ import (
 
 var cli *client.Client
 
-func init() {
+func InitDockerClient() {
 	cli = initDockerClient()
 	beego.Info("Docker client initialized.")
 }
