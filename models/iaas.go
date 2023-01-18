@@ -52,6 +52,7 @@ func InitClouds() {
 		switch iaasParas[i]["type"].(string) {
 		case OpenstackIaas:
 			Clouds = append(Clouds, InitOpenstack(iaasParas[i]))
+		case ProxmoxIaas:
 		}
 	}
 	beego.Info(fmt.Sprintf("All %d clouds are initialized.", len(Clouds)))

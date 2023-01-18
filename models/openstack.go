@@ -26,6 +26,7 @@ func InitOpenstack(paras map[string]interface{}) *Openstack {
 		IdentityEndpoint:            paras["authurl"].(string),
 		ApplicationCredentialID:     paras["applicationcredentialid"].(string),
 		ApplicationCredentialSecret: paras["applicationcredentialsecret"].(string),
+		AllowReauth:                 true,
 	}
 
 	// init provider
