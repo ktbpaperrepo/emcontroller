@@ -68,7 +68,8 @@ func TestGetComputeQuota(t *testing.T) {
 	for i := 0; i < len(Clouds); i++ {
 		switch Clouds[i].(type) {
 		case *Openstack:
-			fmt.Printf("%+v\n", Clouds[i].(*Openstack).GetComputeQuota())
+			computeQuota, _ := Clouds[i].(*Openstack).GetComputeQuota()
+			fmt.Printf("%+v\n", computeQuota)
 		}
 	}
 }
@@ -78,7 +79,8 @@ func TestGetNetworkQuota(t *testing.T) {
 	for i := 0; i < len(Clouds); i++ {
 		switch Clouds[i].(type) {
 		case *Openstack:
-			fmt.Printf("%+v\n", Clouds[i].(*Openstack).GetNetworkQuota())
+			networkQuota, _ := Clouds[i].(*Openstack).GetNetworkQuota()
+			fmt.Printf("%+v\n", networkQuota)
 		}
 	}
 }
@@ -88,7 +90,8 @@ func TestGetStorageQuota(t *testing.T) {
 	for i := 0; i < len(Clouds); i++ {
 		switch Clouds[i].(type) {
 		case *Openstack:
-			fmt.Printf("%+v\n", Clouds[i].(*Openstack).GetStorageQuota())
+			storageQuota, _ := Clouds[i].(*Openstack).GetStorageQuota()
+			fmt.Printf("%+v\n", storageQuota)
 		}
 	}
 }
@@ -116,7 +119,7 @@ func TestCreateVolume(t *testing.T) {
 				Name:    "volume-unittest2",
 				ImageID: Clouds[i].(*Openstack).ImageID,
 			}
-			vol := Clouds[i].(*Openstack).CreateVolume(opts)
+			vol, _ := Clouds[i].(*Openstack).CreateVolume(opts)
 			fmt.Printf("%+v\n", vol)
 		}
 	}
@@ -139,7 +142,7 @@ func TestDeleteVolume(t *testing.T) {
 	for i := 0; i < len(Clouds); i++ {
 		switch Clouds[i].(type) {
 		case *Openstack:
-			id := "3dcc23ec-ecf1-460c-9c90-890acd077367"
+			id := "ec494289-2f8a-46c3-aa3e-3378ad2a3233"
 			Clouds[i].(*Openstack).DeleteVolume(id)
 		}
 	}
@@ -150,7 +153,7 @@ func TestListAllFavors(t *testing.T) {
 	for i := 0; i < len(Clouds); i++ {
 		switch Clouds[i].(type) {
 		case *Openstack:
-			allFlavors := Clouds[i].(*Openstack).ListAllFavors()
+			allFlavors, _ := Clouds[i].(*Openstack).ListAllFavors()
 			for j := 0; j < len(allFlavors); j++ {
 				fmt.Printf("%+v\n", allFlavors[j])
 			}
@@ -200,20 +203,21 @@ func TestCreateServer(t *testing.T) {
 					},
 				},
 			}
-			newServer := Clouds[i].(*Openstack).CreateServer(optsBfv)
+			newServer, _ := Clouds[i].(*Openstack).CreateServer(optsBfv)
 			fmt.Printf("%+v\n", newServer)
 		}
 	}
 }
 
-func TestGetServer(t *testing.T) {
+func TestGetServerAndExtractIPs(t *testing.T) {
 	InitClouds()
 	for i := 0; i < len(Clouds); i++ {
 		switch Clouds[i].(type) {
 		case *Openstack:
-			id := "5dff3877-7412-4a21-8932-be4e8f6b566e"
-			vol := Clouds[i].(*Openstack).GetServer(id)
-			fmt.Printf("%+v\n", vol)
+			id := "c6f7e22b-3e55-4772-9efa-8d072d4cfc31"
+			server, _ := Clouds[i].(*Openstack).GetServer(id)
+			fmt.Printf("%+v\n", server)
+			fmt.Println(Clouds[i].(*Openstack).ExtractIPs(server))
 		}
 	}
 }
@@ -223,7 +227,7 @@ func TestDeleteServer(t *testing.T) {
 	for i := 0; i < len(Clouds); i++ {
 		switch Clouds[i].(type) {
 		case *Openstack:
-			id := "dd7470ad-c66c-4715-8f7a-ad3b6fbef6b7"
+			id := "f128b1f2-3574-44ef-b107-f664b6ce6967"
 			Clouds[i].(*Openstack).DeleteServer(id)
 		}
 	}

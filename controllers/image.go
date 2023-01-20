@@ -1,11 +1,8 @@
 package controllers
 
 import (
-	"fmt"
-	"golang.org/x/crypto/ssh"
-	"time"
-
 	"emcontroller/models"
+	"fmt"
 	"github.com/astaxie/beego"
 )
 
@@ -42,17 +39,10 @@ func (c *ImageController) DeleteRepo() {
 	// use ssh to delete repository on docker registry
 	dockerRegistryIP := beego.AppConfig.String("dockerRegistryIP")
 	sshPort := 22
-	sshUser := "root"
+	sshUser := models.SshRootUser
 	sshPassword := beego.AppConfig.String("dockerRegiRootPasswd")
 
-	config := &ssh.ClientConfig{
-		Timeout:         5 * time.Second,
-		User:            sshUser,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		Auth:            []ssh.AuthMethod{ssh.Password(sshPassword)},
-	}
-
-	sshClient, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", dockerRegistryIP, sshPort), config)
+	sshClient, err := models.SshClientWithPasswd(sshUser, sshPassword, dockerRegistryIP, sshPort)
 	if err != nil {
 		beego.Error(fmt.Sprintf("Create ssh client fail: error: %s", err.Error()))
 	}

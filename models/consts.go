@@ -18,6 +18,14 @@ const (
 	// type of clouds
 	OpenstackIaas string = "openstack"
 	ProxmoxIaas   string = "proxmox"
+
+	McmSign        string = "mcmcreated" // add this sign something, meaning that it is created by multi-cloud manager
+	WaitForTimeOut int    = 600          // unit second. wait for 10 minutes when creating or deleting something
+
+	SshUser     string        = "ubuntu"
+	SshRootUser string        = "root"
+	SshPort     int           = 22
+	SshTimeout  time.Duration = 10 * time.Second
 )
 
 var (

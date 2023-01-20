@@ -3,18 +3,24 @@ package models
 import (
 	"fmt"
 	"github.com/astaxie/beego"
+	"github.com/gophercloud/gophercloud"
 	"github.com/spf13/viper"
 )
 
 type Iaas interface {
-	CreateVM()
+	CreateVM(name string, vcpu, ram, storage int) (*IaasVm, error)
 	DeleteVM()
-	CheckResources() ResourceStatus
+	CheckResources() (ResourceStatus, error)
 }
 
 type ResourceStatus struct {
 	Limit ResSet // total amounts of resources
 	InUse ResSet // the amounts of resources being used
+}
+
+type IaasVm struct {
+	ID  string // the id provided by the cloud
+	IPs []string
 }
 
 // Resource set
@@ -56,4 +62,42 @@ func InitClouds() {
 		}
 	}
 	beego.Info(fmt.Sprintf("All %d clouds are initialized.", len(Clouds)))
+}
+
+// after a VM is created, we should wait until the SSH is enabled, then we can to other things.
+func WaitForSshPem(user string, pemFilePath string, sshIP string, sshPort int, secs int) error {
+	return gophercloud.WaitFor(secs, func() (bool, error) {
+		sshClient, err := SshClientWithPem(pemFilePath, user, sshIP, sshPort)
+		if err != nil {
+			beego.Info(fmt.Sprintf("Waiting for SSH ip %s, this time SshClientWithPem error: %s", sshIP, err.Error()))
+			return false, nil // cannot return error, otherwise, gophercloud.WaitFor will stop with error
+		}
+		defer sshClient.Close()
+		output, err := SshOneCommand(sshClient, "pwd")
+		if err != nil {
+			beego.Info(fmt.Sprintf("Waiting for SSH ip %s, this time SshOneCommand \"pwd\" error: %s", sshIP, err.Error()))
+			return false, nil
+		}
+		beego.Info(fmt.Sprintf("SSH of ip %s is enabled, output: %s", sshIP, output))
+		return true, nil
+	})
+}
+
+// after a VM is created, we should wait until the SSH is enabled, then we can to other things.
+func WaitForSshPasswd(user string, passwd string, sshIP string, sshPort int, secs int) error {
+	return gophercloud.WaitFor(secs, func() (bool, error) {
+		sshClient, err := SshClientWithPasswd(user, passwd, sshIP, sshPort)
+		if err != nil {
+			beego.Info(fmt.Sprintf("Waiting for SSH ip %s, this time SshClientWithPasswd error: %s", sshIP, err.Error()))
+			return false, nil // cannot return error, otherwise, gophercloud.WaitFor will stop with error
+		}
+		defer sshClient.Close()
+		output, err := SshOneCommand(sshClient, "pwd")
+		if err != nil {
+			beego.Info(fmt.Sprintf("Waiting for SSH ip %s, this time SshOneCommand \"pwd\" error: %s", sshIP, err.Error()))
+			return false, nil
+		}
+		beego.Info(fmt.Sprintf("SSH of ip %s is enabled, output: %s", sshIP, output))
+		return true, nil
+	})
 }
