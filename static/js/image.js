@@ -13,12 +13,14 @@ function unlockDeleteRepo() {
 }
 
 // original html does not support to send PUT or DELETE request
-function deleteRepo(repository) {
+function deleteRepo(repository, messageID) {
     if (deleteRepoLock) {
         console.log("Another deleting is executing, please try again after a few seconds");
         return;
     }
     lockDeleteRepo();
+    let imageMessage = document.getElementById(messageID);
+    imageMessage.innerText = "Deleting";
     let xmlhttp = new XMLHttpRequest();
     xmlhttp.open("DELETE", `/image/${repository}`);
     xmlhttp.send();

@@ -31,26 +31,27 @@
     <table border = 1>
         <tr> <th></th> <th>App Name</th> <th>Internal Access</th> <th>External Access</th> <th>Status</th> </tr>
         {{range $appIdx, $app := .applicationList}}
-        <tr>
-            <td><button type="button" onclick="deleteApp('{{$app.AppName}}')">Delete</button></td>
-            <td>{{$app.AppName}}</td>
-            <td>
-                {{if not (eq $app.ClusterIP "" "None") }}
-                    {{range $idx, $svcPort := $app.SvcPort}}
-                    {{$app.SvcName}}:{{$svcPort}} <br>
-                    {{$app.ClusterIP}}:{{$svcPort}} <br>
+            {{$statusID := printf "appStatus%s" $app.AppName}}
+            <tr>
+                <td><button type="button" onclick="deleteApp('{{$app.AppName}}', '{{$statusID}}')">Delete</button></td>
+                <td>{{$app.AppName}}</td>
+                <td>
+                    {{if not (eq $app.ClusterIP "" "None") }}
+                        {{range $idx, $svcPort := $app.SvcPort}}
+                        {{$app.SvcName}}:{{$svcPort}} <br>
+                        {{$app.ClusterIP}}:{{$svcPort}} <br>
+                        {{end}}
                     {{end}}
-                {{end}}
-            </td>
-            <td>
-                {{if ne $app.NodePortIP ""}}
-                    {{range $idx, $nodePort := $app.NodePort}}
-                    {{$app.NodePortIP}}:{{$nodePort}} <br>
+                </td>
+                <td>
+                    {{if ne $app.NodePortIP ""}}
+                        {{range $idx, $nodePort := $app.NodePort}}
+                        {{$app.NodePortIP}}:{{$nodePort}} <br>
+                        {{end}}
                     {{end}}
-                {{end}}
-            </td>
-            <td>{{$app.Status}}</td>
-        </tr>
+                </td>
+                <td id="{{$statusID}}">{{$app.Status}}</td>
+            </tr>
         {{end}}
     </table>
 

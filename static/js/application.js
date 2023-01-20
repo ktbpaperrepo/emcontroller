@@ -13,13 +13,15 @@ function unlockDeleteApp() {
 }
 
 // original html does not support to send PUT or DELETE request
-function deleteApp(appName) {
+function deleteApp(appName, statusID) {
     if (deleteAppLock) {
         console.log("Another deleting is executing, please try again after a few seconds");
         return;
     }
     lockDeleteApp();
-    let xmlhttp = new XMLHttpRequest()
+    let appStatus = document.getElementById(statusID);
+    appStatus.innerText = "Deleting";
+    let xmlhttp = new XMLHttpRequest();
     xmlhttp.open("DELETE", `/application/${appName}`);
     xmlhttp.send();
     console.log("delete %s request has been sent", appName);
