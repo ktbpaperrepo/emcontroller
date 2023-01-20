@@ -8,21 +8,22 @@
     <title>Image</title>
 
     <link rel="stylesheet" href="/static/css/style.css">
-
+<!--jquery should before image.js in which jquery is used-->
+    <script src="/static/js/jquery-3.6.3.js"></script>
     <script src="/static/js/image.js"></script>
 
 </head>
-<body>
+<body onload="initImagePage()">
     {{template "/public/header.tpl" .}}
-    <h2>Image</h2>
+    <h2>Container Image</h2>
 
     <br>
     <h3>Upload a new Image</h3>
-    <form method="POST" action="/upload" enctype="multipart/form-data">
+    <form id="uploadForm" method="POST" action="/upload" enctype="multipart/form-data">
         Set the RepoTag:<br>
-        {{config "String" "dockerRegistryIP" ""}}:{{config "String" "dockerRegistryPort" ""}}/<input type="text" name="imageName">:<input type="text" name="imageTag"><br>
-        <input name="imageFile" type="file"/>
-        <input type="submit" value="Upload">
+        {{config "String" "dockerRegistryIP" ""}}:{{config "String" "dockerRegistryPort" ""}}/<input type="text" id="imageName" name="imageName">:<input type="text" id="imageTag" name="imageTag"><br>
+        <input id="imageFile" name="imageFile" type="file"/>
+        <input id="upload" type="submit" value="Upload">
     </form>
 
     <br>
