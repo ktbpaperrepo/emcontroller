@@ -9,7 +9,7 @@ import (
 
 type Iaas interface {
 	CreateVM(name string, vcpu, ram, storage int) (*IaasVm, error)
-	DeleteVM()
+	DeleteVM(vmID string) error
 	CheckResources() (ResourceStatus, error)
 }
 
@@ -19,8 +19,11 @@ type ResourceStatus struct {
 }
 
 type IaasVm struct {
-	ID  string // the id provided by the cloud
-	IPs []string
+	ID        string // the id provided by the cloud
+	Name      string
+	IPs       []string
+	Cloud     string
+	CloudType string
 }
 
 // Resource set

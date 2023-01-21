@@ -26,6 +26,8 @@ const (
 	SshRootUser string        = "root"
 	SshPort     int           = 22
 	SshTimeout  time.Duration = 10 * time.Second
+
+	Os404Substr string = "itemNotFound" // this string exists in the "not found" error of Openstack
 )
 
 var (
