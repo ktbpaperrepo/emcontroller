@@ -36,7 +36,7 @@ type ResSet struct {
 	Port    float64 `json:"port"`    // number of network ports
 }
 
-var Clouds []Iaas
+var Clouds map[string]Iaas = make(map[string]Iaas)
 var iaasConfig *viper.Viper
 
 // read config from iaas.json
@@ -60,7 +60,8 @@ func InitClouds() {
 	for i := 0; i < len(iaasParas); i++ {
 		switch iaasParas[i]["type"].(string) {
 		case OpenstackIaas:
-			Clouds = append(Clouds, InitOpenstack(iaasParas[i]))
+			osCloud := InitOpenstack(iaasParas[i])
+			Clouds[osCloud.Name] = osCloud
 		case ProxmoxIaas:
 		}
 	}

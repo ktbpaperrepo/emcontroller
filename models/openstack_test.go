@@ -15,6 +15,8 @@ import (
 	networkingquota "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/quotas"
 )
 
+const testOsCloudName = "CLAAUDIAweifan"
+
 func TestGophercloud(t *testing.T) {
 	opts := gophercloud.AuthOptions{
 		IdentityEndpoint:            "https://strato-new.claaudia.aau.dk:5000/v3",
@@ -65,174 +67,171 @@ func TestGophercloud(t *testing.T) {
 
 func TestGetComputeQuota(t *testing.T) {
 	InitClouds()
-	for i := 0; i < len(Clouds); i++ {
-		switch Clouds[i].(type) {
-		case *Openstack:
-			computeQuota, _ := Clouds[i].(*Openstack).GetComputeQuota()
-			fmt.Printf("%+v\n", computeQuota)
-		}
+	cloud := Clouds[testOsCloudName]
+	switch cloud.(type) {
+	case *Openstack:
+		computeQuota, _ := cloud.(*Openstack).GetComputeQuota()
+		fmt.Printf("%+v\n", computeQuota)
 	}
 }
 
 func TestGetNetworkQuota(t *testing.T) {
 	InitClouds()
-	for i := 0; i < len(Clouds); i++ {
-		switch Clouds[i].(type) {
-		case *Openstack:
-			networkQuota, _ := Clouds[i].(*Openstack).GetNetworkQuota()
-			fmt.Printf("%+v\n", networkQuota)
-		}
+	cloud := Clouds[testOsCloudName]
+	switch cloud.(type) {
+	case *Openstack:
+		networkQuota, _ := cloud.(*Openstack).GetNetworkQuota()
+		fmt.Printf("%+v\n", networkQuota)
 	}
+
 }
 
 func TestGetStorageQuota(t *testing.T) {
 	InitClouds()
-	for i := 0; i < len(Clouds); i++ {
-		switch Clouds[i].(type) {
-		case *Openstack:
-			storageQuota, _ := Clouds[i].(*Openstack).GetStorageQuota()
-			fmt.Printf("%+v\n", storageQuota)
-		}
+	cloud := Clouds[testOsCloudName]
+	switch cloud.(type) {
+	case *Openstack:
+		storageQuota, _ := cloud.(*Openstack).GetStorageQuota()
+		fmt.Printf("%+v\n", storageQuota)
 	}
+
 }
 
 func TestListAllVolumes(t *testing.T) {
 	InitClouds()
-	for i := 0; i < len(Clouds); i++ {
-		switch Clouds[i].(type) {
-		case *Openstack:
-			allVolumes, _ := Clouds[i].(*Openstack).ListAllVolumes()
-			for j := 0; j < len(allVolumes); j++ {
-				vol, _ := Clouds[i].(*Openstack).GetVolume(allVolumes[j].ID)
-				fmt.Printf("%+v\n", vol)
-			}
+	cloud := Clouds[testOsCloudName]
+	switch cloud.(type) {
+	case *Openstack:
+		allVolumes, _ := cloud.(*Openstack).ListAllVolumes()
+		for j := 0; j < len(allVolumes); j++ {
+			vol, _ := cloud.(*Openstack).GetVolume(allVolumes[j].ID)
+			fmt.Printf("%+v\n", vol)
 		}
 	}
+
 }
 
 func TestCreateVolume(t *testing.T) {
 	InitClouds()
-	for i := 0; i < len(Clouds); i++ {
-		switch Clouds[i].(type) {
-		case *Openstack:
-			opts := volumes.CreateOpts{
-				Size:    150,
-				Name:    "volume-unittest3",
-				ImageID: Clouds[i].(*Openstack).ImageID,
-			}
-			vol, _ := Clouds[i].(*Openstack).CreateVolume(opts)
-			fmt.Printf("%+v\n", vol)
+	cloud := Clouds[testOsCloudName]
+	switch cloud.(type) {
+	case *Openstack:
+		opts := volumes.CreateOpts{
+			Size:    150,
+			Name:    "volume-unittest3",
+			ImageID: cloud.(*Openstack).ImageID,
 		}
+		vol, _ := cloud.(*Openstack).CreateVolume(opts)
+		fmt.Printf("%+v\n", vol)
 	}
+
 }
 
 func TestGetVolume(t *testing.T) {
 	InitClouds()
-	for i := 0; i < len(Clouds); i++ {
-		switch Clouds[i].(type) {
-		case *Openstack:
-			id := "199a5fb0-8a11-4fc3-ab5f-c24706fb25d6"
-			vol, _ := Clouds[i].(*Openstack).GetVolume(id)
-			fmt.Printf("%+v\n", vol)
-		}
+	cloud := Clouds[testOsCloudName]
+	switch cloud.(type) {
+	case *Openstack:
+		id := "a5afa30f-28d8-46c8-8568-58e068cbde32"
+		vol, _ := cloud.(*Openstack).GetVolume(id)
+		fmt.Printf("%+v\n", vol)
 	}
+
 }
 
 func TestDeleteVolume(t *testing.T) {
 	InitClouds()
-	for i := 0; i < len(Clouds); i++ {
-		switch Clouds[i].(type) {
-		case *Openstack:
-			id := "199a5fb0-8a11-4fc3-ab5f-c24706fb25d6"
-			_ = Clouds[i].(*Openstack).DeleteVolume(id)
-		}
+	cloud := Clouds[testOsCloudName]
+	switch cloud.(type) {
+	case *Openstack:
+		id := "a5afa30f-28d8-46c8-8568-58e068cbde32"
+		_ = cloud.(*Openstack).DeleteVolume(id)
 	}
+
 }
 
 func TestListAllFavors(t *testing.T) {
 	InitClouds()
-	for i := 0; i < len(Clouds); i++ {
-		switch Clouds[i].(type) {
-		case *Openstack:
-			allFlavors, _ := Clouds[i].(*Openstack).ListAllFavors()
-			for j := 0; j < len(allFlavors); j++ {
-				fmt.Printf("%+v\n", allFlavors[j])
-			}
+	cloud := Clouds[testOsCloudName]
+	switch cloud.(type) {
+	case *Openstack:
+		allFlavors, _ := cloud.(*Openstack).ListAllFavors()
+		for j := 0; j < len(allFlavors); j++ {
+			fmt.Printf("%+v\n", allFlavors[j])
 		}
 	}
+
 }
 
 func TestListAllServers(t *testing.T) {
 	InitClouds()
-	for i := 0; i < len(Clouds); i++ {
-		switch Clouds[i].(type) {
-		case *Openstack:
-			allServers, _ := Clouds[i].(*Openstack).ListAllServers()
-			for j := 0; j < len(allServers); j++ {
-				fmt.Printf("%+v\n", allServers[j])
-			}
+	cloud := Clouds[testOsCloudName]
+	switch cloud.(type) {
+	case *Openstack:
+		allServers, _ := cloud.(*Openstack).ListAllServers()
+		for j := 0; j < len(allServers); j++ {
+			fmt.Printf("%+v\n", allServers[j])
 		}
 	}
+
 }
 
 func TestCreateServer(t *testing.T) {
 	InitClouds()
-	for i := 0; i < len(Clouds); i++ {
-		switch Clouds[i].(type) {
-		case *Openstack:
-			baseOpts := servers.CreateOpts{
-				Name:           "unittest3",
-				FlavorRef:      "abb9477b-955c-45fa-bfaf-b53ebc8b2cb7",
-				SecurityGroups: []string{Clouds[i].(*Openstack).SecurityGroup},
-				Networks: []servers.Network{
-					{UUID: Clouds[i].(*Openstack).NetworkID},
-				},
-			}
-			optsWithKeyPair := keypairs.CreateOptsExt{
-				CreateOptsBuilder: baseOpts,
-				KeyName:           Clouds[i].(*Openstack).KeyName,
-			}
-			optsBfv := bootfromvolume.CreateOptsExt{
-				CreateOptsBuilder: optsWithKeyPair,
-				BlockDevice: []bootfromvolume.BlockDevice{
-					{
-						BootIndex:           0,
-						DeleteOnTermination: false,
-						UUID:                "f3dd4500-665c-4b36-b793-2b2671d7eb75",
-						SourceType:          bootfromvolume.SourceVolume,
-						DestinationType:     bootfromvolume.DestinationVolume,
-					},
-				},
-			}
-			newServer, _ := Clouds[i].(*Openstack).CreateServer(optsBfv)
-			fmt.Printf("%+v\n", newServer)
+	cloud := Clouds[testOsCloudName]
+	switch cloud.(type) {
+	case *Openstack:
+		baseOpts := servers.CreateOpts{
+			Name:           "unittest3",
+			FlavorRef:      "abb9477b-955c-45fa-bfaf-b53ebc8b2cb7",
+			SecurityGroups: []string{cloud.(*Openstack).SecurityGroup},
+			Networks: []servers.Network{
+				{UUID: cloud.(*Openstack).NetworkID},
+			},
 		}
+		optsWithKeyPair := keypairs.CreateOptsExt{
+			CreateOptsBuilder: baseOpts,
+			KeyName:           cloud.(*Openstack).KeyName,
+		}
+		optsBfv := bootfromvolume.CreateOptsExt{
+			CreateOptsBuilder: optsWithKeyPair,
+			BlockDevice: []bootfromvolume.BlockDevice{
+				{
+					BootIndex:           0,
+					DeleteOnTermination: false,
+					UUID:                "a5afa30f-28d8-46c8-8568-58e068cbde32",
+					SourceType:          bootfromvolume.SourceVolume,
+					DestinationType:     bootfromvolume.DestinationVolume,
+				},
+			},
+		}
+		newServer, _ := cloud.(*Openstack).CreateServer(optsBfv)
+		fmt.Printf("%+v\n", newServer)
 	}
+
 }
 
 func TestGetServerAndExtractIPs(t *testing.T) {
 	InitClouds()
-	for i := 0; i < len(Clouds); i++ {
-		switch Clouds[i].(type) {
-		case *Openstack:
-			id := "c6f7e22b-3e55-4772-9efa-8d072d4cfc31"
-			server, err := Clouds[i].(*Openstack).GetServer(id)
-			if err != nil {
-				t.Fatalf("get server error: %s", err.Error())
-			}
-			fmt.Printf("%+v\n", server)
-			fmt.Println(Clouds[i].(*Openstack).ExtractIPs(server))
+	cloud := Clouds[testOsCloudName]
+	switch cloud.(type) {
+	case *Openstack:
+		id := "0b0d3d61-360d-4cb2-93a1-9f2073e13b50"
+		server, err := cloud.(*Openstack).GetServer(id)
+		if err != nil {
+			t.Fatalf("get server error: %s", err.Error())
 		}
+		fmt.Printf("%+v\n", server)
+		fmt.Println(cloud.(*Openstack).ExtractIPs(server))
 	}
 }
 
 func TestDeleteServer(t *testing.T) {
 	InitClouds()
-	for i := 0; i < len(Clouds); i++ {
-		switch Clouds[i].(type) {
-		case *Openstack:
-			id := "c6f7e22b-3e55-4772-9efa-8d072d4cfc31"
-			_ = Clouds[i].(*Openstack).DeleteServer(id)
-		}
+	cloud := Clouds[testOsCloudName]
+	switch cloud.(type) {
+	case *Openstack:
+		id := "0b0d3d61-360d-4cb2-93a1-9f2073e13b50"
+		_ = cloud.(*Openstack).DeleteServer(id)
 	}
 }
