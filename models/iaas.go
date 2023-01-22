@@ -8,21 +8,29 @@ import (
 )
 
 type Iaas interface {
+	ShowName() string
+	ShowType() string
+	GetVM(vmID string) (*IaasVm, error)
+	ListAllVMs() ([]IaasVm, error)
 	CreateVM(name string, vcpu, ram, storage int) (*IaasVm, error)
 	DeleteVM(vmID string) error
 	CheckResources() (ResourceStatus, error)
 }
 
 type ResourceStatus struct {
-	Limit ResSet // total amounts of resources
-	InUse ResSet // the amounts of resources being used
+	Limit ResSet `json:"limit"` // total amounts of resources
+	InUse ResSet `json:"inUse"` // the amounts of resources being used
 }
 
 type IaasVm struct {
 	ID        string // the id provided by the cloud
 	Name      string
-	IPs       []string
-	Cloud     string
+	IPs       []string // all IPs of this VM
+	VCpu      float64  // number of logical CPU cores
+	Ram       float64  // memory size unit: MB
+	Storage   float64  // storage size unit: GB
+	Status    string
+	Cloud     string // the name of the cloud that this VM belongs to
 	CloudType string
 }
 

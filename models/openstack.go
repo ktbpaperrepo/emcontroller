@@ -87,6 +87,76 @@ func InitOpenstack(paras map[string]interface{}) *Openstack {
 	}
 }
 
+func (os *Openstack) ShowName() string {
+	return os.Name
+}
+
+func (os *Openstack) ShowType() string {
+	return os.Type
+}
+
+func (os *Openstack) GetVM(vmID string) (*IaasVm, error) {
+	// get the name and IPs from the server
+	server, err := os.GetServer(vmID)
+	if err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], project id [%s], Get server %s error: %w", os.Name, os.Type, os.ProjectID, vmID, err)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+
+	// get the vcpu and ram from the flavor
+	flavorID := server.Flavor["id"].(string)
+	flavor, err := os.GetFlavor(flavorID)
+	if err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], project id [%s], Get flavor %s error: %w", os.Name, os.Type, os.ProjectID, flavorID, err)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+
+	// get the storage from the attached volumes
+	var storage float64 = 0
+	for _, attachedVolume := range server.AttachedVolumes {
+		volume, err := os.GetVolume(attachedVolume.ID)
+		if err != nil {
+			outErr := fmt.Errorf("Cloud name [%s], type [%s], project id [%s], Get volume %s error: %w", os.Name, os.Type, os.ProjectID, attachedVolume.ID, err)
+			beego.Error(outErr)
+			return nil, outErr
+		}
+		storage += float64(volume.Size)
+	}
+	return &IaasVm{
+		ID:        vmID,
+		Name:      server.Name,
+		IPs:       os.ExtractIPs(server),
+		VCpu:      float64(flavor.VCPUs),
+		Ram:       float64(flavor.RAM),
+		Storage:   storage,
+		Status:    server.Status,
+		Cloud:     os.Name,
+		CloudType: os.Type,
+	}, nil
+}
+
+func (os *Openstack) ListAllVMs() ([]IaasVm, error) {
+	allServers, err := os.ListAllServers()
+	if err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], project id [%s], list all servers, error: %w", os.Name, os.Type, os.ProjectID, err)
+		beego.Error(outErr)
+		return []IaasVm{}, outErr
+	}
+	var result []IaasVm
+	for _, server := range allServers {
+		iaasVM, err := os.GetVM(server.ID)
+		if err != nil {
+			outErr := fmt.Errorf("Cloud name [%s], type [%s], project id [%s], Get VM %s, error: %w", os.Name, os.Type, os.ProjectID, server.ID, err)
+			beego.Error(outErr)
+			return []IaasVm{}, outErr
+		}
+		result = append(result, *iaasVM)
+	}
+	return result, nil
+}
+
 // the unit of vcpu, ram, storage in the input is consistent with ResSet
 func (os *Openstack) CreateVM(name string, vcpu, ram, storage int) (*IaasVm, error) {
 	beego.Info(fmt.Sprintf("Cloud name [%s], type [%s], project id [%s], Create VM: %s", os.Name, os.Type, os.ProjectID, name))
@@ -189,21 +259,14 @@ func (os *Openstack) CreateVM(name string, vcpu, ram, storage int) (*IaasVm, err
 	}
 	beego.Info(fmt.Sprintf("Successful! Wait for VM %s able to be SSHed ip %s", name, sshIP))
 
-	finishedVm, err := os.GetServer(vm.ID)
+	finishedVm, err := os.GetVM(vm.ID)
 	if err != nil {
 		outErr := fmt.Errorf("get finishedVm %s error: %w", name, err)
 		beego.Error(outErr)
 		return nil, outErr
 	}
 
-	var outIaasVm IaasVm = IaasVm{
-		Name:      name,
-		ID:        finishedVm.ID,
-		IPs:       os.ExtractIPs(finishedVm),
-		Cloud:     os.Name,
-		CloudType: os.Type,
-	}
-	return &outIaasVm, nil
+	return finishedVm, nil
 }
 
 func (os *Openstack) DeleteVM(vmID string) error {
@@ -458,6 +521,14 @@ func (os *Openstack) ListAllFavors() ([]flavors.Flavor, error) {
 		return allFlavors, err
 	}
 	return allFlavors, err
+}
+
+func (os *Openstack) GetFlavor(id string) (*flavors.Flavor, error) {
+	vol, err := flavors.Get(os.ComputeClient, id).Extract()
+	if err != nil {
+		beego.Error(fmt.Sprintf("Cloud name [%s], type [%s], project id [%s], Get Flavor id [%s] error: %s", os.Name, os.Type, os.ProjectID, id, err.Error()))
+	}
+	return vol, err
 }
 
 func (os *Openstack) ListAllServers() ([]servers.Server, error) {

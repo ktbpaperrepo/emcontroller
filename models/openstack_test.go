@@ -136,7 +136,6 @@ func TestGetVolume(t *testing.T) {
 		vol, _ := cloud.(*Openstack).GetVolume(id)
 		fmt.Printf("%+v\n", vol)
 	}
-
 }
 
 func TestDeleteVolume(t *testing.T) {
@@ -147,7 +146,6 @@ func TestDeleteVolume(t *testing.T) {
 		id := "a5afa30f-28d8-46c8-8568-58e068cbde32"
 		_ = cloud.(*Openstack).DeleteVolume(id)
 	}
-
 }
 
 func TestListAllFavors(t *testing.T) {
@@ -160,7 +158,17 @@ func TestListAllFavors(t *testing.T) {
 			fmt.Printf("%+v\n", allFlavors[j])
 		}
 	}
+}
 
+func TestGetFlavor(t *testing.T) {
+	InitClouds()
+	cloud := Clouds[testOsCloudName]
+	switch cloud.(type) {
+	case *Openstack:
+		id := "0238fdc1-2525-4669-be22-a545341c8301"
+		vol, _ := cloud.(*Openstack).GetFlavor(id)
+		fmt.Printf("%+v\n", vol)
+	}
 }
 
 func TestListAllServers(t *testing.T) {
