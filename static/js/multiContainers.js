@@ -107,7 +107,7 @@ function generatePortHTML(containerElementID) {
             Name: <input type="text" name="${containerElementID}Port${container.portIndex}Name"><br>
             Protocol: <input type="text" name="${containerElementID}Port${container.portIndex}Protocol"><br>
             ServicePort: <input type="text" name="${containerElementID}Port${container.portIndex}ServicePort"><br>
-            NodePort: <input type="text" name="${containerElementID}Port${container.portIndex}NodePort"><br>
+            NodePort (valid range 30000-32768): <input type="text" name="${containerElementID}Port${container.portIndex}NodePort"><br>
         </li>
         <br>
     `;
