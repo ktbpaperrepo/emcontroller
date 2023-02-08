@@ -47,7 +47,7 @@ func TestCreateVM(t *testing.T) {
 func TestDeleteVM(t *testing.T) {
 	InitClouds()
 	cloud := Clouds[testOsCloudName]
-	err := cloud.DeleteVM("55d6b25a-1f91-4bd2-9230-130e3078e92c")
+	err := cloud.DeleteVM("9b8e9722-7ea4-4152-9f42-d2ac3bad720e")
 	if err != nil {
 		t.Errorf("error: %s\n", err.Error())
 	}

@@ -25,6 +25,7 @@ type Openstack struct {
 	SecurityGroup string // we use a fixed security group to create VMs
 	KeyName       string // we use a fixed key pair to create VMs
 	SshPemPath    string // the SSH identity file private key for the VMs on this cloud
+	RootPasswd    string // root password for SSH. If root password is provided, we use it to SSH, otherwise, we use pem to SSH
 	Provider      *gophercloud.ProviderClient
 	ComputeClient *gophercloud.ServiceClient
 	NetworkClient *gophercloud.ServiceClient
@@ -80,6 +81,7 @@ func InitOpenstack(paras map[string]interface{}) *Openstack {
 		SecurityGroup: paras["securitygroup"].(string),
 		KeyName:       paras["keyname"].(string),
 		SshPemPath:    paras["sshpempath"].(string),
+		RootPasswd:    paras["root_password"].(string),
 		Provider:      provider,
 		ComputeClient: computeClient,
 		NetworkClient: networkClient,
@@ -252,10 +254,20 @@ func (os *Openstack) CreateVM(name string, vcpu, ram, storage int) (*IaasVm, err
 
 	beego.Info(fmt.Sprintf("Wait for VM %s able to be SSHed, ip %s", name, sshIP))
 
-	if err := WaitForSshPem(SshUser, os.SshPemPath, sshIP, SshPort, WaitForTimeOut); err != nil {
-		outErr := fmt.Errorf("wait for VM %s able to be SSHed, ip %s, error: %w", name, sshIP, err)
-		beego.Error(outErr)
-		return nil, outErr
+	if len(os.RootPasswd) > 0 { // If root password is provided, we use it to SSH, otherwise, we use PEM to SSH
+		if err := WaitForSshPasswdAndInit(SshRootUser, os.RootPasswd, sshIP, SshPort, WaitForTimeOut); err != nil {
+			beego.Info("use password to test SSH")
+			outErr := fmt.Errorf("wait for VM %s able to be SSHed, ip %s, error: %w", name, sshIP, err)
+			beego.Error(outErr)
+			return nil, outErr
+		}
+	} else {
+		beego.Info("use PEM SSH identity file to test SSH")
+		if err := WaitForSshPem(SshUser, os.SshPemPath, sshIP, SshPort, WaitForTimeOut); err != nil {
+			outErr := fmt.Errorf("wait for VM %s able to be SSHed, ip %s, error: %w", name, sshIP, err)
+			beego.Error(outErr)
+			return nil, outErr
+		}
 	}
 	beego.Info(fmt.Sprintf("Successful! Wait for VM %s able to be SSHed ip %s", name, sshIP))
 

@@ -65,6 +65,18 @@ func TestGophercloud(t *testing.T) {
 	fmt.Println("storage:", storageExtracted)
 }
 
+func TestNoConfig(t *testing.T) {
+	InitClouds()
+	for _, cloud := range Clouds {
+		switch cloud.(type) {
+		case *Openstack:
+			fmt.Printf("Cloud: %s, root password is\n", cloud.(*Openstack).Name)
+			fmt.Println(cloud.(*Openstack).RootPasswd)
+			fmt.Printf("%t\n", len(cloud.(*Openstack).RootPasswd) > 0)
+		}
+	}
+}
+
 func TestGetComputeQuota(t *testing.T) {
 	InitClouds()
 	cloud := Clouds[testOsCloudName]
