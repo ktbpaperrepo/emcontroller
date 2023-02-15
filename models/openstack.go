@@ -360,17 +360,19 @@ func (os *Openstack) DeleteVM(vmID string) error {
 }
 
 func (os *Openstack) CheckResources() (ResourceStatus, error) {
+	// if we cannot get a resource, return -1
+	var errResult ResourceStatus = errRs
 	computeQuota, err := os.GetComputeQuota()
 	if err != nil {
-		return ResourceStatus{}, err
+		return errResult, err
 	}
 	networkQuota, err := os.GetNetworkQuota()
 	if err != nil {
-		return ResourceStatus{}, err
+		return errResult, err
 	}
 	storageQuota, err := os.GetStorageQuota()
 	if err != nil {
-		return ResourceStatus{}, err
+		return errResult, err
 	}
 
 	return ResourceStatus{

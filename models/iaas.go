@@ -71,6 +71,8 @@ func InitClouds() {
 			osCloud := InitOpenstack(iaasParas[i])
 			Clouds[osCloud.Name] = osCloud
 		case ProxmoxIaas:
+			pCloud := InitProxmox(iaasParas[i])
+			Clouds[pCloud.Name] = pCloud
 		}
 	}
 	beego.Info(fmt.Sprintf("All %d clouds are initialized.", len(Clouds)))

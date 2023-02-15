@@ -31,9 +31,21 @@
             <th>Network Port</th>
         </tr>
         <tr>
-            <td>{{.cloudInfo.Resources.InUse.VCpu}}/{{.cloudInfo.Resources.Limit.VCpu}}</td>
-            <td>{{.cloudInfo.Resources.InUse.Ram}}/{{.cloudInfo.Resources.Limit.Ram}}</td>
-            <td>{{.cloudInfo.Resources.InUse.Storage}}/{{.cloudInfo.Resources.Limit.Storage}}</td>
+            {{if lt .cloudInfo.Resources.Limit.VCpu 0.0}}
+                <td></td>
+            {{else}}
+                <td>{{.cloudInfo.Resources.InUse.VCpu}}/{{.cloudInfo.Resources.Limit.VCpu}}</td>
+            {{end}}
+            {{if lt .cloudInfo.Resources.Limit.Ram 0.0}}
+                <td></td>
+            {{else}}
+                <td>{{.cloudInfo.Resources.InUse.Ram}}/{{.cloudInfo.Resources.Limit.Ram}}</td>
+            {{end}}
+            {{if lt .cloudInfo.Resources.Limit.Storage 0.0}}
+                <td></td>
+            {{else}}
+                <td>{{.cloudInfo.Resources.InUse.Storage}}/{{.cloudInfo.Resources.Limit.Storage}}</td>
+            {{end}}
             {{if lt .cloudInfo.Resources.Limit.Vm 0.0}}
                 <td></td>
             {{else}}

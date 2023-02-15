@@ -7,7 +7,7 @@ import (
 
 func TestCheckResources(t *testing.T) {
 	InitClouds()
-	cloud := Clouds[testOsCloudName]
+	cloud := Clouds[testPCloudName]
 	resourceStatus, _ := cloud.CheckResources()
 	fmt.Printf("Limit: %#v\n", resourceStatus.Limit)
 	fmt.Printf("InUse: %#v\n", resourceStatus.InUse)

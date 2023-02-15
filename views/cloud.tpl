@@ -36,9 +36,21 @@
             <tr>
                 <td><a href="/cloud/{{$cloud.Name}}">{{$cloud.Name}}</a></td>
                 <td>{{$cloud.Type}}</td>
-                <td>{{$cloud.Resources.InUse.VCpu}}/{{$cloud.Resources.Limit.VCpu}}</td>
-                <td>{{$cloud.Resources.InUse.Ram}}/{{$cloud.Resources.Limit.Ram}}</td>
-                <td>{{$cloud.Resources.InUse.Storage}}/{{$cloud.Resources.Limit.Storage}}</td>
+                {{if lt $cloud.Resources.Limit.VCpu 0.0}}
+                    <td></td>
+                {{else}}
+                    <td>{{$cloud.Resources.InUse.VCpu}}/{{$cloud.Resources.Limit.VCpu}}</td>
+                {{end}}
+                {{if lt $cloud.Resources.Limit.Ram 0.0}}
+                    <td></td>
+                {{else}}
+                    <td>{{$cloud.Resources.InUse.Ram}}/{{$cloud.Resources.Limit.Ram}}</td>
+                {{end}}
+                {{if lt $cloud.Resources.Limit.Storage 0.0}}
+                    <td></td>
+                {{else}}
+                    <td>{{$cloud.Resources.InUse.Storage}}/{{$cloud.Resources.Limit.Storage}}</td>
+                {{end}}
                 {{if lt $cloud.Resources.Limit.Vm 0.0}}
                     <td></td>
                 {{else}}

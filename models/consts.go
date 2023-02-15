@@ -36,4 +36,24 @@ var (
 	DockerEngine   string = beego.AppConfig.String("dockerEngineIP") + ":" + beego.AppConfig.String("dockerEnginePort")
 	DockerRegistry string = beego.AppConfig.String("dockerRegistryIP") + ":" + beego.AppConfig.String("dockerRegistryPort")
 	KubeConfigPath string = beego.AppConfig.String("kubeConfigPath")
+
+	// When checking resources, if not successful, return -1
+	errRs ResourceStatus = ResourceStatus{
+		Limit: ResSet{
+			VCpu:    float64(-1),
+			Ram:     float64(-1),
+			Vm:      float64(-1),
+			Volume:  float64(-1),
+			Storage: float64(-1),
+			Port:    float64(-1),
+		},
+		InUse: ResSet{
+			VCpu:    float64(-1),
+			Ram:     float64(-1),
+			Vm:      float64(-1),
+			Volume:  float64(-1),
+			Storage: float64(-1),
+			Port:    float64(-1),
+		},
+	}
 )
