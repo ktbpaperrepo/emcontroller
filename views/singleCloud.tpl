@@ -17,6 +17,8 @@
     </a>
     <br>
     <h2>Cloud Name: [{{.cloudInfo.Name}}]&ensp;&ensp;&ensp;&ensp;Cloud Type: [{{.cloudInfo.Type}}]</h2>
+    <!--target="_blank" is to open a new tab, rel="noopener noreferrer" is to avoid tabnabbing-->
+    <h3>Web URL: <a href="{{.cloudInfo.WebUrl}}" target="_blank" rel="noopener noreferrer">{{.cloudInfo.WebUrl}}</a></h3>
 
     <br>
     <h3>Resources (used/total)</h3>

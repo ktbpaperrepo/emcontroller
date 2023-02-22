@@ -19,6 +19,7 @@ import (
 type Openstack struct {
 	Name          string
 	Type          string
+	WebUrl        string // web url to access this cloud
 	ProjectID     string
 	ImageID       string // we use a fixed image to create VMs
 	NetworkID     string // we use a fixed network to create VMs
@@ -75,6 +76,7 @@ func InitOpenstack(paras map[string]interface{}) *Openstack {
 	return &Openstack{
 		Name:          paras["name"].(string),
 		Type:          paras["type"].(string),
+		WebUrl:        paras["weburl"].(string),
 		ProjectID:     paras["project_id"].(string),
 		ImageID:       paras["imageid"].(string),
 		NetworkID:     paras["networkid"].(string),
@@ -95,6 +97,10 @@ func (os *Openstack) ShowName() string {
 
 func (os *Openstack) ShowType() string {
 	return os.Type
+}
+
+func (os *Openstack) ShowWebUrl() string {
+	return os.WebUrl
 }
 
 func (os *Openstack) GetVM(vmID string) (*IaasVm, error) {

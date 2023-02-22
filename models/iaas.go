@@ -10,6 +10,7 @@ import (
 type Iaas interface {
 	ShowName() string
 	ShowType() string
+	ShowWebUrl() string
 	GetVM(vmID string) (*IaasVm, error)
 	ListAllVMs() ([]IaasVm, error)
 	CreateVM(name string, vcpu, ram, storage int) (*IaasVm, error)

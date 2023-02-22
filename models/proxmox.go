@@ -51,6 +51,10 @@ func (p *Proxmox) ShowType() string {
 	return p.Type
 }
 
+func (p *Proxmox) ShowWebUrl() string {
+	return fmt.Sprintf("https://%s:%s/", p.IP, p.Port)
+}
+
 // in Proxmox, a node is a cloud, this function is to get the cloud status
 func (p *Proxmox) NodeStatus() ([]byte, error) {
 	beego.Info(fmt.Sprintf("Cloud name [%s], type [%s], get node status.", p.Name, p.Type))

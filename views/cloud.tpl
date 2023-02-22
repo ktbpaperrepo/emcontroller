@@ -20,6 +20,7 @@
         <tr>
             <th rowspan="2">Name</th>
             <th rowspan="2">Type</th>
+            <th rowspan="2">Web URL</th>
             <th colspan="6">Resources (used/total)</th>
         </tr>
         <tr>
@@ -36,6 +37,8 @@
             <tr>
                 <td><a href="/cloud/{{$cloud.Name}}">{{$cloud.Name}}</a></td>
                 <td>{{$cloud.Type}}</td>
+                <!--target="_blank" is to open a new tab, rel="noopener noreferrer" is to avoid tabnabbing-->
+                <td><a href="{{$cloud.WebUrl}}" target="_blank" rel="noopener noreferrer">{{$cloud.WebUrl}}</a></td>
                 {{if lt $cloud.Resources.Limit.VCpu 0.0}}
                     <td></td>
                 {{else}}

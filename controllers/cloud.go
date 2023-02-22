@@ -13,6 +13,7 @@ type CloudController struct {
 type CloudInfo struct {
 	Name      string
 	Type      string
+	WebUrl    string
 	Resources models.ResourceStatus
 }
 
@@ -22,6 +23,7 @@ func (c *CloudController) Get() {
 		var thisCloud CloudInfo
 		thisCloud.Name = cloud.ShowName()
 		thisCloud.Type = cloud.ShowType()
+		thisCloud.WebUrl = cloud.ShowWebUrl()
 		resources, err := cloud.CheckResources()
 		if err != nil {
 			beego.Error(fmt.Sprintf("Check resources for cloud Name [%s] Type [%s], error: %s", cloud.ShowType(), cloud.ShowType(), err.Error()))
@@ -45,6 +47,7 @@ func (c *CloudController) GetSingleCloud() {
 	cloudInfo := CloudInfo{
 		Name:      cloud.ShowName(),
 		Type:      cloud.ShowType(),
+		WebUrl:    cloud.ShowWebUrl(),
 		Resources: resources,
 	}
 
