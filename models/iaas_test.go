@@ -11,7 +11,6 @@ func TestCheckResources(t *testing.T) {
 	resourceStatus, _ := cloud.CheckResources()
 	fmt.Printf("Limit: %#v\n", resourceStatus.Limit)
 	fmt.Printf("InUse: %#v\n", resourceStatus.InUse)
-
 }
 
 func TestGetVM(t *testing.T) {
@@ -26,7 +25,7 @@ func TestGetVM(t *testing.T) {
 
 func TestListAllVMs(t *testing.T) {
 	InitClouds()
-	cloud := Clouds[testOsCloudName]
+	cloud := Clouds[testPCloudName]
 	vm, err := cloud.ListAllVMs()
 	if err != nil {
 		t.Errorf("error: %s\n", err.Error())

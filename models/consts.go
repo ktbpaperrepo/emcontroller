@@ -30,6 +30,12 @@ const (
 	Os404Substr string = "itemNotFound" // this string exists in the "not found" error of Openstack
 
 	DiskInitCmd string = "fsname=$(df -h / | grep -v Filesystem | awk '{print $1}'); diskname=$(echo ${fsname} | sed 's/2$//'); echo \"d\n2\nn\n2\n\n\nNo\nw\" | fdisk ${diskname}; resize2fs ${fsname}"
+
+	LoopBackMac     = "00:00:00:00:00:00"
+	LoopBackIntName = "lo"
+	LoopBackIp      = "127.0.0.1"
+	IPv4Type        = "ipv4"
+	IPv6Type        = "ipv6"
 )
 
 var (

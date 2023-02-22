@@ -4,32 +4,46 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/astaxie/beego"
 	"io"
 	"net/http"
+	"strconv"
+
+	"github.com/astaxie/beego"
 )
 
 type Proxmox struct {
 	Name            string
 	Type            string
-	IP              string // IP of Proxmox server
-	Port            string // Port of Proxmox service
-	Endpoint        string // IP:Port of Proxmox service
-	ProxmoxUser     string // The user used in Proxmox Web and Proxmox server SSH
-	ProxmoxPassword string // The password used in Proxmox Web and Proxmox server SSH
-	TokenName       string // The name of API Token for HTTP request
-	AuthHeader      string // The header "Authorization" used in HTTP request
-	RootPasswd      string // root password for SSH of VMs.
+	IP              string      // IP of Proxmox server
+	Port            string      // Port of Proxmox service
+	Endpoint        string      // IP:Port of Proxmox service
+	ProxmoxUser     string      // The user used in Proxmox Web and Proxmox server SSH
+	ProxmoxPassword string      // The password used in Proxmox Web and Proxmox server SSH
+	TokenName       string      // The name of API Token for HTTP request
+	AuthHeader      string      // The header "Authorization" used in HTTP request
+	RootPasswd      string      // root password for SSH of VMs.
+	HTTPClient      http.Client // used to call the API of proxmox
 }
 
 func InitProxmox(paras map[string]interface{}) *Proxmox {
+	beego.Info(fmt.Sprintf("Start to initialize cloud name [%s] type [%s]", paras["name"].(string), paras["type"].(string)))
+
 	ip := paras["ip"].(string)
 	port := paras["port"].(string)
 	proxmoxUser := paras["proxmox_user"].(string)
 	tokenName := paras["token_name"].(string)
 	tokenSecret := paras["token_secret"].(string)
 
-	beego.Info(fmt.Sprintf("Start to initialize cloud name [%s] type [%s]", paras["name"].(string), paras["type"].(string)))
+	// initialize the http client to call the API of proxmox
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true, // curl -k for https
+		},
+	}
+	client := http.Client{
+		Transport: tr,
+	}
+
 	return &Proxmox{
 		Name:            paras["name"].(string),
 		Type:            paras["type"].(string),
@@ -40,6 +54,7 @@ func InitProxmox(paras map[string]interface{}) *Proxmox {
 		ProxmoxPassword: paras["proxmox_password"].(string),
 		AuthHeader:      fmt.Sprintf("PVEAPIToken=%s@pam!%s=%s", proxmoxUser, tokenName, tokenSecret),
 		RootPasswd:      paras["root_password"].(string),
+		HTTPClient:      client,
 	}
 }
 
@@ -61,14 +76,6 @@ func (p *Proxmox) NodeStatus() ([]byte, error) {
 
 	// send HTTP request to get node status firstly, in Proxmox, a node is a cloud
 	url := fmt.Sprintf("https://%s/api2/json/nodes/%s/status", p.Endpoint, p.Name)
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true, // curl -k for https
-		},
-	}
-	client := http.Client{
-		Transport: tr,
-	}
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		outErr := fmt.Errorf("Cloud name [%s], type [%s], get node status, construct request, error: %w", p.Name, p.Type, err)
@@ -76,7 +83,7 @@ func (p *Proxmox) NodeStatus() ([]byte, error) {
 		return nil, outErr
 	}
 	req.Header.Add("Authorization", p.AuthHeader)
-	resp, err := client.Do(req)
+	resp, err := p.HTTPClient.Do(req)
 	if err != nil {
 		outErr := fmt.Errorf("Cloud name [%s], type [%s], get node status, do HTTP request, error: %w", p.Name, p.Type, err)
 		beego.Error(outErr)
@@ -99,14 +106,6 @@ func (p *Proxmox) ListQemus() ([]byte, error) {
 
 	// send HTTP request to list all qemus firstly, in Proxmox, a qemu is a VM
 	url := fmt.Sprintf("https://%s/api2/json/nodes/%s/qemu", p.Endpoint, p.Name)
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true, // curl -k for https
-		},
-	}
-	client := http.Client{
-		Transport: tr,
-	}
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		outErr := fmt.Errorf("Cloud name [%s], type [%s], list all qemus, construct request, error: %w", p.Name, p.Type, err)
@@ -114,7 +113,7 @@ func (p *Proxmox) ListQemus() ([]byte, error) {
 		return nil, outErr
 	}
 	req.Header.Add("Authorization", p.AuthHeader)
-	resp, err := client.Do(req)
+	resp, err := p.HTTPClient.Do(req)
 	if err != nil {
 		outErr := fmt.Errorf("Cloud name [%s], type [%s], list all qemus, do HTTP request, error: %w", p.Name, p.Type, err)
 		beego.Error(outErr)
@@ -128,6 +127,34 @@ func (p *Proxmox) ListQemus() ([]byte, error) {
 		return nil, outErr
 	}
 	beego.Info(fmt.Sprintf("Successful! Cloud name [%s], type [%s], list all qemus.", p.Name, p.Type))
+	return body, nil
+}
+
+func (p *Proxmox) GetNetInterfaces(vmid string) ([]byte, error) {
+	beego.Info(fmt.Sprintf("Cloud name [%s], type [%s], get vm id [%s] network interfaces .", p.Name, p.Type, vmid))
+	// send HTTP request to get vm network interfaces, in Proxmox, a qemu is a VM
+	url := fmt.Sprintf("https://%s/api2/json/nodes/%s/qemu/%s/agent/network-get-interfaces", p.Endpoint, p.Name, vmid)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], get vm id [%s], construct request, error: %w", p.Name, p.Type, vmid, err)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+	req.Header.Add("Authorization", p.AuthHeader)
+	resp, err := p.HTTPClient.Do(req)
+	if err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], get vm id [%s], do HTTP request, error: %w", p.Name, p.Type, vmid, err)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], get vm id [%s], read response body, error: %w", p.Name, p.Type, vmid, err)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+	beego.Info(fmt.Sprintf("Successful! Cloud name [%s], type [%s], get vm id [%s].", p.Name, p.Type, vmid))
 	return body, nil
 }
 
@@ -206,7 +233,89 @@ func (p *Proxmox) GetVM(vmID string) (*IaasVm, error) {
 	return nil, nil
 }
 func (p *Proxmox) ListAllVMs() ([]IaasVm, error) {
-	return nil, nil
+	beego.Info(fmt.Sprintf("Cloud name [%s], type [%s], list all VMs.", p.Name, p.Type))
+
+	// From qemus get inuse CPU, inuse Storage, inuse Memory.
+	qemusBytes, err := p.ListQemus()
+	if err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], list all VMs, list qemus, error: %w", p.Name, p.Type, err)
+		beego.Error(outErr)
+		return []IaasVm{}, outErr
+	}
+	beego.Info(fmt.Sprintf("Qemus of Cloud [%s] is [%v]", p.Name, string(qemusBytes)))
+
+	var qemus map[string]interface{}
+	if err := json.Unmarshal(qemusBytes, &qemus); err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], list all VMs, unmarshal qemus, error: %w", p.Name, p.Type, err)
+		beego.Error(outErr)
+		return []IaasVm{}, outErr
+	}
+	qemuSlice := qemus["data"].([]interface{})
+	var vms []IaasVm
+	for _, qemu := range qemuSlice {
+		var vmid string = strconv.FormatFloat(qemu.(map[string]interface{})["vmid"].(float64), 'f', -1, 64)
+
+		// get the ip address of this VM. If error, return an empty string slice, which means we cannot get IPs, but it does not affect other information.
+		var ips []string = func() []string {
+			netIntsBytes, err := p.GetNetInterfaces(vmid)
+			if err != nil {
+				beego.Error(fmt.Errorf("Cloud name [%s], type [%s], GetNetInterfaces vmid %s, error: %w", p.Name, p.Type, vmid, err))
+				return []string{}
+			}
+			beego.Info(fmt.Sprintf("Cloud name [%s], type [%s], GetNetInterfaces vmid %s, response: %s", p.Name, p.Type, vmid, string(netIntsBytes)))
+
+			var netInts map[string]interface{}
+			if err := json.Unmarshal(netIntsBytes, &netInts); err != nil {
+				beego.Error(fmt.Errorf("Cloud name [%s], type [%s], GetNetInterfaces vmid %s, Unmarshal netIntsBytes, error: %w", p.Name, p.Type, vmid, err))
+				return []string{}
+			}
+
+			var netIntSlice []interface{}
+			switch netInts["data"].(type) {
+			case map[string]interface{}:
+				netIntSlice = netInts["data"].(map[string]interface{})["result"].([]interface{})
+			default:
+				beego.Info(fmt.Errorf("netInts[\"data\"] is not a map[string]interface{}"))
+				return []string{}
+			}
+
+			var vmIps []string
+			for _, netInt := range netIntSlice {
+				// we do not need loopback IP
+				if netInt.(map[string]interface{})["hardware-address"].(string) == LoopBackMac || netInt.(map[string]interface{})["name"].(string) == LoopBackIntName {
+					continue
+				}
+
+				// We only have requirements about interface name
+				if !IsIfNeeded(netInt.(map[string]interface{})["name"].(string)) {
+					continue
+				}
+
+				ipAddrs := netInt.(map[string]interface{})["ip-addresses"].([]interface{})
+				for _, ipAddr := range ipAddrs {
+					if ipAddr.(map[string]interface{})["ip-address-type"].(string) == IPv4Type {
+						vmIps = append(vmIps, ipAddr.(map[string]interface{})["ip-address"].(string))
+					}
+				}
+			}
+			return vmIps
+		}()
+
+		thisVM := IaasVm{
+			ID:        vmid,
+			Name:      qemu.(map[string]interface{})["name"].(string),
+			IPs:       ips,
+			VCpu:      qemu.(map[string]interface{})["cpus"].(float64),
+			Ram:       qemu.(map[string]interface{})["maxmem"].(float64) / 1024 / 1024,         // unit MB
+			Storage:   qemu.(map[string]interface{})["maxdisk"].(float64) / 1024 / 1024 / 1024, // unit GB
+			Status:    qemu.(map[string]interface{})["status"].(string),
+			Cloud:     p.Name,
+			CloudType: p.Type,
+		}
+		vms = append(vms, thisVM)
+	}
+
+	return vms, nil
 }
 
 func (p *Proxmox) CreateVM(name string, vcpu, ram, storage int) (*IaasVm, error) {

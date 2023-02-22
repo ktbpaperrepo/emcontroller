@@ -28,3 +28,14 @@ func TestListQemus(t *testing.T) {
 		}
 	}
 }
+
+func TestGetNetInterfaces(t *testing.T) {
+	InitClouds()
+	for _, cloud := range Clouds {
+		switch cloud.(type) {
+		case *Proxmox:
+			netIfs, _ := cloud.(*Proxmox).GetNetInterfaces("100")
+			fmt.Printf("%+v\n", string(netIfs))
+		}
+	}
+}
