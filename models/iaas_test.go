@@ -15,8 +15,8 @@ func TestCheckResources(t *testing.T) {
 
 func TestGetVM(t *testing.T) {
 	InitClouds()
-	cloud := Clouds[testOsCloudName]
-	vm, err := cloud.GetVM("e5df0ca9-1f33-4d56-a3d5-7387d66bac6e")
+	cloud := Clouds[testPCloudName]
+	vm, err := cloud.GetVM("100")
 	if err != nil {
 		t.Errorf("error: %s\n", err.Error())
 	}

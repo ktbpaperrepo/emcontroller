@@ -29,6 +29,16 @@ func TestListQemus(t *testing.T) {
 	}
 }
 
+func TestGetQemu(t *testing.T) {
+	InitClouds()
+	cloud := Clouds[testPCloudName]
+	qemu, err := cloud.(*Proxmox).GetQemu("100")
+	if err != nil {
+		t.Errorf("error: %s\n", err.Error())
+	}
+	fmt.Printf("%+v\n", string(qemu))
+}
+
 func TestGetNetInterfaces(t *testing.T) {
 	InitClouds()
 	for _, cloud := range Clouds {

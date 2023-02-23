@@ -130,6 +130,37 @@ func (p *Proxmox) ListQemus() ([]byte, error) {
 	return body, nil
 }
 
+// in Proxmox, a qemu is a VM, this function is get the current status of a qemu
+func (p *Proxmox) GetQemu(vmid string) ([]byte, error) {
+	beego.Info(fmt.Sprintf("Cloud name [%s], type [%s], get qemu ID [%s].", p.Name, p.Type, vmid))
+
+	// send HTTP request to get this qemu status, in Proxmox, a qemu is a VM
+	url := fmt.Sprintf("https://%s/api2/json/nodes/%s/qemu/%s/status/current", p.Endpoint, p.Name, vmid)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], get qemu id [%s], construct request, error: %w", p.Name, p.Type, vmid, err)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+	req.Header.Add("Authorization", p.AuthHeader)
+	resp, err := p.HTTPClient.Do(req)
+	if err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], get qemu id [%s], do HTTP request, error: %w", p.Name, p.Type, vmid, err)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], get qemu id [%s], read response body, error: %w", p.Name, p.Type, vmid, err)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+	beego.Info(fmt.Sprintf("Successful! Cloud name [%s], type [%s], get qemu id [%s].", p.Name, p.Type, vmid))
+	return body, nil
+}
+
+// To get all net interfaces of a qemu
 func (p *Proxmox) GetNetInterfaces(vmid string) ([]byte, error) {
 	beego.Info(fmt.Sprintf("Cloud name [%s], type [%s], get vm id [%s] network interfaces .", p.Name, p.Type, vmid))
 	// send HTTP request to get vm network interfaces, in Proxmox, a qemu is a VM
@@ -156,6 +187,52 @@ func (p *Proxmox) GetNetInterfaces(vmid string) ([]byte, error) {
 	}
 	beego.Info(fmt.Sprintf("Successful! Cloud name [%s], type [%s], get vm id [%s].", p.Name, p.Type, vmid))
 	return body, nil
+}
+
+// get all IPs of a Proxmox VM. If error, return an empty string slice, which means we cannot get IPs, but it does not affect other information.
+func (p *Proxmox) getVmIps(vmid string) []string {
+	netIntsBytes, err := p.GetNetInterfaces(vmid)
+	if err != nil {
+		beego.Error(fmt.Errorf("Cloud name [%s], type [%s], GetNetInterfaces vmid %s, error: %w", p.Name, p.Type, vmid, err))
+		return []string{}
+	}
+	beego.Info(fmt.Sprintf("Cloud name [%s], type [%s], GetNetInterfaces vmid %s, response: %s", p.Name, p.Type, vmid, string(netIntsBytes)))
+
+	var netInts map[string]interface{}
+	if err := json.Unmarshal(netIntsBytes, &netInts); err != nil {
+		beego.Error(fmt.Errorf("Cloud name [%s], type [%s], GetNetInterfaces vmid %s, Unmarshal netIntsBytes, error: %w", p.Name, p.Type, vmid, err))
+		return []string{}
+	}
+
+	var netIntSlice []interface{}
+	switch netInts["data"].(type) {
+	case map[string]interface{}:
+		netIntSlice = netInts["data"].(map[string]interface{})["result"].([]interface{})
+	default:
+		beego.Info(fmt.Errorf("netInts[\"data\"] is not a map[string]interface{}"))
+		return []string{}
+	}
+
+	var vmIps []string
+	for _, netInt := range netIntSlice {
+		// we do not need loopback IP
+		if netInt.(map[string]interface{})["hardware-address"].(string) == LoopBackMac || netInt.(map[string]interface{})["name"].(string) == LoopBackIntName {
+			continue
+		}
+
+		// We only have requirements about interface name
+		if !IsIfNeeded(netInt.(map[string]interface{})["name"].(string)) {
+			continue
+		}
+
+		ipAddrs := netInt.(map[string]interface{})["ip-addresses"].([]interface{})
+		for _, ipAddr := range ipAddrs {
+			if ipAddr.(map[string]interface{})["ip-address-type"].(string) == IPv4Type {
+				vmIps = append(vmIps, ipAddr.(map[string]interface{})["ip-address"].(string))
+			}
+		}
+	}
+	return vmIps
 }
 
 func (p *Proxmox) CheckResources() (ResourceStatus, error) {
@@ -229,8 +306,33 @@ func (p *Proxmox) CheckResources() (ResourceStatus, error) {
 	}, nil
 }
 
-func (p *Proxmox) GetVM(vmID string) (*IaasVm, error) {
-	return nil, nil
+func (p *Proxmox) GetVM(vmid string) (*IaasVm, error) {
+	qemuBytes, err := p.GetQemu(vmid)
+	if err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], get VM id [%s], get qemu, error: %w", p.Name, p.Type, vmid, err)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+	beego.Info(fmt.Sprintf("Cloud name [%s], type [%s], get qemu id %s, response: %s", p.Name, p.Type, vmid, string(qemuBytes)))
+
+	var qemu map[string]interface{}
+	if err := json.Unmarshal(qemuBytes, &qemu); err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], get VM id %s, Unmarshal qemuBytes, error: %w", p.Name, p.Type, vmid, err)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+
+	return &IaasVm{
+		ID:        strconv.FormatFloat(qemu["data"].(map[string]interface{})["vmid"].(float64), 'f', -1, 64),
+		Name:      qemu["data"].(map[string]interface{})["name"].(string),
+		IPs:       p.getVmIps(vmid),
+		VCpu:      qemu["data"].(map[string]interface{})["cpus"].(float64),
+		Ram:       qemu["data"].(map[string]interface{})["maxmem"].(float64) / 1024 / 1024,         // unit MB
+		Storage:   qemu["data"].(map[string]interface{})["maxdisk"].(float64) / 1024 / 1024 / 1024, // unit GB
+		Status:    qemu["data"].(map[string]interface{})["status"].(string),
+		Cloud:     p.Name,
+		CloudType: p.Type,
+	}, nil
 }
 func (p *Proxmox) ListAllVMs() ([]IaasVm, error) {
 	beego.Info(fmt.Sprintf("Cloud name [%s], type [%s], list all VMs.", p.Name, p.Type))
@@ -255,51 +357,8 @@ func (p *Proxmox) ListAllVMs() ([]IaasVm, error) {
 	for _, qemu := range qemuSlice {
 		var vmid string = strconv.FormatFloat(qemu.(map[string]interface{})["vmid"].(float64), 'f', -1, 64)
 
-		// get the ip address of this VM. If error, return an empty string slice, which means we cannot get IPs, but it does not affect other information.
-		var ips []string = func() []string {
-			netIntsBytes, err := p.GetNetInterfaces(vmid)
-			if err != nil {
-				beego.Error(fmt.Errorf("Cloud name [%s], type [%s], GetNetInterfaces vmid %s, error: %w", p.Name, p.Type, vmid, err))
-				return []string{}
-			}
-			beego.Info(fmt.Sprintf("Cloud name [%s], type [%s], GetNetInterfaces vmid %s, response: %s", p.Name, p.Type, vmid, string(netIntsBytes)))
-
-			var netInts map[string]interface{}
-			if err := json.Unmarshal(netIntsBytes, &netInts); err != nil {
-				beego.Error(fmt.Errorf("Cloud name [%s], type [%s], GetNetInterfaces vmid %s, Unmarshal netIntsBytes, error: %w", p.Name, p.Type, vmid, err))
-				return []string{}
-			}
-
-			var netIntSlice []interface{}
-			switch netInts["data"].(type) {
-			case map[string]interface{}:
-				netIntSlice = netInts["data"].(map[string]interface{})["result"].([]interface{})
-			default:
-				beego.Info(fmt.Errorf("netInts[\"data\"] is not a map[string]interface{}"))
-				return []string{}
-			}
-
-			var vmIps []string
-			for _, netInt := range netIntSlice {
-				// we do not need loopback IP
-				if netInt.(map[string]interface{})["hardware-address"].(string) == LoopBackMac || netInt.(map[string]interface{})["name"].(string) == LoopBackIntName {
-					continue
-				}
-
-				// We only have requirements about interface name
-				if !IsIfNeeded(netInt.(map[string]interface{})["name"].(string)) {
-					continue
-				}
-
-				ipAddrs := netInt.(map[string]interface{})["ip-addresses"].([]interface{})
-				for _, ipAddr := range ipAddrs {
-					if ipAddr.(map[string]interface{})["ip-address-type"].(string) == IPv4Type {
-						vmIps = append(vmIps, ipAddr.(map[string]interface{})["ip-address"].(string))
-					}
-				}
-			}
-			return vmIps
-		}()
+		// get the ip address of this VM.
+		var ips []string = p.getVmIps(vmid)
 
 		thisVM := IaasVm{
 			ID:        vmid,
