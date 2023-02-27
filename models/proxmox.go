@@ -822,36 +822,38 @@ func (p *Proxmox) CreateVM(name string, vcpu, ram, storage int) (*IaasVm, error)
 	beego.Info(fmt.Sprintf("diskName is %s", diskName))
 
 	// call API to resize disk
+	// There is a bug of proxmox described in https://forum.proxmox.com/threads/bug-a-bug-about-the-api-to-resize-disk-in-version-7-3-3.123400/.
 	// After a VM is created, the disk cannot be resized in a short time (I know it in my practice). We need to retry until the resize is successful.
-	// Beside the retry, for safety, we wait for some time before resize the disk. This is because, if the resize fails one time, even if we succeed afterward, the config in Proxmox will still have error, i.e., the disk size shown in Proxmox will be the old value rather than the resized value.
-	// However, we found the timeOfWait cannot guarantee that the resize can successed at the first time.
-	// Then we found another method, which is to call resize disk API again with the input parameter +XG, relative value, which can fix the bug enabling the proxmox show the disk size correctly
-	timeOfWait := 10 * time.Second
-	beego.Info(fmt.Sprintf("To avoid proxmox bugs, before we resize the disk, we wait for %v", timeOfWait))
-	time.Sleep(timeOfWait)
+	// Moreover, only the retry is not enough, because if the resize fails one time, even if we succeed afterward, the config in Proxmox will still have error, i.e., the disk size shown in Proxmox will be the old value rather than the resized value.
+	// So we need to SSH to the Proxmox Node to execute a command like qm rescan to refresh the status.
 
 	// resize the disk, the input size of this API should be a string with value and unit.
-	// In order to, avoid the bug of proxmox, we set the disk size 2 times.
-	// 1. set an absolute value, which may trigger the bug of proxmox;
-	// 2. set an added value, which can fix the problem of the bug.
-	diskSizeFirst := fmt.Sprintf("%dG", storage-1)
-	diskSizeAdded := "+1G"
-	beego.Info(fmt.Sprintf("1. set the absolute value %s to the disk size, which may trigger the bug.", diskSizeFirst))
-	if err := p.waitForResizeDisk(WaitForTimeOut, 5, vmid, diskName, diskSizeFirst); err != nil {
+	diskSize := fmt.Sprintf("%dG", storage)
+	beego.Info(fmt.Sprintf("set the disk [%s] size %s, which may trigger a Proxmox bug.", diskName, diskSize))
+	if err := p.waitForResizeDisk(WaitForTimeOut, 5, vmid, diskName, diskSize); err != nil {
 		outErr := fmt.Errorf("Cloud name [%s], type [%s], CreateVM [%s], waitForResizeDisk, error: %w", p.Name, p.Type, name, err)
 		beego.Error(outErr)
 		return nil, outErr
 	}
-	beego.Info(fmt.Sprintf("Successful! Cloud name [%s], type [%s], CreateVM [%s], config disk [%s] size [%s].", p.Name, p.Type, name, diskName, diskSizeFirst))
+	beego.Info(fmt.Sprintf("Successful! Cloud name [%s], type [%s], CreateVM [%s], config disk [%s] size [%s].", p.Name, p.Type, name, diskName, diskSize))
 
-	beego.Info(fmt.Sprintf("2. set the relative value %s to the disk size, which may fix the problem of the bug.", diskSizeAdded))
-	if err := p.waitForAddDiskSize(WaitForTimeOut, 5, vmid, diskName, diskSizeAdded, storage); err != nil {
-		outErr := fmt.Errorf("Cloud name [%s], type [%s], CreateVM [%s], waitForAddDiskSize, error: %w", p.Name, p.Type, name, err)
+	// SSH to the Proxmox node to execute the command to fix the problem of the proxmox bug.
+	qmRescanCmd := fmt.Sprintf("qm rescan --vmid %d", vmid)
+	beego.Info(fmt.Sprintf("SSH to the Proxmox node [%s] to run command [%s] to refresh the state to fix the problem of the Proxmox bug.", p.IP, qmRescanCmd))
+	sshClient, err := SshClientWithPasswd(p.ProxmoxUser, p.ProxmoxPassword, p.IP, SshPort)
+	if err != nil {
+		outErr := fmt.Errorf("Create SshClientWithPasswd for ip %s, this time SshClientWithPasswd error: %w", p.IP, err)
 		beego.Error(outErr)
 		return nil, outErr
 	}
-
-	beego.Info(fmt.Sprintf("Successful! Cloud name [%s], type [%s], CreateVM [%d], get disk size of [%s] size not less than [%d]G.", p.Name, p.Type, vmid, diskName, storage))
+	defer sshClient.Close()
+	output, err := SshOneCommand(sshClient, qmRescanCmd)
+	if err != nil {
+		outErr := fmt.Errorf("Execute command %s on Proxmox node %s error: %w", qmRescanCmd, p.IP, err)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+	beego.Info(fmt.Sprintf("Successful! SSH to the Proxmox node [%s] to run command [%s] to refresh the state to fix the Proxmox bug. output: %s", p.IP, qmRescanCmd, output))
 
 	// 5. Start the VM
 	startResqBytes, err := p.StartQemu(vmid)
@@ -1004,6 +1006,7 @@ func (p *Proxmox) waitForResizeDisk(timeout int, checkInterval int, vmid int, di
 }
 
 // To avoid a Proxmox bug, we need to resize the disk size 2 times.
+// Deprecated: From https://forum.proxmox.com/threads/bug-a-bug-about-the-api-to-resize-disk-in-version-7-3-3.123400/post-536856, I know that the better method to avoid the Proxmox bug is to use qm rescan command.
 func (p *Proxmox) waitForAddDiskSize(timeout int, checkInterval int, vmid int, diskName string, addedSize string, expectedSize int) error {
 	return MyWaitFor(timeout, checkInterval, func() (bool, error) {
 		// send request to resize the disk
