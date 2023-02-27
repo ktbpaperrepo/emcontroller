@@ -261,8 +261,8 @@ func (os *Openstack) CreateVM(name string, vcpu, ram, storage int) (*IaasVm, err
 	beego.Info(fmt.Sprintf("Wait for VM %s able to be SSHed, ip %s", name, sshIP))
 
 	if len(os.RootPasswd) > 0 { // If root password is provided, we use it to SSH, otherwise, we use PEM to SSH
+		beego.Info("use password to test SSH")
 		if err := WaitForSshPasswdAndInit(SshRootUser, os.RootPasswd, sshIP, SshPort, WaitForTimeOut); err != nil {
-			beego.Info("use password to test SSH")
 			outErr := fmt.Errorf("wait for VM %s able to be SSHed, ip %s, error: %w", name, sshIP, err)
 			beego.Error(outErr)
 			return nil, outErr

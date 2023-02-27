@@ -35,8 +35,8 @@ func TestListAllVMs(t *testing.T) {
 
 func TestCreateVM(t *testing.T) {
 	InitClouds()
-	cloud := Clouds[testOsCloudName]
-	vm, err := cloud.CreateVM("testiaasvm", 4, 16384, 150)
+	cloud := Clouds[testPCloudName]
+	vm, err := cloud.CreateVM("testiaasvm", 8, 16384, 150)
 	if err != nil {
 		t.Errorf("error: %s\n", err.Error())
 	}

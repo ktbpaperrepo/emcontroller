@@ -24,12 +24,17 @@ type ResourceStatus struct {
 }
 
 type IaasVm struct {
-	ID        string // the id provided by the cloud
-	Name      string
-	IPs       []string // all IPs of this VM
-	VCpu      float64  // number of logical CPU cores
-	Ram       float64  // memory size unit: MB
-	Storage   float64  // storage size unit: GB
+	ID   string // the id provided by the cloud
+	Name string
+
+	// all IPs of this VM.
+	// Although we can show multiple IPs, the VMs created by multi-cloud manager should only have 1 IP.
+	// So when we need to get the IP of a VM, we can directly get its 1st IP.
+	IPs []string
+
+	VCpu      float64 // number of logical CPU cores
+	Ram       float64 // memory size unit: MB
+	Storage   float64 // storage size unit: GB
 	Status    string
 	Cloud     string // the name of the cloud that this VM belongs to
 	CloudType string

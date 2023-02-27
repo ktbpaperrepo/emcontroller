@@ -36,6 +36,10 @@ const (
 	LoopBackIp      = "127.0.0.1"
 	IPv4Type        = "ipv4"
 	IPv6Type        = "ipv6"
+
+	ProxmoxAPIInterval time.Duration = 1 * time.Second // I suspect that if we call Proxmox API too frequently, it may not be stable
+	ProxTSRunning      string        = "running"       // Proxmox Task Status Running
+	ProxTSStopped      string        = "stopped"       // Proxmox Task Status stopped
 )
 
 var (
