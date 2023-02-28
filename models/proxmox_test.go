@@ -39,6 +39,26 @@ func TestGetQemu(t *testing.T) {
 	fmt.Printf("%+v\n", string(qemu))
 }
 
+func TestShutdownQemu(t *testing.T) {
+	InitClouds()
+	cloud := Clouds[testPCloudName]
+	resp, err := cloud.(*Proxmox).ShutdownQemu("102")
+	if err != nil {
+		t.Errorf("error: %s\n", err.Error())
+	}
+	fmt.Printf("%+v\n", string(resp))
+}
+
+func TestDeleteQemu(t *testing.T) {
+	InitClouds()
+	cloud := Clouds[testPCloudName]
+	resp, err := cloud.(*Proxmox).DeleteQemu("102")
+	if err != nil {
+		t.Errorf("error: %s\n", err.Error())
+	}
+	fmt.Printf("%+v\n", string(resp))
+}
+
 func TestGetTaskStatus(t *testing.T) {
 	InitClouds()
 	cloud := Clouds[testPCloudName]

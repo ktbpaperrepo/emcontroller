@@ -38,8 +38,10 @@ const (
 	IPv6Type        = "ipv6"
 
 	ProxmoxAPIInterval time.Duration = 1 * time.Second // I suspect that if we call Proxmox API too frequently, it may not be stable
-	ProxTSRunning      string        = "running"       // Proxmox Task Status Running
+	ProxTSRunning      string        = "running"       // Proxmox Task Status running
 	ProxTSStopped      string        = "stopped"       // Proxmox Task Status stopped
+	ProxQSRunning      string        = "running"       // Proxmox Qemu Status running
+	ProxQSStopped      string        = "stopped"       // Proxmox Qemu Status stopped
 )
 
 var (

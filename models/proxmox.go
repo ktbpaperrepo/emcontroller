@@ -222,6 +222,83 @@ func (p *Proxmox) CloneQemu(newVmId, newVmName string) ([]byte, error) {
 	return body, nil
 }
 
+// Shutdown a VM
+func (p *Proxmox) ShutdownQemu(vmid string) ([]byte, error) {
+	beego.Info(fmt.Sprintf("Cloud name [%s], type [%s], shutdown VM [%s].", p.Name, p.Type, vmid))
+
+	// send HTTP request to shut down a VM
+	url := fmt.Sprintf("https://%s/api2/json/nodes/%s/qemu/%s/status/shutdown", p.Endpoint, p.Name, vmid)
+
+	req, err := http.NewRequest("POST", url, nil)
+	if err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], shutdown VM [%s], construct request, error: %w", p.Name, p.Type, vmid, err)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+	req.Header.Add("Authorization", p.AuthHeader)
+	resp, err := p.HTTPClient.Do(req)
+	if err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], shutdown VM [%s], do HTTP request, error: %w", p.Name, p.Type, vmid, err)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+	defer resp.Body.Close()
+	beego.Info(fmt.Sprintf("HTTP Status is [%s], HTTP Status Code is [%d]", resp.Status, resp.StatusCode))
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], shutdown VM [%s], HTTP response status code is [%d]", p.Name, p.Type, vmid, resp.StatusCode)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], shutdown VM [%s], read response body, error: %w", p.Name, p.Type, vmid, err)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+	beego.Info(fmt.Sprintf("Successful! Cloud name [%s], type [%s], shutdown VM [%s].", p.Name, p.Type, vmid))
+	return body, nil
+}
+
+// Delete a VM
+func (p *Proxmox) DeleteQemu(vmid string) ([]byte, error) {
+	beego.Info(fmt.Sprintf("Cloud name [%s], type [%s], delete Qemu [%s].", p.Name, p.Type, vmid))
+
+	// send HTTP request to shut down a VM
+	// The following two lines are copied from the Proxmox API documentation.
+	// purge: boolean. Remove VMID from configurations, like backup & replication jobs and HA.
+	// destroy-unreferenced-disks: boolean. If set, destroy additionally all disks not referenced in the config but with a matching VMID from all enabled storages.
+	url := fmt.Sprintf("https://%s/api2/json/nodes/%s/qemu/%s?purge=1&destroy-unreferenced-disks=1", p.Endpoint, p.Name, vmid)
+
+	req, err := http.NewRequest("DELETE", url, nil)
+	if err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], delete Qemu [%s], construct request, error: %w", p.Name, p.Type, vmid, err)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+	req.Header.Add("Authorization", p.AuthHeader)
+	resp, err := p.HTTPClient.Do(req)
+	if err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], delete Qemu [%s], do HTTP request, error: %w", p.Name, p.Type, vmid, err)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+	defer resp.Body.Close()
+	beego.Info(fmt.Sprintf("HTTP Status is [%s], HTTP Status Code is [%d]", resp.Status, resp.StatusCode))
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], delete Qemu [%s], HTTP response status code is [%d]", p.Name, p.Type, vmid, resp.StatusCode)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], delete Qemu [%s], read response body, error: %w", p.Name, p.Type, vmid, err)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+	beego.Info(fmt.Sprintf("Request Successful! Cloud name [%s], type [%s], delete Qemu [%s].", p.Name, p.Type, vmid))
+	return body, nil
+}
+
 // Get the status of a task
 func (p *Proxmox) GetTaskStatus(upid string) ([]byte, error) {
 	beego.Info(fmt.Sprintf("Cloud name [%s], type [%s], get task upid ID [%s].", p.Name, p.Type, upid))
@@ -772,12 +849,12 @@ func (p *Proxmox) CreateVM(name string, vcpu, ram, storage int) (*IaasVm, error)
 		beego.Error(outErr)
 		return nil, outErr
 	}
-	cloneUpid := cloneResp["data"].(string)
+	cloneUpid := cloneResp["data"].(string) // used for check task status
 
 	// 3-1. After we create the clone task, we can use this polling function to wait for it to be finished
 	beego.Info(fmt.Sprintf("Wait for Task [%s] is finished.", cloneUpid))
 	if err := p.waitForTaskFinished(WaitForTimeOut, 5, cloneUpid); err != nil {
-		outErr := fmt.Errorf("Cloud name [%s], type [%s], CreateVM [%s], waitForTaskFinished, error: %w", p.Name, p.Type, name, err)
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], CreateVM [%s], waitForTaskFinished, CloneQemu, error: %w", p.Name, p.Type, name, err)
 		beego.Error(outErr)
 		return nil, outErr
 	}
@@ -897,10 +974,87 @@ func (p *Proxmox) CreateVM(name string, vcpu, ram, storage int) (*IaasVm, error)
 		beego.Error(outErr)
 		return nil, outErr
 	}
+	beego.Info(fmt.Sprintf("Successful! Cloud name [%s], type [%s], Create VM: %s", p.Name, p.Type, name))
 	return iaasVm, nil
 }
 
-func (p *Proxmox) DeleteVM(vmID string) error {
+func (p *Proxmox) DeleteVM(vmid string) error {
+	beego.Info(fmt.Sprintf("Cloud name [%s], type [%s], Delete VM: %s", p.Name, p.Type, vmid))
+	// 1. Shut down the VM
+	sdRespBytes, err := p.ShutdownQemu(vmid)
+	time.Sleep(ProxmoxAPIInterval)
+	if err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], DeleteVM [%s], ShutdownQemu, error: %w", p.Name, p.Type, vmid, err)
+		beego.Error(outErr)
+		return outErr
+	}
+	beego.Info(fmt.Sprintf("Cloud [%s], ShutdownQemu [%s] response of is [%s]", p.Name, vmid, string(sdRespBytes)))
+	if err := p.CheckErrInResp(sdRespBytes); err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], DeleteVM [%s], ShutdownQemu, error in resp: %w", p.Name, p.Type, vmid, err)
+		beego.Error(outErr)
+		return outErr
+	}
+	beego.Info(fmt.Sprintf("ShutdownQemu [%s] request is sent successfully.", vmid))
+
+	var sdResp map[string]interface{}
+	if err := json.Unmarshal(sdRespBytes, &sdResp); err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], DeleteVM [%s], unmarshal sdResp, error: %w", p.Name, p.Type, vmid, err)
+		beego.Error(outErr)
+		return outErr
+	}
+	sdUpid := sdResp["data"].(string) // used for check task status
+
+	// 2-1. After we create the shutdown task, we can use this polling function to wait for it to be finished
+	beego.Info(fmt.Sprintf("Wait for Task [%s] is finished.", sdUpid))
+	if err := p.waitForTaskFinished(WaitForTimeOut, 5, sdUpid); err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], DeleteVM [%s], waitForTaskFinished, ShutdownQemu, error: %w", p.Name, p.Type, vmid, err)
+		beego.Error(outErr)
+		return outErr
+	}
+	beego.Info(fmt.Sprintf("Task [%s] is already finished successfully.", sdUpid))
+
+	// 2-2. Before we delete the VM, to be safe, we make sure that the VM status is "stopped"
+	beego.Info(fmt.Sprintf("Wait for VM [%s] status to be [%s].", vmid, ProxQSStopped))
+	if err := p.waitForQemuStopped(WaitForTimeOut, 5, vmid); err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], DeleteVM [%s], waitForQemuStopped, error: %w", p.Name, p.Type, vmid, err)
+		beego.Error(outErr)
+		return outErr
+	}
+	beego.Info(fmt.Sprintf("VM [%s] is already stopped.", vmid))
+
+	// 3. Send request to delete this Qemu
+	dqRespBytes, err := p.DeleteQemu(vmid)
+	time.Sleep(ProxmoxAPIInterval)
+	if err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], DeleteVM [%s], DeleteQemu, error: %w", p.Name, p.Type, vmid, err)
+		beego.Error(outErr)
+		return outErr
+	}
+	beego.Info(fmt.Sprintf("Cloud [%s], DeleteQemu [%s] response of is [%s]", p.Name, vmid, string(dqRespBytes)))
+	if err := p.CheckErrInResp(dqRespBytes); err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], DeleteVM [%s], DeleteQemu, error in resp: %w", p.Name, p.Type, vmid, err)
+		beego.Error(outErr)
+		return outErr
+	}
+	beego.Info(fmt.Sprintf("DeleteQemu [%s] request is sent successfully.", vmid))
+
+	var dqResp map[string]interface{}
+	if err := json.Unmarshal(dqRespBytes, &dqResp); err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], DeleteVM [%s], unmarshal dqResp, error: %w", p.Name, p.Type, vmid, err)
+		beego.Error(outErr)
+		return outErr
+	}
+	dqUpid := dqResp["data"].(string) // used for check task status
+	beego.Info(fmt.Sprintf("Wait for Task [%s] is finished.", dqUpid))
+	if err := p.waitForTaskFinished(WaitForTimeOut, 5, dqUpid); err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], DeleteVM [%s], waitForTaskFinished, DeleteQemu, error: %w", p.Name, p.Type, vmid, err)
+		beego.Error(outErr)
+		return outErr
+	}
+	beego.Info(fmt.Sprintf("Task [%s] is already finished successfully.", dqUpid))
+
+	beego.Info(fmt.Sprintf("Successful! Cloud name [%s], type [%s], Delete VM: %s", p.Name, p.Type, vmid))
+
 	return nil
 }
 
@@ -1055,6 +1209,41 @@ func (p *Proxmox) waitForAddDiskSize(timeout int, checkInterval int, vmid int, d
 			return false, nil
 		}
 
+		return true, nil
+	})
+}
+
+// After we shut down a VM, we can use this polling function to make sure it is stopped.
+func (p *Proxmox) waitForQemuStopped(timeout int, checkInterval int, vmid string) error {
+	return MyWaitFor(timeout, checkInterval, func() (bool, error) {
+		qemuBytes, err := p.GetQemu(vmid)
+		if err != nil {
+			outErr := fmt.Errorf("Cloud name [%s], type [%s], get qemu id [%s], error: %w", p.Name, p.Type, vmid, err)
+			beego.Error(outErr)
+			return false, nil
+		}
+		beego.Info(fmt.Sprintf("Cloud name [%s], type [%s], get qemu id %s, response: %s", p.Name, p.Type, vmid, string(qemuBytes)))
+
+		if err := p.CheckErrInResp(qemuBytes); err != nil {
+			outErr := fmt.Errorf("Cloud name [%s], type [%s], get qemu id [%s], error in resp: %w", p.Name, p.Type, vmid, err)
+			beego.Error(outErr)
+			return false, nil
+		}
+
+		var qemu map[string]interface{}
+		if err := json.Unmarshal(qemuBytes, &qemu); err != nil {
+			outErr := fmt.Errorf("Cloud name [%s], type [%s], get qemu id [%s], Unmarshal qemuBytes, error: %w", p.Name, p.Type, vmid, err)
+			beego.Error(outErr)
+			return false, nil
+		}
+
+		if qemu["data"].(map[string]interface{})["status"].(string) != ProxQSStopped {
+			outErr := fmt.Errorf("Cloud name [%s], type [%s], qemu id [%s], status: %s, not %s", p.Name, p.Type, vmid, qemu["data"].(map[string]interface{})["status"].(string), ProxQSStopped)
+			beego.Error(outErr)
+			return false, nil
+		}
+
+		beego.Info(fmt.Sprintf("Cloud name [%s], type [%s], qemu id [%s], status is %s, it's already %s.", p.Name, p.Type, vmid, qemu["data"].(map[string]interface{})["status"].(string), ProxQSStopped))
 		return true, nil
 	})
 }
