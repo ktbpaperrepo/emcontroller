@@ -51,3 +51,13 @@ func TestDeleteVM(t *testing.T) {
 		t.Errorf("error: %s\n", err.Error())
 	}
 }
+
+func TestIsCreatedByMcm(t *testing.T) {
+	InitClouds()
+	cloud := Clouds[testOsCloudName]
+	is, err := cloud.IsCreatedByMcm("d2076789-f289-4ae1-b599-b8e20e7658b3")
+	if err != nil {
+		t.Errorf("error: %s\n", err.Error())
+	}
+	fmt.Printf("%t\n", is)
+}

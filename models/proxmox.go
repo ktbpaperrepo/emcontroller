@@ -97,17 +97,21 @@ func (p *Proxmox) NodeStatus() ([]byte, error) {
 	}
 	defer resp.Body.Close()
 	beego.Info(fmt.Sprintf("HTTP Status is [%s], HTTP Status Code is [%d]", resp.Status, resp.StatusCode))
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		outErr := fmt.Errorf("Cloud name [%s], type [%s], get node status, HTTP response status code is [%d]", p.Name, p.Type, resp.StatusCode)
-		beego.Error(outErr)
-		return nil, outErr
-	}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		outErr := fmt.Errorf("Cloud name [%s], type [%s], get node status, read response body, error: %w", p.Name, p.Type, err)
 		beego.Error(outErr)
 		return nil, outErr
 	}
+	beego.Info(fmt.Sprintf("HTTP response body is [%s].", string(body)))
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], get node status, HTTP response status code is [%d]", p.Name, p.Type, resp.StatusCode)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+
 	beego.Info(fmt.Sprintf("Successful! Cloud name [%s], type [%s], get node status.", p.Name, p.Type))
 	return body, nil
 }
@@ -133,14 +137,17 @@ func (p *Proxmox) ListQemus() ([]byte, error) {
 	}
 	defer resp.Body.Close()
 	beego.Info(fmt.Sprintf("HTTP Status is [%s], HTTP Status Code is [%d]", resp.Status, resp.StatusCode))
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		outErr := fmt.Errorf("Cloud name [%s], type [%s], list all qemus, HTTP response status code is [%d]", p.Name, p.Type, resp.StatusCode)
-		beego.Error(outErr)
-		return nil, outErr
-	}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		outErr := fmt.Errorf("Cloud name [%s], type [%s], list all qemus, read response body, error: %w", p.Name, p.Type, err)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+	beego.Info(fmt.Sprintf("HTTP response body is [%s].", string(body)))
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], list all qemus, HTTP response status code is [%d]", p.Name, p.Type, resp.StatusCode)
 		beego.Error(outErr)
 		return nil, outErr
 	}
@@ -169,17 +176,21 @@ func (p *Proxmox) GetQemu(vmid string) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 	beego.Info(fmt.Sprintf("HTTP Status is [%s], HTTP Status Code is [%d]", resp.Status, resp.StatusCode))
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		outErr := fmt.Errorf("Cloud name [%s], type [%s], get qemu id [%s], HTTP response status code is [%d]", p.Name, p.Type, vmid, resp.StatusCode)
-		beego.Error(outErr)
-		return nil, outErr
-	}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		outErr := fmt.Errorf("Cloud name [%s], type [%s], get qemu id [%s], read response body, error: %w", p.Name, p.Type, vmid, err)
 		beego.Error(outErr)
 		return nil, outErr
 	}
+	beego.Info(fmt.Sprintf("HTTP response body is [%s].", string(body)))
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], get qemu id [%s], HTTP response status code is [%d]", p.Name, p.Type, vmid, resp.StatusCode)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+
 	beego.Info(fmt.Sprintf("Successful! Cloud name [%s], type [%s], get qemu id [%s].", p.Name, p.Type, vmid))
 	return body, nil
 }
@@ -190,7 +201,9 @@ func (p *Proxmox) CloneQemu(newVmId, newVmName string) ([]byte, error) {
 
 	// send HTTP request to clone a new VM from a template
 	url := fmt.Sprintf("https://%s/api2/json/nodes/%s/qemu/%s/clone", p.Endpoint, p.Name, p.TemplateId)
-	bodyJson := []byte(fmt.Sprintf(`{ "newid": %s, "full": true, "name": "%s"}`, newVmId, newVmName))
+
+	// We add the sign McmSign to the VMs created by multi-cloud manager. When deleting a VM, multi-cloud manager is only allowed to delete the VMs created by itself with this sign.
+	bodyJson := []byte(fmt.Sprintf(`{ "newid": %s, "full": true, "name": "%s", "description": "%s"}`, newVmId, newVmName, McmSign))
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(bodyJson))
 	if err != nil {
 		outErr := fmt.Errorf("Cloud name [%s], type [%s], clone new VM [%s/%s] from template ID [%s], construct request, error: %w", p.Name, p.Type, newVmId, newVmName, p.TemplateId, err)
@@ -207,17 +220,21 @@ func (p *Proxmox) CloneQemu(newVmId, newVmName string) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 	beego.Info(fmt.Sprintf("HTTP Status is [%s], HTTP Status Code is [%d]", resp.Status, resp.StatusCode))
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		outErr := fmt.Errorf("Cloud name [%s], type [%s], clone new VM [%s/%s] from template ID [%s], HTTP response status code is [%d]", p.Name, p.Type, newVmId, newVmName, p.TemplateId, resp.StatusCode)
-		beego.Error(outErr)
-		return nil, outErr
-	}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		outErr := fmt.Errorf("Cloud name [%s], type [%s], clone new VM [%s/%s] from template ID [%s], read response body, error: %w", p.Name, p.Type, newVmId, newVmName, p.TemplateId, err)
 		beego.Error(outErr)
 		return nil, outErr
 	}
+	beego.Info(fmt.Sprintf("HTTP response body is [%s].", string(body)))
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], clone new VM [%s/%s] from template ID [%s], HTTP response status code is [%d]", p.Name, p.Type, newVmId, newVmName, p.TemplateId, resp.StatusCode)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+
 	beego.Info(fmt.Sprintf("Successful! Cloud name [%s], type [%s], clone new VM [%s/%s] from template ID [%s].", p.Name, p.Type, newVmId, newVmName, p.TemplateId))
 	return body, nil
 }
@@ -244,17 +261,21 @@ func (p *Proxmox) ShutdownQemu(vmid string) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 	beego.Info(fmt.Sprintf("HTTP Status is [%s], HTTP Status Code is [%d]", resp.Status, resp.StatusCode))
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		outErr := fmt.Errorf("Cloud name [%s], type [%s], shutdown VM [%s], HTTP response status code is [%d]", p.Name, p.Type, vmid, resp.StatusCode)
-		beego.Error(outErr)
-		return nil, outErr
-	}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		outErr := fmt.Errorf("Cloud name [%s], type [%s], shutdown VM [%s], read response body, error: %w", p.Name, p.Type, vmid, err)
 		beego.Error(outErr)
 		return nil, outErr
 	}
+	beego.Info(fmt.Sprintf("HTTP response body is [%s].", string(body)))
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], shutdown VM [%s], HTTP response status code is [%d]", p.Name, p.Type, vmid, resp.StatusCode)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+
 	beego.Info(fmt.Sprintf("Successful! Cloud name [%s], type [%s], shutdown VM [%s].", p.Name, p.Type, vmid))
 	return body, nil
 }
@@ -284,17 +305,21 @@ func (p *Proxmox) DeleteQemu(vmid string) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 	beego.Info(fmt.Sprintf("HTTP Status is [%s], HTTP Status Code is [%d]", resp.Status, resp.StatusCode))
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		outErr := fmt.Errorf("Cloud name [%s], type [%s], delete Qemu [%s], HTTP response status code is [%d]", p.Name, p.Type, vmid, resp.StatusCode)
-		beego.Error(outErr)
-		return nil, outErr
-	}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		outErr := fmt.Errorf("Cloud name [%s], type [%s], delete Qemu [%s], read response body, error: %w", p.Name, p.Type, vmid, err)
 		beego.Error(outErr)
 		return nil, outErr
 	}
+	beego.Info(fmt.Sprintf("HTTP response body is [%s].", string(body)))
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], delete Qemu [%s], HTTP response status code is [%d]", p.Name, p.Type, vmid, resp.StatusCode)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+
 	beego.Info(fmt.Sprintf("Request Successful! Cloud name [%s], type [%s], delete Qemu [%s].", p.Name, p.Type, vmid))
 	return body, nil
 }
@@ -320,17 +345,21 @@ func (p *Proxmox) GetTaskStatus(upid string) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 	beego.Info(fmt.Sprintf("HTTP Status is [%s], HTTP Status Code is [%d]", resp.Status, resp.StatusCode))
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		outErr := fmt.Errorf("Cloud name [%s], type [%s], get task upid ID [%s], HTTP response status code is [%d]", p.Name, p.Type, upid, resp.StatusCode)
-		beego.Error(outErr)
-		return nil, outErr
-	}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		outErr := fmt.Errorf("Cloud name [%s], type [%s], get task upid ID [%s], read response body, error: %w", p.Name, p.Type, upid, err)
 		beego.Error(outErr)
 		return nil, outErr
 	}
+	beego.Info(fmt.Sprintf("HTTP response body is [%s].", string(body)))
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], get task upid ID [%s], HTTP response status code is [%d]", p.Name, p.Type, upid, resp.StatusCode)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+
 	beego.Info(fmt.Sprintf("Successful! Cloud name [%s], type [%s], get task upid ID [%s].", p.Name, p.Type, upid))
 	return body, nil
 }
@@ -369,17 +398,21 @@ func (p *Proxmox) ConfigCoreRam(vmid, ramMB, cores int) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 	beego.Info(fmt.Sprintf("HTTP Status is [%s], HTTP Status Code is [%d]", resp.Status, resp.StatusCode))
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		outErr := fmt.Errorf("Cloud name [%s], type [%s], Config VM [%d], Memory [%d]MB, CPU cores [%d], HTTP response status code is [%d]", p.Name, p.Type, vmid, ramMB, cores, resp.StatusCode)
-		beego.Error(outErr)
-		return nil, outErr
-	}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		outErr := fmt.Errorf("Cloud name [%s], type [%s], Config VM [%d], Memory [%d]MB, CPU cores [%d], read response body, error: %w", p.Name, p.Type, vmid, ramMB, cores, err)
 		beego.Error(outErr)
 		return nil, outErr
 	}
+	beego.Info(fmt.Sprintf("HTTP response body is [%s].", string(body)))
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], Config VM [%d], Memory [%d]MB, CPU cores [%d], HTTP response status code is [%d]", p.Name, p.Type, vmid, ramMB, cores, resp.StatusCode)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+
 	beego.Info(fmt.Sprintf("Successful! Cloud name [%s], type [%s], Config VM [%d], Memory [%d]MB, CPU cores [%d].", p.Name, p.Type, vmid, ramMB, cores))
 	return body, nil
 }
@@ -405,19 +438,56 @@ func (p *Proxmox) GetQemuConfig(vmid string) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 	beego.Info(fmt.Sprintf("HTTP Status is [%s], HTTP Status Code is [%d]", resp.Status, resp.StatusCode))
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		outErr := fmt.Errorf("Cloud name [%s], type [%s], get qemu config id [%s], HTTP response status code is [%d]", p.Name, p.Type, vmid, resp.StatusCode)
-		beego.Error(outErr)
-		return nil, outErr
-	}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		outErr := fmt.Errorf("Cloud name [%s], type [%s], get qemu config id [%s], read response body, error: %w", p.Name, p.Type, vmid, err)
 		beego.Error(outErr)
 		return nil, outErr
 	}
+	beego.Info(fmt.Sprintf("HTTP response body is [%s].", string(body)))
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], get qemu config id [%s], HTTP response status code is [%d]", p.Name, p.Type, vmid, resp.StatusCode)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+
 	beego.Info(fmt.Sprintf("Successful! Cloud name [%s], type [%s], get qemu config id [%s].", p.Name, p.Type, vmid))
 	return body, nil
+}
+
+// Check whether a VM is created by multi-cloud manager
+func (p *Proxmox) IsCreatedByMcm(vmid string) (bool, error) {
+	beego.Info(fmt.Sprintf("Cloud name [%s], type [%s], check whether VM [%s] is created by multi-cloud manager", p.Name, p.Type, vmid))
+
+	qemuConfigBytes, err := p.GetQemuConfig(vmid)
+	if err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], check whether VM [%s] is created by multi-cloud manager, get qemu config id, error: %w", p.Name, p.Type, vmid, err)
+		beego.Error(outErr)
+		return false, outErr
+	}
+	beego.Info(fmt.Sprintf("Cloud name [%s], type [%s], check whether VM [%s] is created by multi-cloud manager, get qemu config id, response: %s", p.Name, p.Type, vmid, string(qemuConfigBytes)))
+	if err := p.CheckErrInResp(qemuConfigBytes); err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], check whether VM [%s] is created by multi-cloud manager, get qemu config id, error in resp: %w", p.Name, p.Type, vmid, err)
+		beego.Error(outErr)
+		return false, outErr
+	}
+
+	var qemuConfig map[string]interface{}
+	if err := json.Unmarshal(qemuConfigBytes, &qemuConfig); err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], check whether VM [%s] is created by multi-cloud manager, get qemu config id, Unmarshal qemuBytes, error: %w", p.Name, p.Type, vmid, err)
+		beego.Error(outErr)
+		return false, outErr
+	}
+
+	if description, exist := qemuConfig["data"].(map[string]interface{})["description"]; exist && description.(string) == McmSign {
+		beego.Info(fmt.Sprintf("Cloud name [%s], type [%s], VM [%s] is created by multi-cloud manager", p.Name, p.Type, vmid))
+		return true, nil
+	}
+
+	beego.Info(fmt.Sprintf("Cloud name [%s], type [%s], VM [%s] is not created by multi-cloud manager", p.Name, p.Type, vmid))
+	return false, nil
 }
 
 // Get the Name of the disk of a qemu
@@ -482,17 +552,21 @@ func (p *Proxmox) ResizeDisk(vmid int, disk, size string) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 	beego.Info(fmt.Sprintf("HTTP Status is [%s], HTTP Status Code is [%d]", resp.Status, resp.StatusCode))
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		outErr := fmt.Errorf("Cloud name [%s], type [%s], Resize VM [%d], disk [%s] size [%s], HTTP response status code is [%d]", p.Name, p.Type, vmid, disk, size, resp.StatusCode)
-		beego.Error(outErr)
-		return nil, outErr
-	}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		outErr := fmt.Errorf("Cloud name [%s], type [%s], Resize VM [%d], disk [%s] size [%s], read response body, error: %w", p.Name, p.Type, vmid, disk, size, err)
 		beego.Error(outErr)
 		return nil, outErr
 	}
+	beego.Info(fmt.Sprintf("HTTP response body is [%s].", string(body)))
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], Resize VM [%d], disk [%s] size [%s], HTTP response status code is [%d]", p.Name, p.Type, vmid, disk, size, resp.StatusCode)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+
 	beego.Info(fmt.Sprintf("Successful! Cloud name [%s], type [%s], Resize VM [%d], disk [%s] size [%s].", p.Name, p.Type, vmid, disk, size))
 	return body, nil
 }
@@ -519,17 +593,21 @@ func (p *Proxmox) StartQemu(vmid int) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 	beego.Info(fmt.Sprintf("HTTP Status is [%s], HTTP Status Code is [%d]", resp.Status, resp.StatusCode))
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		outErr := fmt.Errorf("Cloud name [%s], type [%s], start (turn on) VM [%d], HTTP response status code is [%d]", p.Name, p.Type, vmid, resp.StatusCode)
-		beego.Error(outErr)
-		return nil, outErr
-	}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		outErr := fmt.Errorf("Cloud name [%s], type [%s], start (turn on) VM [%d], read response body, error: %w", p.Name, p.Type, vmid, err)
 		beego.Error(outErr)
 		return nil, outErr
 	}
+	beego.Info(fmt.Sprintf("HTTP response body is [%s].", string(body)))
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], start (turn on) VM [%d], HTTP response status code is [%d]", p.Name, p.Type, vmid, resp.StatusCode)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+
 	beego.Info(fmt.Sprintf("Successful! Cloud name [%s], type [%s], start (turn on) VM [%d].", p.Name, p.Type, vmid))
 	return body, nil
 }
@@ -554,17 +632,21 @@ func (p *Proxmox) GetNetInterfaces(vmid string) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 	beego.Info(fmt.Sprintf("HTTP Status is [%s], HTTP Status Code is [%d]", resp.Status, resp.StatusCode))
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		outErr := fmt.Errorf("Cloud name [%s], type [%s], get vm id [%s], HTTP response status code is [%d]", p.Name, p.Type, vmid, resp.StatusCode)
-		beego.Error(outErr)
-		return nil, outErr
-	}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		outErr := fmt.Errorf("Cloud name [%s], type [%s], get vm id [%s], read response body, error: %w", p.Name, p.Type, vmid, err)
 		beego.Error(outErr)
 		return nil, outErr
 	}
+	beego.Info(fmt.Sprintf("HTTP response body is [%s].", string(body)))
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], get vm id [%s], HTTP response status code is [%d]", p.Name, p.Type, vmid, resp.StatusCode)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+
 	beego.Info(fmt.Sprintf("Successful! Cloud name [%s], type [%s], get vm id [%s].", p.Name, p.Type, vmid))
 	return body, nil
 }
@@ -980,6 +1062,20 @@ func (p *Proxmox) CreateVM(name string, vcpu, ram, storage int) (*IaasVm, error)
 
 func (p *Proxmox) DeleteVM(vmid string) error {
 	beego.Info(fmt.Sprintf("Cloud name [%s], type [%s], Delete VM: %s", p.Name, p.Type, vmid))
+
+	// Multi-cloud manager is only allowed to delete VMs created by itself
+	createdByMcm, err := p.IsCreatedByMcm(vmid)
+	if err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], DeleteVM [%s], check whether the VM is created by multi-cloud manager, error: %w", p.Name, p.Type, vmid, err)
+		beego.Error(outErr)
+		return outErr
+	}
+	if !createdByMcm {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], DeleteVM [%s], the VM is not created by multi-cloud manager, so we cannot delete it.", p.Name, p.Type, vmid)
+		beego.Error(outErr)
+		return outErr
+	}
+
 	// 1. Shut down the VM
 	sdRespBytes, err := p.ShutdownQemu(vmid)
 	time.Sleep(ProxmoxAPIInterval)

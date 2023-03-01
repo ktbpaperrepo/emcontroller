@@ -19,8 +19,8 @@ function deleteVM(cloudName, vmID, statusID) {
         return;
     }
     lockDeleteVM();
-    let appStatus = document.getElementById(statusID);
-    appStatus.innerText = "Deleting";
+    let vmStatus = document.getElementById(statusID);
+    vmStatus.innerText = "Deleting";
     let xmlhttp = new XMLHttpRequest();
     xmlhttp.open("DELETE", `/cloud/${cloudName}/vm/${vmID}`);
     xmlhttp.send();
@@ -28,8 +28,8 @@ function deleteVM(cloudName, vmID, statusID) {
     xmlhttp.onreadystatechange = function(){
         if(this.readyState==4 && this.status==200) {
             console.log("delete vm %s response: %s", vmID, xmlhttp.responseText);
-            // reserve 10s for deleting
-            setTimeout(unlockDeleteVM, 10000);
+            // this Delete VM API will block until the VM is completely deleted, so 2 seconds of waiting is enough
+            setTimeout(unlockDeleteVM, 2000);
         }
         console.log("onreadystatechange this.readyState: %O, this.status: %O", this.readyState, this.status);
     }

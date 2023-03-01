@@ -16,6 +16,7 @@ type Iaas interface {
 	CreateVM(name string, vcpu, ram, storage int) (*IaasVm, error)
 	DeleteVM(vmID string) error
 	CheckResources() (ResourceStatus, error)
+	IsCreatedByMcm(vmID string) (bool, error)
 }
 
 type ResourceStatus struct {

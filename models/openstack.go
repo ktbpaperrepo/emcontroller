@@ -289,17 +289,24 @@ func (os *Openstack) CreateVM(name string, vcpu, ram, storage int) (*IaasVm, err
 
 func (os *Openstack) DeleteVM(vmID string) error {
 	beego.Info(fmt.Sprintf("Cloud name [%s], type [%s], project id [%s], Delete VM: %s", os.Name, os.Type, os.ProjectID, vmID))
-	// 1. delete server
-	oriVM, err := os.GetServer(vmID)
+
+	// This method can only delete VMs created by multi-cloud manager
+	createdByMcm, err := os.IsCreatedByMcm(vmID)
 	if err != nil {
-		outErr := fmt.Errorf("get oriVM %s error: %w", vmID, err)
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], DeleteVM [%s], check whether the VM is created by multi-cloud manager, error: %w", os.Name, os.Type, vmID, err)
+		beego.Error(outErr)
+		return outErr
+	}
+	if !createdByMcm {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], DeleteVM [%s], the VM is not created by multi-cloud manager, so we cannot delete it", os.Name, os.Type, vmID)
 		beego.Error(outErr)
 		return outErr
 	}
 
-	// VMs created by multi-cloud manager has this metadata. This method can only delete VMs created by multi-cloud manager
-	if oriVM.Metadata[McmSign] != McmSign {
-		outErr := fmt.Errorf("server %s is not created by multi-cloud manager, so we cannot delete it.", vmID)
+	// 1. delete server
+	oriVM, err := os.GetServer(vmID)
+	if err != nil {
+		outErr := fmt.Errorf("get oriVM %s error: %w", vmID, err)
 		beego.Error(outErr)
 		return outErr
 	}
@@ -399,6 +406,27 @@ func (os *Openstack) CheckResources() (ResourceStatus, error) {
 			Port:    float64(networkQuota.Port.Used),
 		},
 	}, nil
+}
+
+// Check whether a VM is created by multi-cloud manager
+func (os *Openstack) IsCreatedByMcm(vmID string) (bool, error) {
+	beego.Info(fmt.Sprintf("check whether VM [%s] is created by multi-cloud manager.", vmID))
+	vm, err := os.GetServer(vmID)
+	if err != nil {
+		outErr := fmt.Errorf("check whether VM [%s] is created by multi-cloud manager, get VM error: %w", vmID, err)
+		beego.Error(outErr)
+		return false, outErr
+	}
+
+	// VMs created by multi-cloud manager has this metadata.
+	if vm.Metadata[McmSign] != McmSign {
+		outErr := fmt.Errorf("server %s is not created by multi-cloud manager.", vmID)
+		beego.Error(outErr)
+		return false, nil
+	}
+
+	beego.Info(fmt.Sprintf("server %s is created by multi-cloud manager.", vmID))
+	return true, nil
 }
 
 // check whether this error is the "not found" of Openstack
