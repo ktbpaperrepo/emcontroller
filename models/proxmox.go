@@ -687,10 +687,12 @@ func (p *Proxmox) getVmIps(vmid string) []string {
 			continue
 		}
 
-		ipAddrs := netInt.(map[string]interface{})["ip-addresses"].([]interface{})
-		for _, ipAddr := range ipAddrs {
-			if ipAddr.(map[string]interface{})["ip-address-type"].(string) == IPv4Type {
-				vmIps = append(vmIps, ipAddr.(map[string]interface{})["ip-address"].(string))
+		// netInt.(map[string]interface{})["ip-addresses"] is possible to be nil
+		if ipAddrs, ok := netInt.(map[string]interface{})["ip-addresses"].([]interface{}); ok {
+			for _, ipAddr := range ipAddrs {
+				if ipAddr.(map[string]interface{})["ip-address-type"].(string) == IPv4Type {
+					vmIps = append(vmIps, ipAddr.(map[string]interface{})["ip-address"].(string))
+				}
 			}
 		}
 	}
