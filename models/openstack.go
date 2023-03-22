@@ -210,11 +210,16 @@ func (os *Openstack) CreateVM(name string, vcpu, ram, storage int) (*IaasVm, err
 	var metadata = map[string]string{
 		McmSign: McmSign, // add this sign to the VM meaning that it is created by multi-cloud manager
 	}
+	// We can also disable the port security of a network or a port. In this case, we do not need and cannot set security group to a VM or a port
+	securityGroups := []string{}
+	if os.SecurityGroup != "" {
+		securityGroups = append(securityGroups, os.SecurityGroup)
+	}
 	baseVmOpts := servers.CreateOpts{
 		Name:           name,
 		Metadata:       metadata,
 		FlavorRef:      chosenFlavor.ID,
-		SecurityGroups: []string{os.SecurityGroup},
+		SecurityGroups: securityGroups,
 		Networks: []servers.Network{
 			{UUID: os.NetworkID},
 		},
