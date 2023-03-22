@@ -57,6 +57,26 @@ func appRunning(app v1.Deployment) bool {
 	return true
 }
 
+// We list all pods of this deployment, and take the node IP of a pod as the NodePortIP.
+func getNodePortIP(app v1.Deployment) string {
+	selector, err := metav1.LabelSelectorAsSelector(app.Spec.Selector)
+	if err != nil {
+		beego.Error(fmt.Sprintf("Error, get the selector of deployment %s/%s, error: %s", app.Namespace, app.Name, err.Error()))
+		return ""
+	}
+	stringSelector := selector.String()
+	beego.Info(fmt.Sprintf("List pods in namespace %s, with selector: %s", app.Namespace, stringSelector))
+	pods, err := models.ListPods(app.Namespace, metav1.ListOptions{LabelSelector: stringSelector})
+	if err != nil {
+		beego.Error(fmt.Sprintf("Error, List pods in namespace %s, with selector: %s, error: %s", app.Namespace, stringSelector, err.Error()))
+		return ""
+	}
+	if len(pods) == 0 {
+		beego.Info(fmt.Sprintf("There are no pods in namespace %s that can mapping: %s", app.Namespace, stringSelector))
+	}
+	return pods[0].Status.HostIP
+}
+
 func (c *ApplicationController) Get() {
 	applications, err := models.ListDeployment(models.KubernetesNamespace)
 	if err != nil {
@@ -78,14 +98,14 @@ func (c *ApplicationController) Get() {
 		if appRunning(app) {
 			thisApp.Status = "Stable Running"
 		} else {
-			thisApp.Status = "Not Stable"
+			thisApp.Status = "Not Yet Stable"
 		}
 
 		svc, _ := models.GetService(models.KubernetesNamespace, svcName)
 		if svc != nil {
 			thisApp.ClusterIP = svc.Spec.ClusterIP
 			if svc.Spec.Type == apiv1.ServiceTypeNodePort {
-				thisApp.NodePortIP = beego.AppConfig.String("k8sMasterIP")
+				thisApp.NodePortIP = getNodePortIP(app)
 			} else {
 				thisApp.NodePortIP = ""
 			}

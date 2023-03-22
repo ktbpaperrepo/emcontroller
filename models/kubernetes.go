@@ -113,3 +113,13 @@ func GetService(namespace, name string) (*apiv1.Service, error) {
 	}
 	return service, nil
 }
+
+func ListPods(namespace string, listOptions metav1.ListOptions) ([]apiv1.Pod, error) {
+	ctx := context.Background()
+	pods, err := kubernetesClient.CoreV1().Pods(namespace).List(ctx, listOptions)
+	if err != nil {
+		beego.Error(fmt.Printf("List pods error: %s", err.Error()))
+		return []apiv1.Pod{}, err
+	}
+	return pods.Items, nil
+}
