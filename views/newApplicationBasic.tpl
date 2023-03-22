@@ -26,6 +26,16 @@
 <!--        Replicas: <input type="text" name="replicas"> <br><br>-->
         <input type="text" hidden name="replicas" value="1">
 
+<!--        Checkbox for container network or host network-->
+        <div>
+            <input type="radio" id="containerNet" name="networkType" value="container" checked>
+            <label for="containerNet">Container Network</label>
+        </div>
+        <div>
+            <input type="radio" id="hostNet" name="networkType" value="host">
+            <label for="hostNet">Host Network</label>
+        </div>
+
         <!--submit the container Number-->
         <input type="hidden" id="containerNum" name="containerNumber" value="0">
 

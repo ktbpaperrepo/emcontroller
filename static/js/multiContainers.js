@@ -21,6 +21,7 @@ function generateContainerHTML() {
         <li>CPU: <input type="text" name="container${containerIndex}LimitCPU"></li>
         <li>Storage: <input type="text" name="container${containerIndex}LimitEphemeralStorage"></li>
     </ul>
+    Working Directory: <input type="text" name="container${containerIndex}Workdir"> <br><br>
     Commands:
     <!--submit the Command Number-->
     <input type="hidden" id="container${containerIndex}CommandNum" name="container${containerIndex}CommandNumber" value="0">

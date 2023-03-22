@@ -178,6 +178,10 @@ func (c *ApplicationController) DoNewApplication() {
 		beego.Error(fmt.Sprintf("Get replicas error: %s", err.Error()))
 		return
 	}
+
+	// networkType have 2 options: "container" and "host"
+	var hostNetwork bool = c.GetString("networkType") == "host"
+
 	containerNum, err := c.GetInt("containerNumber")
 	if err != nil {
 		beego.Error(fmt.Sprintf("Get containerNumber error: %s", err.Error()))
@@ -239,6 +243,12 @@ func (c *ApplicationController) DoNewApplication() {
 		thisContainer.Name = c.GetString(fmt.Sprintf("container%dName", i))
 		thisContainer.Image = c.GetString(fmt.Sprintf("container%dImage", i))
 		thisContainer.Resources = getContainerResources(c, i)
+
+		// If the working directory of the container is configured, we transmit it to Kubernetes.
+		workdir := c.GetString(fmt.Sprintf("container%dWorkdir", i))
+		if len(workdir) > 0 {
+			thisContainer.WorkingDir = workdir
+		}
 
 		CommandNum, err := c.GetInt(fmt.Sprintf("container%dCommandNumber", i))
 		if err != nil {
@@ -402,8 +412,9 @@ func (c *ApplicationController) DoNewApplication() {
 					Labels: labels,
 				},
 				Spec: apiv1.PodSpec{
-					Containers: containers,
-					Volumes:    volumes,
+					HostNetwork: hostNetwork,
+					Containers:  containers,
+					Volumes:     volumes,
 					Affinity: &apiv1.Affinity{
 						PodAntiAffinity: &apiv1.PodAntiAffinity{
 							RequiredDuringSchedulingIgnoredDuringExecution: []apiv1.PodAffinityTerm{
