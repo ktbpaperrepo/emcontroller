@@ -413,6 +413,7 @@ func (c *ApplicationController) DoNewApplication() {
 				},
 				Spec: apiv1.PodSpec{
 					HostNetwork: hostNetwork,
+					DNSPolicy:   apiv1.DNSClusterFirstWithHostNet, // without this, pods with HostNetwork cannot access coredns
 					Containers:  containers,
 					Volumes:     volumes,
 					Affinity: &apiv1.Affinity{
