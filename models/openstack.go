@@ -226,7 +226,10 @@ func (os *Openstack) CreateVM(name string, vcpu, ram, storage int) (*IaasVm, err
 	}
 	vmOptsWithKeyPair := keypairs.CreateOptsExt{
 		CreateOptsBuilder: baseVmOpts,
-		KeyName:           os.KeyName,
+	}
+	// We set Key Name only when the user set Key Name
+	if os.KeyName != "" {
+		vmOptsWithKeyPair.KeyName = os.KeyName
 	}
 	vmOptsBfv := bootfromvolume.CreateOptsExt{
 		CreateOptsBuilder: vmOptsWithKeyPair,
@@ -263,18 +266,19 @@ func (os *Openstack) CreateVM(name string, vcpu, ram, storage int) (*IaasVm, err
 	}
 	sshIP := os.ExtractIPs(curVM)[0]
 
+	// Then, wait for SSH enabled. Then, SSH to the VM and execute commands to extend the disk partition.
 	beego.Info(fmt.Sprintf("Wait for VM %s able to be SSHed, ip %s", name, sshIP))
 
-	if len(os.RootPasswd) > 0 { // If root password is provided, we use it to SSH, otherwise, we use PEM to SSH
-		beego.Info("use password to test SSH")
-		if err := WaitForSshPasswdAndInit(SshRootUser, os.RootPasswd, sshIP, SshPort, WaitForTimeOut); err != nil {
+	if len(os.SshPemPath) > 0 { // If the SSH private key is provided, we use it to SSH, otherwise, we use password to SSH
+		beego.Info("use PEM SSH identity file to test SSH")
+		if err := WaitForSshPem(SshRootUser, os.SshPemPath, sshIP, SshPort, WaitForTimeOut); err != nil {
 			outErr := fmt.Errorf("wait for VM %s able to be SSHed, ip %s, error: %w", name, sshIP, err)
 			beego.Error(outErr)
 			return nil, outErr
 		}
 	} else {
-		beego.Info("use PEM SSH identity file to test SSH")
-		if err := WaitForSshPem(SshUser, os.SshPemPath, sshIP, SshPort, WaitForTimeOut); err != nil {
+		beego.Info("use password to test SSH")
+		if err := WaitForSshPasswdAndInit(SshRootUser, os.RootPasswd, sshIP, SshPort, WaitForTimeOut); err != nil {
 			outErr := fmt.Errorf("wait for VM %s able to be SSHed, ip %s, error: %w", name, sshIP, err)
 			beego.Error(outErr)
 			return nil, outErr

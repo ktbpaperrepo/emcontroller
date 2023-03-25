@@ -35,7 +35,7 @@ func TestListAllVMs(t *testing.T) {
 
 func TestCreateVM(t *testing.T) {
 	InitClouds()
-	cloud := Clouds[testPCloudName]
+	cloud := Clouds[testOsCloudName]
 	vm, err := cloud.CreateVM("testiaasvm", 8, 16384, 150)
 	if err != nil {
 		t.Errorf("error: %s\n", err.Error())
@@ -45,8 +45,8 @@ func TestCreateVM(t *testing.T) {
 
 func TestDeleteVM(t *testing.T) {
 	InitClouds()
-	cloud := Clouds[testPCloudName]
-	err := cloud.DeleteVM("102")
+	cloud := Clouds[testOsCloudName]
+	err := cloud.DeleteVM("a3e02a3a-7213-462a-bbe4-5411a6f92be2")
 	if err != nil {
 		t.Errorf("error: %s\n", err.Error())
 	}

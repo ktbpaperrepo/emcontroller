@@ -24,6 +24,7 @@ type Proxmox struct {
 	ProxmoxPassword string // The password used in Proxmox Web and Proxmox server SSH
 	TokenName       string // The name of API Token for HTTP request
 	AuthHeader      string // The header "Authorization" used in HTTP request
+	SshPemPath      string // the SSH identity file private key for the VMs on this cloud
 	RootPasswd      string // root password for SSH of VMs.
 	TemplateId      string // the ID of the VM template used to create new VMs
 
@@ -58,6 +59,7 @@ func InitProxmox(paras map[string]interface{}) *Proxmox {
 		ProxmoxUser:     proxmoxUser,
 		ProxmoxPassword: paras["proxmox_password"].(string),
 		AuthHeader:      fmt.Sprintf("PVEAPIToken=%s@pam!%s=%s", proxmoxUser, tokenName, tokenSecret),
+		SshPemPath:      paras["sshpempath"].(string),
 		RootPasswd:      paras["root_password"].(string),
 		TemplateId:      paras["template_id"].(string),
 		HTTPClient:      client,
@@ -1044,10 +1046,20 @@ func (p *Proxmox) CreateVM(name string, vcpu, ram, storage int) (*IaasVm, error)
 	beego.Info(fmt.Sprintf("found IPs [%v], we use ip [%s] to ssh", vmIPs, sshIP))
 
 	// Then, wait for SSH enabled. Then, SSH to the VM and execute commands to extend the disk partition.
-	if err := WaitForSshPasswdAndInit(SshRootUser, p.RootPasswd, sshIP, SshPort, WaitForTimeOut); err != nil {
-		outErr := fmt.Errorf("wait for VM %s able to be SSHed, ip %s, error: %w", name, sshIP, err)
-		beego.Error(outErr)
-		return nil, outErr
+	if len(p.SshPemPath) > 0 {
+		beego.Info("use PEM SSH identity file to test SSH")
+		if err := WaitForSshPem(SshRootUser, p.SshPemPath, sshIP, SshPort, WaitForTimeOut); err != nil {
+			outErr := fmt.Errorf("wait for VM %s able to be SSHed, ip %s, error: %w", name, sshIP, err)
+			beego.Error(outErr)
+			return nil, outErr
+		}
+	} else {
+		beego.Info("use password to test SSH")
+		if err := WaitForSshPasswdAndInit(SshRootUser, p.RootPasswd, sshIP, SshPort, WaitForTimeOut); err != nil {
+			outErr := fmt.Errorf("wait for VM %s able to be SSHed, ip %s, error: %w", name, sshIP, err)
+			beego.Error(outErr)
+			return nil, outErr
+		}
 	}
 
 	// 7. Get the VM and return it.

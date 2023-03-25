@@ -94,9 +94,9 @@ func WaitForSshPem(user string, pemFilePath string, sshIP string, sshPort int, s
 			return false, nil // cannot return error, otherwise, gophercloud.WaitFor will stop with error
 		}
 		defer sshClient.Close()
-		output, err := SshOneCommand(sshClient, "pwd")
+		output, err := SshOneCommand(sshClient, DiskInitCmd)
 		if err != nil {
-			beego.Info(fmt.Sprintf("Waiting for SSH ip %s, this time SshOneCommand \"pwd\" error: %s", sshIP, err.Error()))
+			beego.Info(fmt.Sprintf("Waiting for SSH ip %s, this time SshOneCommand \"\n%s\n\" error: %s", sshIP, DiskInitCmd, err.Error()))
 			return false, nil
 		}
 		beego.Info(fmt.Sprintf("SSH of ip %s is enabled, output: %s", sshIP, output))
@@ -116,7 +116,7 @@ func WaitForSshPasswdAndInit(user string, passwd string, sshIP string, sshPort i
 		defer sshClient.Close()
 		output, err := SshOneCommand(sshClient, DiskInitCmd)
 		if err != nil {
-			beego.Info(fmt.Sprintf("Waiting for SSH ip %s, this time SshOneCommand \"\nDiskInitCmd\n\" error: %s", sshIP, err.Error()))
+			beego.Info(fmt.Sprintf("Waiting for SSH ip %s, this time SshOneCommand \"\n%s\n\" error: %s", sshIP, DiskInitCmd, err.Error()))
 			return false, nil
 		}
 		beego.Info(fmt.Sprintf("SSH of ip %s is enabled, output: %s", sshIP, output))
