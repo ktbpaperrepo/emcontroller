@@ -42,6 +42,8 @@ const (
 	ProxTSStopped      string        = "stopped"       // Proxmox Task Status stopped
 	ProxQSRunning      string        = "running"       // Proxmox Qemu Status running
 	ProxQSStopped      string        = "stopped"       // Proxmox Qemu Status stopped
+
+	K8sMasterNodeRole = "node-role.kubernetes.io/control-plane"
 )
 
 var (

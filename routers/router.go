@@ -23,4 +23,8 @@ func init() {
 	beego.Router("/newApplication", &controllers.ApplicationController{}, "get:NewApplication")
 	beego.Router("/doNewApplication", &controllers.ApplicationController{}, "post:DoNewApplication")
 
+	beego.Router("/k8sNode", &controllers.K8sNodeController{}, "get:Get")
+	beego.Router("/k8sNode/:nodeName", &controllers.K8sNodeController{}, "delete:DeleteNode")
+	beego.Router("/k8sNode/add", &controllers.K8sNodeController{}, "get:AddNodes")
+	beego.Router("/k8sNode/doAdd", &controllers.K8sNodeController{}, "post:DoAddNodes")
 }

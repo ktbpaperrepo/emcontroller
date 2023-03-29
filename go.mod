@@ -7,6 +7,7 @@ require github.com/astaxie/beego v1.12.3
 require (
 	github.com/docker/docker v20.10.17+incompatible
 	github.com/gophercloud/gophercloud v1.1.1
+	github.com/pkg/sftp v1.13.1
 	github.com/smartystreets/goconvey v1.6.4
 	github.com/spf13/viper v1.14.0
 	github.com/stretchr/testify v1.8.1
@@ -43,6 +44,7 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/jtolds/gls v4.20.0+incompatible // indirect
+	github.com/kr/fs v0.1.0 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect

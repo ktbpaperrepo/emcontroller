@@ -5,7 +5,7 @@ import (
 )
 
 func TestSshWithPem(t *testing.T) {
-	sshClient, err := SshClientWithPem("conf/CLAAUDIAweifan.pem", SshUser, "10.92.1.198", SshPort)
+	sshClient, err := SshClientWithPem("/root/.ssh/mc_id_rsa", SshRootUser, "10.234.234.157", SshPort)
 	if err != nil {
 		t.Errorf("SshClientWithPem error: %s", err)
 	}
@@ -15,4 +15,17 @@ func TestSshWithPem(t *testing.T) {
 		t.Errorf("SshOneCommand error %s", err.Error())
 	}
 	t.Logf("output is: %s", string(output))
+}
+
+func TestSftpCopyFile(t *testing.T) {
+	sshClient, err := SshClientWithPem("/root/.ssh/mc_id_rsa", SshRootUser, "10.234.234.100", SshPort)
+	if err != nil {
+		t.Errorf("SshClientWithPem error: %s", err.Error())
+	}
+	defer sshClient.Close()
+
+	err = SftpCopyFile("/root/.kube/config", "/root/.kube/config", sshClient)
+	if err != nil {
+		t.Errorf("SftpCopyFile error: %s", err.Error())
+	}
 }

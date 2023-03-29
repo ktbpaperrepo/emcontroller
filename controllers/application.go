@@ -37,7 +37,13 @@ type AppInfo struct {
 	NodePortIP string
 	SvcPort    []string
 	NodePort   []string
+	Hosts      []PodHost
 	Status     string
+}
+
+type PodHost struct {
+	HostName string
+	HostIP   string
 }
 
 // a method to check whether the application is running
@@ -57,22 +63,47 @@ func appRunning(app v1.Deployment) bool {
 	return true
 }
 
-// We list all pods of this deployment, and take the node IP of a pod as the NodePortIP.
-func getNodePortIP(app v1.Deployment) string {
+// get all Kubernetes pods of this application
+func getAllPods(app v1.Deployment) []apiv1.Pod {
 	selector, err := metav1.LabelSelectorAsSelector(app.Spec.Selector)
 	if err != nil {
 		beego.Error(fmt.Sprintf("Error, get the selector of deployment %s/%s, error: %s", app.Namespace, app.Name, err.Error()))
-		return ""
+		return []apiv1.Pod{}
 	}
 	stringSelector := selector.String()
-	beego.Info(fmt.Sprintf("List pods in namespace %s, with selector: %s", app.Namespace, stringSelector))
+	beego.Info(fmt.Sprintf("List pods belonging to the app %s/%s, with selector: %s", app.Namespace, app.Name, stringSelector))
 	pods, err := models.ListPods(app.Namespace, metav1.ListOptions{LabelSelector: stringSelector})
 	if err != nil {
 		beego.Error(fmt.Sprintf("Error, List pods in namespace %s, with selector: %s, error: %s", app.Namespace, stringSelector, err.Error()))
-		return ""
+		return []apiv1.Pod{}
 	}
+	return pods
+}
+
+// get the host Kubernetes Nodes of all pods of this application
+func getHosts(app v1.Deployment, pods []apiv1.Pod) []PodHost {
+	var hosts []PodHost
 	if len(pods) == 0 {
-		beego.Info(fmt.Sprintf("There are no pods in namespace %s that can mapping: %s", app.Namespace, stringSelector))
+		beego.Info(fmt.Sprintf("No pods belonging to the app %s/%s are got.", app.Namespace, app.Name))
+	}
+	for _, pod := range pods {
+		if len(pod.Spec.NodeName)+len(pod.Status.HostIP) == 0 {
+			continue
+		}
+		hosts = append(hosts, PodHost{
+			HostName: pod.Spec.NodeName,
+			HostIP:   pod.Status.HostIP,
+		})
+	}
+
+	return hosts
+}
+
+// We list all pods of this deployment, and take the node IP of a pod as the NodePortIP.
+func getNodePortIP(app v1.Deployment, pods []apiv1.Pod) string {
+	if len(pods) == 0 {
+		beego.Info(fmt.Sprintf("No pods belonging to the app %s/%s are got.", app.Namespace, app.Name))
+		return ""
 	}
 	return pods[0].Status.HostIP
 }
@@ -83,6 +114,7 @@ func (c *ApplicationController) Get() {
 		beego.Error(fmt.Sprintf("error: %s", err.Error()))
 		c.Data["applicationList"] = []AppInfo{}
 	}
+
 	var appList []AppInfo
 	for _, app := range applications {
 		var thisApp AppInfo
@@ -90,9 +122,12 @@ func (c *ApplicationController) Get() {
 		appName = strings.TrimSuffix(app.Name, models.DeploymentSuffix)
 		svcName = appName + models.ServiceSuffix
 
+		pods := getAllPods(app)
+
 		thisApp.AppName = appName
 		thisApp.SvcName = svcName
 		thisApp.DeployName = app.Name
+		thisApp.Hosts = getHosts(app, pods)
 
 		// set the status of this app
 		if appRunning(app) {
@@ -105,7 +140,7 @@ func (c *ApplicationController) Get() {
 		if svc != nil {
 			thisApp.ClusterIP = svc.Spec.ClusterIP
 			if svc.Spec.Type == apiv1.ServiceTypeNodePort {
-				thisApp.NodePortIP = getNodePortIP(app)
+				thisApp.NodePortIP = getNodePortIP(app, pods)
 			} else {
 				thisApp.NodePortIP = ""
 			}

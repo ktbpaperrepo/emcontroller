@@ -2,12 +2,16 @@ package models
 
 import (
 	"fmt"
-	"github.com/astaxie/beego"
-	"golang.org/x/crypto/ssh"
 	"io/ioutil"
+	"os"
+
+	"github.com/astaxie/beego"
+	"github.com/pkg/sftp"
+	"golang.org/x/crypto/ssh"
 )
 
 func SshOneCommand(client *ssh.Client, command string) ([]byte, error) {
+	beego.Info(fmt.Sprintf("Execute command on IP [%s]", client.Conn.RemoteAddr()))
 	session, err := client.NewSession()
 	if err != nil {
 		beego.Error(fmt.Sprintf("Create ssh session fail: error: %s", err.Error()))
@@ -69,4 +73,46 @@ func SshClientWithPem(pemFilePath string, user string, ip string, port int) (*ss
 		return nil, ourErr
 	}
 	return client, nil
+}
+
+func SftpCopyFile(srcPath, dstPath string, sshClient *ssh.Client) error {
+	beego.Info(fmt.Sprintf("SFTP copy file [local:%s] to [%s:%s].", srcPath, sshClient.Conn.RemoteAddr(), dstPath))
+
+	// open an SFTP session over an existing ssh connection.
+	sftpClient, err := sftp.NewClient(sshClient)
+	if err != nil {
+		if err != nil {
+			ourErr := fmt.Errorf("create SFTP client, error: %w", err)
+			beego.Error(ourErr)
+			return ourErr
+		}
+	}
+	defer sftpClient.Close()
+
+	// Open the source file
+	srcFile, err := os.Open(srcPath)
+	if err != nil {
+		ourErr := fmt.Errorf("open source file %s, error: %w", srcPath, err)
+		beego.Error(ourErr)
+		return ourErr
+	}
+	defer srcFile.Close()
+
+	// Create the destination file
+	dstFile, err := sftpClient.Create(dstPath)
+	if err != nil {
+		ourErr := fmt.Errorf("create the destination file %s:%s, error: %w", sshClient.Conn.RemoteAddr(), dstPath, err)
+		beego.Error(ourErr)
+		return ourErr
+	}
+	defer dstFile.Close()
+
+	// write from source file to destination file
+	if _, err := dstFile.ReadFrom(srcFile); err != nil {
+		ourErr := fmt.Errorf("write from source file %s to the destination file %s:%s, error: %w", srcPath, sshClient.Conn.RemoteAddr(), dstPath, err)
+		beego.Error(ourErr)
+		return ourErr
+	}
+
+	return nil
 }

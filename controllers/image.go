@@ -1,9 +1,12 @@
 package controllers
 
 import (
-	"emcontroller/models"
 	"fmt"
+
 	"github.com/astaxie/beego"
+	"golang.org/x/crypto/ssh"
+
+	"emcontroller/models"
 )
 
 type ImageController struct {
@@ -38,13 +41,27 @@ func (c *ImageController) DeleteRepo() {
 
 	// use ssh to delete repository on docker registry
 	dockerRegistryIP := beego.AppConfig.String("dockerRegistryIP")
-	sshPort := 22
+	sshPort := models.SshPort
 	sshUser := models.SshRootUser
 	sshPassword := beego.AppConfig.String("dockerRegiRootPasswd")
+	sshPrivateKey := beego.AppConfig.String("dockerRegiSshPrivateKey")
 
-	sshClient, err := models.SshClientWithPasswd(sshUser, sshPassword, dockerRegistryIP, sshPort)
-	if err != nil {
-		beego.Error(fmt.Sprintf("Create ssh client fail: error: %s", err.Error()))
+	var sshClient *ssh.Client
+	var err error
+	if len(sshPrivateKey) == 0 {
+		beego.Info("Config \"dockerRegiSshPrivateKey\" is not provided, so we use password to SSH.")
+		sshClient, err = models.SshClientWithPasswd(sshUser, sshPassword, dockerRegistryIP, sshPort)
+		if err != nil {
+			beego.Error(fmt.Sprintf("Create ssh client with password fail: error: %s", err.Error()))
+			return
+		}
+	} else {
+		beego.Info("Config \"dockerRegiSshPrivateKey\" is provided, so we use SSH key to SSH.")
+		sshClient, err = models.SshClientWithPem(sshPrivateKey, sshUser, dockerRegistryIP, sshPort)
+		if err != nil {
+			beego.Error(fmt.Sprintf("Create ssh client with SSH key fail: error: %s", err.Error()))
+			return
+		}
 	}
 	defer sshClient.Close()
 
