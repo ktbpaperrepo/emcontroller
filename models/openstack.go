@@ -132,6 +132,14 @@ func (os *Openstack) GetVM(vmID string) (*IaasVm, error) {
 		}
 		storage += float64(volume.Size)
 	}
+
+	mcmCreate, err := os.IsCreatedByMcm(vmID)
+	if err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], project id [%s], check whether the VM [%s] is created by multi-cloud manager, error: %w", os.Name, os.Type, os.ProjectID, vmID, err)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+
 	return &IaasVm{
 		ID:        vmID,
 		Name:      server.Name,
@@ -142,6 +150,7 @@ func (os *Openstack) GetVM(vmID string) (*IaasVm, error) {
 		Status:    server.Status,
 		Cloud:     os.Name,
 		CloudType: os.Type,
+		McmCreate: mcmCreate,
 	}, nil
 }
 

@@ -18,6 +18,7 @@ func (c *VmController) DeleteVM() {
 	err := models.Clouds[cloudName].DeleteVM(vmID)
 	if err != nil {
 		beego.Error(fmt.Sprintf("Delete VM %s on cloud %s, error: %s.", vmID, cloudName, err.Error()))
+		c.Ctx.ResponseWriter.WriteHeader(500)
 		return
 	}
 	beego.Info(fmt.Sprintf("Successful! Delete VM %s on cloud %s.", vmID, cloudName))
@@ -55,4 +56,23 @@ func (c *VmController) CreateVM() {
 
 	c.Data["cloudName"] = cloudName
 	c.TplName = "createVMSuccess.tpl"
+}
+
+// List VMs in all clouds
+func (c *VmController) ListVMsAllClouds() {
+	var allVms []models.IaasVm
+	for _, cloud := range models.Clouds {
+		vms, err := cloud.ListAllVMs()
+		if err != nil {
+			outErr := fmt.Errorf("List vms in cloud [%s] type [%s], error %s.", cloud.ShowName(), cloud.ShowType(), err)
+			beego.Error(outErr)
+			c.Data["errorMessage"] = outErr.Error()
+			c.TplName = "error.tpl"
+			return
+		}
+		allVms = append(allVms, vms...)
+	}
+
+	c.Data["allVms"] = allVms
+	c.TplName = "vm.tpl"
 }

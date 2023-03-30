@@ -815,6 +815,13 @@ func (p *Proxmox) GetVM(vmid string) (*IaasVm, error) {
 		return nil, outErr
 	}
 
+	mcmCreate, err := p.IsCreatedByMcm(vmid)
+	if err != nil {
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], check whether the VM [%s] is created by multi-cloud manager, error: %w", p.Name, p.Type, vmid, err)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+
 	return &IaasVm{
 		ID:        strconv.FormatFloat(qemu["data"].(map[string]interface{})["vmid"].(float64), 'f', -1, 64),
 		Name:      qemu["data"].(map[string]interface{})["name"].(string),
@@ -825,8 +832,10 @@ func (p *Proxmox) GetVM(vmid string) (*IaasVm, error) {
 		Status:    qemu["data"].(map[string]interface{})["status"].(string),
 		Cloud:     p.Name,
 		CloudType: p.Type,
+		McmCreate: mcmCreate,
 	}, nil
 }
+
 func (p *Proxmox) ListAllVMs() ([]IaasVm, error) {
 	beego.Info(fmt.Sprintf("Cloud name [%s], type [%s], list all VMs.", p.Name, p.Type))
 
@@ -853,6 +862,13 @@ func (p *Proxmox) ListAllVMs() ([]IaasVm, error) {
 		// get the ip address of this VM.
 		var ips []string = p.getVmIps(vmid)
 
+		mcmCreate, err := p.IsCreatedByMcm(vmid)
+		if err != nil {
+			outErr := fmt.Errorf("Cloud name [%s], type [%s], check whether the VM [%s] is created by multi-cloud manager, error: %w", p.Name, p.Type, vmid, err)
+			beego.Error(outErr)
+			return []IaasVm{}, outErr
+		}
+
 		thisVM := IaasVm{
 			ID:        vmid,
 			Name:      qemu.(map[string]interface{})["name"].(string),
@@ -863,6 +879,7 @@ func (p *Proxmox) ListAllVMs() ([]IaasVm, error) {
 			Status:    qemu.(map[string]interface{})["status"].(string),
 			Cloud:     p.Name,
 			CloudType: p.Type,
+			McmCreate: mcmCreate,
 		}
 		vms = append(vms, thisVM)
 	}

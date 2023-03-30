@@ -24,12 +24,16 @@ function deleteVM(cloudName, vmID, statusID) {
     let xmlhttp = new XMLHttpRequest();
     xmlhttp.open("DELETE", `/cloud/${cloudName}/vm/${vmID}`);
     xmlhttp.send();
-    console.log("delete vm %s request has been sent", vmID);
+    console.log("delete vm %s in cloud %s request has been sent", vmID, cloudName);
     xmlhttp.onreadystatechange = function(){
-        if(this.readyState==4 && this.status==200) {
-            console.log("delete vm %s response: %s", vmID, xmlhttp.responseText);
-            // this Delete VM API will block until the VM is completely deleted, so 2 seconds of waiting is enough
-            setTimeout(unlockDeleteVM, 2000);
+        if(this.readyState==4) {
+            if (this.status==200) {
+                console.log("delete vm %s in cloud %s response: %s", vmID, cloudName, xmlhttp.responseText);
+                // this Delete VM API will block until the VM is completely deleted, so 2 seconds of waiting is enough
+                setTimeout(unlockDeleteVM, 2000);
+            } else {
+                vmStatus.innerText = `Delete Error:\r\nreadyState: ${this.readyState}\r\nstatus: ${this.status}`;
+            }
         }
         console.log("onreadystatechange this.readyState: %O, this.status: %O", this.readyState, this.status);
     }

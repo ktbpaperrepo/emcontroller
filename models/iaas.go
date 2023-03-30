@@ -39,6 +39,7 @@ type IaasVm struct {
 	Status    string
 	Cloud     string // the name of the cloud that this VM belongs to
 	CloudType string
+	McmCreate bool // whether this VM is created by Multi-cloud manager
 }
 
 // Resource set

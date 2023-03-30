@@ -8,7 +8,7 @@
     <title>Cloud</title>
 
     <link rel="stylesheet" href="/static/css/style.css">
-    <script src="/static/js/cloud.js"></script>
+    <script src="/static/js/vm.js"></script>
 </head>
 <body>
     {{template "/public/header.tpl" .}}
@@ -89,12 +89,13 @@
     <br>
     <h3>Virtual Machines</h3>
     <table border = 1>
-        <tr> <th rowspan="2"></th> <th rowspan="2">Name</th> <th rowspan="2">ID</th> <th rowspan="2">IP Addresses</th> <th colspan="3">Resources</th> <th rowspan="2">Status</th> </tr>
+        <tr> <th rowspan="2"></th> <th rowspan="2">Multi-Cloud<br>Manager Create</th> <th rowspan="2">Name</th> <th rowspan="2">ID</th> <th rowspan="2">IP Addresses</th> <th colspan="3">Resources</th> <th rowspan="2">Status</th> </tr>
         <tr> <th>CPU Logical Core</th> <th>Memory (MB)</th> <th>Storage (GB)</th> </tr>
         {{range $vmIdx, $vm := .vmList}}
             {{$statusID := printf "vmStatus%s" $vm.ID}}
             <tr>
                 <td><button type="button" onclick="deleteVM('{{$vm.Cloud}}', '{{$vm.ID}}', '{{$statusID}}')">Delete</button></td>
+                <td>{{$vm.McmCreate}}</td>
                 <td>{{$vm.Name}}</td>
                 <td>{{$vm.ID}}</td>
                 <td>

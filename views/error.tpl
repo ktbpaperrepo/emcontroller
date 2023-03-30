@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Create Virtual Machine Success</title>
+
+    <link rel="stylesheet" href="/static/css/style.css">
+
+</head>
+<body>
+{{template "/public/header.tpl" .}}
+
+<h2>Error</h2>
+{{.errorMessage}}
+
+</body>
+</html>
