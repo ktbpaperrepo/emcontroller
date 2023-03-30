@@ -17,7 +17,7 @@
 
     <br>
     <h3>New Application</h3>
-    <form method="get" action="/newApplication">
+    <form method="get" action="/newApplication" target="_blank">
         <input type="radio" name="mode" value="basic" checked="checked" />Basic Mode
         <input type="radio" name="mode" value="advanced" />Advanced Mode <br>
         <input type="submit" value="New">

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/astaxie/beego"
@@ -855,33 +856,61 @@ func (p *Proxmox) ListAllVMs() ([]IaasVm, error) {
 		return []IaasVm{}, outErr
 	}
 	qemuSlice := qemus["data"].([]interface{})
+
 	var vms []IaasVm
+	var errs []error
+
+	// the slice in golang is not safe for concurrent read/write
+	var vmsMu sync.Mutex
+	var errsMu sync.Mutex
+
+	// Handle every qemu in parallel
+	var wg sync.WaitGroup
+
 	for _, qemu := range qemuSlice {
-		var vmid string = strconv.FormatFloat(qemu.(map[string]interface{})["vmid"].(float64), 'f', -1, 64)
+		wg.Add(1)
+		go func(q interface{}) {
+			defer wg.Done()
 
-		// get the ip address of this VM.
-		var ips []string = p.getVmIps(vmid)
+			var vmid string = strconv.FormatFloat(q.(map[string]interface{})["vmid"].(float64), 'f', -1, 64)
 
-		mcmCreate, err := p.IsCreatedByMcm(vmid)
-		if err != nil {
-			outErr := fmt.Errorf("Cloud name [%s], type [%s], check whether the VM [%s] is created by multi-cloud manager, error: %w", p.Name, p.Type, vmid, err)
-			beego.Error(outErr)
-			return []IaasVm{}, outErr
-		}
+			// get the ip address of this VM.
+			var ips []string = p.getVmIps(vmid)
 
-		thisVM := IaasVm{
-			ID:        vmid,
-			Name:      qemu.(map[string]interface{})["name"].(string),
-			IPs:       ips,
-			VCpu:      qemu.(map[string]interface{})["cpus"].(float64),
-			Ram:       qemu.(map[string]interface{})["maxmem"].(float64) / 1024 / 1024,         // unit MB
-			Storage:   qemu.(map[string]interface{})["maxdisk"].(float64) / 1024 / 1024 / 1024, // unit GB
-			Status:    qemu.(map[string]interface{})["status"].(string),
-			Cloud:     p.Name,
-			CloudType: p.Type,
-			McmCreate: mcmCreate,
-		}
-		vms = append(vms, thisVM)
+			mcmCreate, err := p.IsCreatedByMcm(vmid)
+			if err != nil {
+				outErr := fmt.Errorf("Cloud name [%s], type [%s], check whether the VM [%s] is created by multi-cloud manager, error: %w", p.Name, p.Type, vmid, err)
+				beego.Error(outErr)
+				errsMu.Lock()
+				errs = append(errs, outErr)
+				errsMu.Unlock()
+			}
+
+			thisVM := IaasVm{
+				ID:        vmid,
+				Name:      q.(map[string]interface{})["name"].(string),
+				IPs:       ips,
+				VCpu:      q.(map[string]interface{})["cpus"].(float64),
+				Ram:       q.(map[string]interface{})["maxmem"].(float64) / 1024 / 1024,         // unit MB
+				Storage:   q.(map[string]interface{})["maxdisk"].(float64) / 1024 / 1024 / 1024, // unit GB
+				Status:    q.(map[string]interface{})["status"].(string),
+				Cloud:     p.Name,
+				CloudType: p.Type,
+				McmCreate: mcmCreate,
+			}
+
+			vmsMu.Lock()
+			vms = append(vms, thisVM)
+			vmsMu.Unlock()
+		}(qemu)
+	}
+	wg.Wait()
+
+	if len(errs) != 0 {
+		sumErr := HandleErrSlice(errs)
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], ListAllVMs Error: %w", p.Name, p.Type, sumErr)
+		beego.Error(outErr)
+		return []IaasVm{}, outErr
 	}
 
 	return vms, nil

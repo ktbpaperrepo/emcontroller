@@ -104,11 +104,11 @@ func (c *K8sNodeController) DoAddNodes() {
 
 	// add node
 	if errs := models.AddNodes(nodeNames, nodeIPs); len(errs) != 0 {
-		sumErr := "AddNodes Error:"
-		for _, err := range errs {
-			sumErr += "\n" + err.Error()
-		}
-		beego.Error(sumErr)
+		sumErr := models.HandleErrSlice(errs)
+		beego.Error(fmt.Sprintf("AddNodes Error: %s", sumErr.Error()))
+		c.Ctx.ResponseWriter.Header().Set("Content-Type", "text/plain")
+		c.Data["errorMessage"] = sumErr.Error()
+		c.TplName = "error.tpl"
 		return
 	} else {
 		beego.Info("Successful. Add nodes.")

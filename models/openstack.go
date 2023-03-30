@@ -2,6 +2,9 @@ package models
 
 import (
 	"fmt"
+	"strings"
+	"sync"
+
 	"github.com/astaxie/beego"
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
@@ -13,7 +16,6 @@ import (
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/servers"
 	networkquota "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/quotas"
-	"strings"
 )
 
 type Openstack struct {
@@ -161,16 +163,43 @@ func (os *Openstack) ListAllVMs() ([]IaasVm, error) {
 		beego.Error(outErr)
 		return []IaasVm{}, outErr
 	}
+
 	var result []IaasVm
+	var errs []error
+
+	// the slice in golang is not safe for concurrent read/write
+	var resultMu sync.Mutex
+	var errsMu sync.Mutex
+
+	// handle every server in parallel
+	var wg sync.WaitGroup
+
 	for _, server := range allServers {
-		iaasVM, err := os.GetVM(server.ID)
-		if err != nil {
-			outErr := fmt.Errorf("Cloud name [%s], type [%s], project id [%s], Get VM %s, error: %w", os.Name, os.Type, os.ProjectID, server.ID, err)
-			beego.Error(outErr)
-			return []IaasVm{}, outErr
-		}
-		result = append(result, *iaasVM)
+		wg.Add(1)
+		go func(s servers.Server) {
+			defer wg.Done()
+			iaasVM, err := os.GetVM(s.ID)
+			if err != nil {
+				outErr := fmt.Errorf("Cloud name [%s], type [%s], project id [%s], Get VM %s, error: %w", os.Name, os.Type, os.ProjectID, s.ID, err)
+				beego.Error(outErr)
+				errsMu.Lock()
+				errs = append(errs, outErr)
+				errsMu.Unlock()
+			}
+			resultMu.Lock()
+			result = append(result, *iaasVM)
+			resultMu.Unlock()
+		}(server)
 	}
+	wg.Wait()
+
+	if len(errs) != 0 {
+		sumErr := HandleErrSlice(errs)
+		outErr := fmt.Errorf("Cloud name [%s], type [%s], project id [%s], ListAllVMs Error: %w", os.Name, os.Type, os.ProjectID, sumErr)
+		beego.Error(outErr)
+		return []IaasVm{}, outErr
+	}
+
 	return result, nil
 }
 

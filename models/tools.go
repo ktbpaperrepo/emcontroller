@@ -57,3 +57,14 @@ func MyWaitFor(timeoutSec int, intervalSec int, predicate func() (bool, error)) 
 		}
 	}
 }
+
+// combine multiple errors into one error
+func HandleErrSlice(errs []error) error {
+	var sumErr string = "\n\r"
+
+	for _, err := range errs {
+		sumErr += err.Error() + "\n\r"
+	}
+
+	return fmt.Errorf(sumErr)
+}

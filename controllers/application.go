@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/astaxie/beego"
 	v1 "k8s.io/api/apps/v1"
@@ -116,47 +117,62 @@ func (c *ApplicationController) Get() {
 	}
 
 	var appList []AppInfo
+
+	// the slice in golang is not safe for concurrent read/write
+	var appListMu sync.Mutex
+
+	// handle every deployment in parallel
+	var wg sync.WaitGroup
+
 	for _, app := range applications {
-		var thisApp AppInfo
-		var appName, svcName string
-		appName = strings.TrimSuffix(app.Name, models.DeploymentSuffix)
-		svcName = appName + models.ServiceSuffix
+		wg.Add(1)
+		go func(d v1.Deployment) {
+			defer wg.Done()
 
-		pods := getAllPods(app)
+			var thisApp AppInfo
+			var appName, svcName string
+			appName = strings.TrimSuffix(d.Name, models.DeploymentSuffix)
+			svcName = appName + models.ServiceSuffix
 
-		thisApp.AppName = appName
-		thisApp.SvcName = svcName
-		thisApp.DeployName = app.Name
-		thisApp.Hosts = getHosts(app, pods)
+			pods := getAllPods(d)
 
-		// set the status of this app
-		if appRunning(app) {
-			thisApp.Status = "Stable Running"
-		} else {
-			thisApp.Status = "Not Yet Stable"
-		}
+			thisApp.AppName = appName
+			thisApp.SvcName = svcName
+			thisApp.DeployName = d.Name
+			thisApp.Hosts = getHosts(d, pods)
 
-		svc, _ := models.GetService(models.KubernetesNamespace, svcName)
-		if svc != nil {
-			thisApp.ClusterIP = svc.Spec.ClusterIP
-			if svc.Spec.Type == apiv1.ServiceTypeNodePort {
-				thisApp.NodePortIP = getNodePortIP(app, pods)
+			// set the status of this application
+			if appRunning(d) {
+				thisApp.Status = "Stable Running"
 			} else {
-				thisApp.NodePortIP = ""
+				thisApp.Status = "Not Yet Stable"
 			}
-			for _, port := range svc.Spec.Ports {
-				thisApp.SvcPort = append(thisApp.SvcPort, strconv.FormatInt(int64(port.Port), 10))
-				thisApp.NodePort = append(thisApp.NodePort, strconv.FormatInt(int64(port.NodePort), 10))
-			}
-		} else {
-			thisApp.ClusterIP = ""
-			thisApp.NodePortIP = ""
-			thisApp.SvcPort = []string{}
-			thisApp.NodePort = []string{}
-		}
 
-		appList = append(appList, thisApp)
+			svc, _ := models.GetService(models.KubernetesNamespace, svcName)
+			if svc != nil {
+				thisApp.ClusterIP = svc.Spec.ClusterIP
+				if svc.Spec.Type == apiv1.ServiceTypeNodePort {
+					thisApp.NodePortIP = getNodePortIP(d, pods)
+				} else {
+					thisApp.NodePortIP = ""
+				}
+				for _, port := range svc.Spec.Ports {
+					thisApp.SvcPort = append(thisApp.SvcPort, strconv.FormatInt(int64(port.Port), 10))
+					thisApp.NodePort = append(thisApp.NodePort, strconv.FormatInt(int64(port.NodePort), 10))
+				}
+			} else {
+				thisApp.ClusterIP = ""
+				thisApp.NodePortIP = ""
+				thisApp.SvcPort = []string{}
+				thisApp.NodePort = []string{}
+			}
+
+			appListMu.Lock()
+			appList = append(appList, thisApp)
+			appListMu.Unlock()
+		}(app)
 	}
+	wg.Wait()
 
 	c.Data["applicationList"] = appList
 	c.TplName = "application.tpl"

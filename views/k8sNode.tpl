@@ -41,7 +41,7 @@
     <h2>Kubernetes Node</h2>
 
     <br>
-    <button class="button buttonFont change" onclick="window.location.href='/k8sNode/add'"><h3>Add Nodes</h3></button>
+    <button class="button buttonFont change" onclick="window.open('/k8sNode/add', '_blank')"><h3>Add Nodes</h3></button>
     <br>
 
     <h3>Existing Kubernetes Nodes (Master Nodes not Shown)</h3>
