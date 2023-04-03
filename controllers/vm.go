@@ -104,3 +104,65 @@ func (c *VmController) ListVMsAllClouds() {
 	c.Data["allVms"] = allVms
 	c.TplName = "vm.tpl"
 }
+
+func (c *VmController) NewVms() {
+	c.TplName = "newVms.tpl"
+}
+
+func (c *VmController) DoNewVms() {
+	vmNum, err := c.GetInt("newVmNumber")
+	if err != nil {
+		outErr := fmt.Errorf("Get newVmNumber error: %w", err)
+		beego.Error(outErr)
+		c.Data["errorMessage"] = outErr.Error()
+		c.TplName = "error.tpl"
+		return
+	}
+	beego.Info(fmt.Sprintf("%d vms need to be created", vmNum))
+
+	// prepare the information of the vms to add
+	vms := make([]models.IaasVm, vmNum, vmNum)
+
+	for i := 0; i < vmNum; i++ {
+		vms[i].Name = c.GetString(fmt.Sprintf("vm%dName", i))
+		vms[i].Cloud = c.GetString(fmt.Sprintf("vm%dCloudName", i))
+		if vms[i].VCpu, err = c.GetFloat(fmt.Sprintf("vm%dVCpu", i)); err != nil {
+			outErr := fmt.Errorf("Get vms[%d].VCpu, error: %w", i, err)
+			beego.Error(outErr)
+			c.Data["errorMessage"] = outErr.Error()
+			c.TplName = "error.tpl"
+			return
+		}
+		if vms[i].Ram, err = c.GetFloat(fmt.Sprintf("vm%dRam", i)); err != nil {
+			outErr := fmt.Errorf("Get vms[%d].Ram, error: %w", i, err)
+			beego.Error(outErr)
+			c.Data["errorMessage"] = outErr.Error()
+			c.TplName = "error.tpl"
+			return
+		}
+		if vms[i].Storage, err = c.GetFloat(fmt.Sprintf("vm%dStorage", i)); err != nil {
+			outErr := fmt.Errorf("Get vms[%d].Storage, error: %w", err)
+			beego.Error(outErr)
+			c.Data["errorMessage"] = outErr.Error()
+			c.TplName = "error.tpl"
+			return
+		}
+	}
+
+	logContent := "VMs to create:"
+	for i := 0; i < vmNum; i++ {
+		logContent += fmt.Sprintf("\n\r%d. Name: %s\tCloud: %s\tVCpu: %f\tRam: %f\tStorage: %f", i+1, vms[i].Name, vms[i].Cloud, vms[i].VCpu, vms[i].Ram, vms[i].Storage)
+	}
+	beego.Info(logContent)
+
+	// create vms
+	if err = models.CreateVms(vms); err != nil {
+		outErr := fmt.Errorf("DoNewVms error: %w", err)
+		beego.Error(outErr)
+		c.Data["errorMessage"] = outErr.Error()
+		c.TplName = "error.tpl"
+		return
+	}
+
+	c.TplName = "newVmsSuccess.tpl"
+}

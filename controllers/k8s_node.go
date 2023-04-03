@@ -2,8 +2,6 @@ package controllers
 
 import (
 	"fmt"
-	"strconv"
-
 	"github.com/astaxie/beego"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -86,24 +84,22 @@ func (c *K8sNodeController) DoAddNodes() {
 	}
 	beego.Info(fmt.Sprintf("%d nodes need to join the Kubernetes cluster", nodeNum))
 
-	// prepare the information of the node to add
-	nodeNames := make([]string, nodeNum, nodeNum)
-	nodeIPs := make([]string, nodeNum, nodeNum)
+	// prepare the information of the nodes to add
+	vms := make([]models.IaasVm, nodeNum, nodeNum)
 
 	for i := 0; i < nodeNum; i++ {
-		nodeNames[i] = c.GetString(fmt.Sprintf("node%dName", i))
-		nodeIPs[i] = c.GetString(fmt.Sprintf("node%dIP", i))
+		vms[i].Name = c.GetString(fmt.Sprintf("node%dName", i))
+		vms[i].IPs = append(vms[i].IPs, c.GetString(fmt.Sprintf("node%dIP", i)))
 	}
 
 	logContent := "Nodes to add:"
 	for i := 0; i < nodeNum; i++ {
-		logContent += "\n\r" + strconv.Itoa(i+1) + ". Name: " + nodeNames[i] + "\tIP: " + nodeIPs[i]
+		logContent += fmt.Sprintf("\n\r%d. Name: %s\tIP: %v", i+1, vms[i].Name, vms[i].IPs)
 	}
-
 	beego.Info(logContent)
 
 	// add node
-	if errs := models.AddNodes(nodeNames, nodeIPs); len(errs) != 0 {
+	if errs := models.AddNodes(vms); len(errs) != 0 {
 		sumErr := models.HandleErrSlice(errs)
 		beego.Error(fmt.Sprintf("AddNodes Error: %s", sumErr.Error()))
 		c.Ctx.ResponseWriter.Header().Set("Content-Type", "text/plain")

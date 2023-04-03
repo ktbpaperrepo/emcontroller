@@ -8,33 +8,10 @@
     <title>Kubernetes Node</title>
 
     <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/button.css">
 
     <script src="/static/js/k8sNode.js"></script>
 
-    <style>
-        .button {
-            background-color: white;
-            border: 2px solid black;
-            color: black;
-            padding: 2px 20px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            margin: 4px 2px;
-            cursor: pointer;
-        }
-        .buttonFont {font-size: 16px;}
-        .change {
-            border-color: #211A52;
-            color: #211A52;
-            background-color: #C0DAEF;
-        }
-
-        .change:hover {
-            background: #211A52;
-            color: white;
-        }
-    </style>
 </head>
 <body>
     {{template "/public/header.tpl" .}}

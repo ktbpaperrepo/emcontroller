@@ -467,8 +467,7 @@ func (os *Openstack) IsCreatedByMcm(vmID string) (bool, error) {
 
 	// VMs created by multi-cloud manager has this metadata.
 	if vm.Metadata[McmSign] != McmSign {
-		outErr := fmt.Errorf("server %s is not created by multi-cloud manager.", vmID)
-		beego.Error(outErr)
+		beego.Info(fmt.Sprintf("server %s is not created by multi-cloud manager.", vmID))
 		return false, nil
 	}
 

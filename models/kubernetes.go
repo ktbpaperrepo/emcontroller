@@ -238,7 +238,16 @@ func DrainNode(nodeName string) error {
 }
 
 // add a new node into Kubernetes cluster
-func AddNode(name, ip, joinCmd string) error {
+func AddNode(vm IaasVm, joinCmd string) error {
+	if len(vm.IPs) == 0 {
+		outErr := fmt.Errorf("the input vm [%s] has no ip address", vm.Name)
+		beego.Error(outErr)
+		return outErr
+	}
+
+	// get the name and IP of the input VM
+	name, ip := vm.Name, vm.IPs[0]
+
 	sshPrivateKey := beego.AppConfig.String("k8sVmSshPrivateKey")
 	sshPort := SshPort
 	sshUser := SshRootUser
@@ -307,9 +316,9 @@ func WaitForNodeJoin(timeout int, checkInterval int, nodeName string) error {
 }
 
 // add some new nodes into Kubernetes cluster
-func AddNodes(names []string, ips []string) []error {
-	if len(names) == 0 || len(ips) == 0 || len(names) != len(ips) {
-		outErr := fmt.Errorf("AddNodes, Invalid input. len(names): %d, len(ips): %d, names: %v, ips: %v,", len(names), len(ips), names, ips)
+func AddNodes(vms []IaasVm) []error {
+	if len(vms) == 0 {
+		outErr := fmt.Errorf("no vms in the input")
 		beego.Error(outErr)
 		return []error{outErr}
 	}
@@ -327,18 +336,18 @@ func AddNodes(names []string, ips []string) []error {
 	// use one goroutine to add one node
 	var wg sync.WaitGroup
 	var errsMu sync.Mutex // the slice (errs) in golang is not safe for concurrent read/write
-	for i := 0; i < len(names); i++ {
+	for i := 0; i < len(vms); i++ {
 		wg.Add(1)
-		go func(name, ip string) {
+		go func(vm IaasVm) {
 			defer wg.Done()
-			if err := AddNode(name, ip, joinCmd); err != nil {
-				outErr := fmt.Errorf("AddNode %s/%s, error: %w", name, ip, err)
+			if err := AddNode(vm, joinCmd); err != nil {
+				outErr := fmt.Errorf("AddNode %s, error: %w", vm.Name, err)
 				beego.Error(outErr)
 				errsMu.Lock()
 				errs = append(errs, outErr)
 				errsMu.Unlock()
 			}
-		}(names[i], ips[i])
+		}(vms[i])
 	}
 	wg.Wait() // wait for all nodes joined
 

@@ -65,7 +65,7 @@ func TestJoinOneNode(t *testing.T) {
 	if err != nil {
 		t.Errorf("GetJoinCmd error: %s", err.Error())
 	}
-	if err := AddNode("cnode2", "10.234.234.234", joinCmd); err != nil {
+	if err := AddNode(IaasVm{Name: "node1", IPs: []string{"192.168.100.43"}}, joinCmd); err != nil {
 		t.Errorf("AddNode error: %s", err.Error())
 	} else {
 		t.Logf("node joined")
@@ -75,26 +75,13 @@ func TestJoinOneNode(t *testing.T) {
 func TestJoinSeveralNodes(t *testing.T) {
 	InitKubernetesClient()
 
-	type nodeNameIP struct {
-		name string
-		ip   string
-	}
-	nodes := []nodeNameIP{
-		{"cnode1", "10.234.234.100"},
-		{"cnode2", "10.234.234.197"},
-		{"cnode4", "10.234.234.133"},
-		{"node1", "192.168.100.145"},
-		{"node2", "192.168.100.25"},
+	vms := []IaasVm{
+		{Name: "node2", IPs: []string{"192.168.100.97"}},
+		{Name: "cnode1", IPs: []string{"10.234.234.38"}},
+		{Name: "cnode2", IPs: []string{"10.234.234.93"}},
 	}
 
-	var nodeNames, nodeIPs []string
-
-	for _, node := range nodes {
-		nodeNames = append(nodeNames, node.name)
-		nodeIPs = append(nodeIPs, node.ip)
-	}
-
-	errs := AddNodes(nodeNames, nodeIPs)
+	errs := AddNodes(vms)
 	if len(errs) != 0 {
 		sumErr := "AddNodes Error:"
 		for _, err := range errs {

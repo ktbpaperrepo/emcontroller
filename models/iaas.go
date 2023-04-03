@@ -2,6 +2,8 @@ package models
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/astaxie/beego"
 	"github.com/gophercloud/gophercloud"
 	"github.com/spf13/viper"
@@ -25,21 +27,21 @@ type ResourceStatus struct {
 }
 
 type IaasVm struct {
-	ID   string // the id provided by the cloud
-	Name string
+	ID   string `json:"id"` // the id provided by the cloud
+	Name string `json:"name"`
 
 	// all IPs of this VM.
 	// Although we can show multiple IPs, the VMs created by multi-cloud manager should only have 1 IP.
 	// So when we need to get the IP of a VM, we can directly get its 1st IP.
-	IPs []string
+	IPs []string `json:"ips"`
 
-	VCpu      float64 // number of logical CPU cores
-	Ram       float64 // memory size unit: MB
-	Storage   float64 // storage size unit: GB
-	Status    string
-	Cloud     string // the name of the cloud that this VM belongs to
-	CloudType string
-	McmCreate bool // whether this VM is created by Multi-cloud manager
+	VCpu      float64 `json:"vCpu"`    // number of logical CPU cores
+	Ram       float64 `json:"ram"`     // memory size unit: MB
+	Storage   float64 `json:"storage"` // storage size unit: GB
+	Status    string  `json:"status"`
+	Cloud     string  `json:"cloud"` // the name of the cloud that this VM belongs to
+	CloudType string  `json:"cloudType"`
+	McmCreate bool    `json:"mcmCreate"` // whether this VM is created by Multi-cloud manager
 }
 
 // Resource set
@@ -123,4 +125,38 @@ func WaitForSshPasswdAndInit(user string, passwd string, sshIP string, sshPort i
 		beego.Info(fmt.Sprintf("SSH of ip %s is enabled, output: %s", sshIP, output))
 		return true, nil
 	})
+}
+
+func CreateVms(vms []IaasVm) error {
+	// create the VMs concurrently
+	// use one goroutine to create one VM
+	var errs []error
+	var errsMu sync.Mutex // the slice (errs) in golang is not safe for concurrent read/write
+	var wg sync.WaitGroup
+	for _, vm := range vms {
+		wg.Add(1)
+		go func(v IaasVm) {
+			defer wg.Done()
+			beego.Info(fmt.Sprintf("Start to create vm Name [%s] CLoud [%s], vcpu cores [%f], ram [%f MB], storage [%f GB].", v.Name, v.Cloud, v.VCpu, v.Ram, v.Storage))
+			createdVM, err := Clouds[v.Cloud].CreateVM(v.Name, int(v.VCpu), int(v.Ram), int(v.Storage))
+			if err != nil {
+				outErr := fmt.Errorf("Create vm %s error %w.", v.Name, err)
+				beego.Error(outErr)
+				errsMu.Lock()
+				errs = append(errs, outErr)
+				errsMu.Unlock()
+			}
+			beego.Info(fmt.Sprintf("Successful! Create vm:\n%+v\n", createdVM))
+		}(vm)
+	}
+	wg.Wait()
+
+	if len(errs) != 0 {
+		sumErr := HandleErrSlice(errs)
+		outErr := fmt.Errorf("CreateVms, Error: %w", sumErr)
+		beego.Error(outErr)
+		return outErr
+	}
+
+	return nil
 }
