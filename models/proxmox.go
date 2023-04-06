@@ -1082,7 +1082,7 @@ func (p *Proxmox) CreateVM(name string, vcpu, ram, storage int) (*IaasVm, error)
 	// 6. Get the 1st IP as the SSH IP. Then, wait for SSH enabled. Then, SSH to the VM and execute commands to extend the disk partition.
 
 	// get the 1st IP as the SSH IP
-	vmIPs := p.getVmIpsWithRetry(vmidStr, 4, 30*time.Second)
+	vmIPs := p.getVmIpsWithRetry(vmidStr, 10, 30*time.Second)
 	if len(vmIPs) == 0 {
 		outErr := fmt.Errorf("Cloud name [%s], type [%s], CreateVM [%s], no IPs are got", p.Name, p.Type, name)
 		beego.Error(outErr)

@@ -25,7 +25,7 @@
         <!--submit the container Number-->
         <input type="hidden" id="newVmNum" name="newVmNumber" value="0">
         <br>
-        <b>VMs to add:</b>
+        <b>VMs to create:</b>
         <br>
         <br id="vmsStart">
 

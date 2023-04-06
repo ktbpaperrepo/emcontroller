@@ -83,6 +83,8 @@ func InitClouds() {
 		case ProxmoxIaas:
 			pCloud := InitProxmox(iaasParas[i])
 			Clouds[pCloud.Name] = pCloud
+		default:
+			beego.Info(fmt.Sprintf("Multi-cloud manager does not support cloud type [%s] of cloud [%s]", iaasParas[i]["type"].(string), iaasParas[i]["name"].(string)))
 		}
 	}
 	beego.Info(fmt.Sprintf("All %d clouds are initialized.", len(Clouds)))

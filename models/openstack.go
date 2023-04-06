@@ -185,10 +185,11 @@ func (os *Openstack) ListAllVMs() ([]IaasVm, error) {
 				errsMu.Lock()
 				errs = append(errs, outErr)
 				errsMu.Unlock()
+			} else {
+				resultMu.Lock()
+				result = append(result, *iaasVM)
+				resultMu.Unlock()
 			}
-			resultMu.Lock()
-			result = append(result, *iaasVM)
-			resultMu.Unlock()
 		}(server)
 	}
 	wg.Wait()
