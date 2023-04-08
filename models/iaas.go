@@ -26,6 +26,7 @@ type ResourceStatus struct {
 	InUse ResSet `json:"inUse"` // the amounts of resources being used
 }
 
+// The backend APIs (Create VMs and Add K8s Nodes) request uses this struct, so we need to define the json of it.
 type IaasVm struct {
 	ID   string `json:"id"` // the id provided by the cloud
 	Name string `json:"name"`
@@ -35,7 +36,7 @@ type IaasVm struct {
 	// So when we need to get the IP of a VM, we can directly get its 1st IP.
 	IPs []string `json:"ips"`
 
-	VCpu      float64 `json:"vCpu"`    // number of logical CPU cores
+	VCpu      float64 `json:"vcpu"`    // number of logical CPU cores
 	Ram       float64 `json:"ram"`     // memory size unit: MB
 	Storage   float64 `json:"storage"` // storage size unit: GB
 	Status    string  `json:"status"`

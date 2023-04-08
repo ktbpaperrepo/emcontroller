@@ -39,9 +39,9 @@ func SshClientWithPasswd(user, passwd, ip string, port int) (*ssh.Client, error)
 	}
 	client, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", ip, port), config)
 	if err != nil {
-		ourErr := fmt.Errorf("create ssh client fail: error: %w", err)
-		beego.Error(ourErr)
-		return nil, ourErr
+		outErr := fmt.Errorf("create ssh client fail: error: %w", err)
+		beego.Error(outErr)
+		return nil, outErr
 	}
 	return client, err
 }
@@ -50,15 +50,15 @@ func SshClientWithPasswd(user, passwd, ip string, port int) (*ssh.Client, error)
 func SshClientWithPem(pemFilePath string, user string, ip string, port int) (*ssh.Client, error) {
 	pemByte, err := ioutil.ReadFile(pemFilePath)
 	if err != nil {
-		ourErr := fmt.Errorf("read ssh private key file %s error: %w", pemFilePath, err)
-		beego.Error(ourErr)
-		return nil, ourErr
+		outErr := fmt.Errorf("read ssh private key file %s error: %w", pemFilePath, err)
+		beego.Error(outErr)
+		return nil, outErr
 	}
 	signer, err := ssh.ParsePrivateKey(pemByte)
 	if err != nil {
-		ourErr := fmt.Errorf("ssh.ParsePrivateKey error: %w", err)
-		beego.Error(ourErr)
-		return nil, ourErr
+		outErr := fmt.Errorf("ssh.ParsePrivateKey error: %w", err)
+		beego.Error(outErr)
+		return nil, outErr
 	}
 	config := &ssh.ClientConfig{
 		Timeout:         SshTimeout,
@@ -68,9 +68,9 @@ func SshClientWithPem(pemFilePath string, user string, ip string, port int) (*ss
 	}
 	client, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", ip, port), config)
 	if err != nil {
-		ourErr := fmt.Errorf("ssh.Dial error: %w", err)
-		beego.Error(ourErr)
-		return nil, ourErr
+		outErr := fmt.Errorf("ssh.Dial error: %w", err)
+		beego.Error(outErr)
+		return nil, outErr
 	}
 	return client, nil
 }
@@ -82,9 +82,9 @@ func SftpCopyFile(srcPath, dstPath string, sshClient *ssh.Client) error {
 	sftpClient, err := sftp.NewClient(sshClient)
 	if err != nil {
 		if err != nil {
-			ourErr := fmt.Errorf("create SFTP client, error: %w", err)
-			beego.Error(ourErr)
-			return ourErr
+			outErr := fmt.Errorf("create SFTP client, error: %w", err)
+			beego.Error(outErr)
+			return outErr
 		}
 	}
 	defer sftpClient.Close()
@@ -92,26 +92,26 @@ func SftpCopyFile(srcPath, dstPath string, sshClient *ssh.Client) error {
 	// Open the source file
 	srcFile, err := os.Open(srcPath)
 	if err != nil {
-		ourErr := fmt.Errorf("open source file %s, error: %w", srcPath, err)
-		beego.Error(ourErr)
-		return ourErr
+		outErr := fmt.Errorf("open source file %s, error: %w", srcPath, err)
+		beego.Error(outErr)
+		return outErr
 	}
 	defer srcFile.Close()
 
 	// Create the destination file
 	dstFile, err := sftpClient.Create(dstPath)
 	if err != nil {
-		ourErr := fmt.Errorf("create the destination file %s:%s, error: %w", sshClient.Conn.RemoteAddr(), dstPath, err)
-		beego.Error(ourErr)
-		return ourErr
+		outErr := fmt.Errorf("create the destination file %s:%s, error: %w", sshClient.Conn.RemoteAddr(), dstPath, err)
+		beego.Error(outErr)
+		return outErr
 	}
 	defer dstFile.Close()
 
 	// write from source file to destination file
 	if _, err := dstFile.ReadFrom(srcFile); err != nil {
-		ourErr := fmt.Errorf("write from source file %s to the destination file %s:%s, error: %w", srcPath, sshClient.Conn.RemoteAddr(), dstPath, err)
-		beego.Error(ourErr)
-		return ourErr
+		outErr := fmt.Errorf("write from source file %s to the destination file %s:%s, error: %w", srcPath, sshClient.Conn.RemoteAddr(), dstPath, err)
+		beego.Error(outErr)
+		return outErr
 	}
 
 	return nil
