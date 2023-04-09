@@ -1,7 +1,10 @@
 package controllers
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/astaxie/beego"
@@ -110,6 +113,20 @@ func (c *VmController) NewVms() {
 }
 
 func (c *VmController) DoNewVms() {
+	contentType := c.Ctx.Request.Header.Get("Content-Type")
+	beego.Info(fmt.Sprintf("The header \"Content-Type\" is [%s]", contentType))
+
+	switch {
+	case strings.Contains(strings.ToLower(contentType), JsonContentType):
+		beego.Info(fmt.Sprintf("The input body should be json"))
+		c.DoNewVmsJson()
+	default:
+		beego.Info(fmt.Sprintf("The input body should be form"))
+		c.DoNewVmsForm()
+	}
+}
+
+func (c *VmController) DoNewVmsForm() {
 	vmNum, err := c.GetInt("newVmNumber")
 	if err != nil {
 		outErr := fmt.Errorf("Get newVmNumber error: %w", err)
@@ -155,6 +172,17 @@ func (c *VmController) DoNewVms() {
 	}
 	beego.Info(logContent)
 
+	vmsJson, err := json.Marshal(vms)
+	if err != nil {
+		outErr := fmt.Errorf("json Marshal this: %v, error: %w", vms, err)
+		beego.Error(outErr)
+		c.Ctx.ResponseWriter.Header().Set("Content-Type", "text/plain")
+		c.Data["errorMessage"] = outErr.Error()
+		c.TplName = "error.tpl"
+		return
+	}
+	beego.Info(fmt.Sprintf("VMs json is\n%s", string(vmsJson)))
+
 	// create vms
 	if err = models.CreateVms(vms); err != nil {
 		outErr := fmt.Errorf("DoNewVms error: %w", err)
@@ -165,4 +193,36 @@ func (c *VmController) DoNewVms() {
 	}
 
 	c.TplName = "newVmsSuccess.tpl"
+}
+
+// test command:
+// curl -i -X POST -H Content-Type:application/json -d '[{"name":"cnode1","vcpu":4,"ram":32768,"storage":400,"cloud":"CLAAUDIAweifan"},{"name":"hpe1","vcpu":4,"ram":8192,"storage":100,"cloud":"HPE1"},{"name":"nokia7","vcpu":4,"ram":8192,"storage":100,"cloud":"NOKIA7"}]' http://localhost:20000/vm/doNew
+func (c *VmController) DoNewVmsJson() {
+	var vms []models.IaasVm
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &vms); err != nil {
+		outErr := fmt.Errorf("json.Unmarshal the vms in RequestBody, error: %w", err)
+		beego.Error(outErr)
+		c.Ctx.ResponseWriter.WriteHeader(http.StatusBadRequest)
+		//c.Ctx.WriteString(outErr.Error())
+		if result, err := c.Ctx.ResponseWriter.Write([]byte(outErr.Error())); err != nil {
+			beego.Error("Write Error to response, error: %s, result: %d", err.Error(), result)
+		}
+		return
+	}
+
+	beego.Info(fmt.Sprintf("From json input, we successfully parsed vms [%v]", vms))
+
+	// Use the parsed vms to create VMs
+	if err := models.CreateVms(vms); err != nil {
+		outErr := fmt.Errorf("Create VMs %v, error: %w", vms, err)
+		beego.Error(outErr)
+		c.Ctx.ResponseWriter.WriteHeader(http.StatusInternalServerError)
+		c.Ctx.WriteString(outErr.Error())
+		return
+	}
+
+	//c.Ctx.ResponseWriter.WriteHeader(http.StatusCreated)
+	c.Ctx.Output.Status = http.StatusCreated
+	c.Data["json"] = vms
+	c.ServeJSON()
 }

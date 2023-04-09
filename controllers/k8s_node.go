@@ -1,7 +1,11 @@
 package controllers
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
+	"strings"
+
 	"github.com/astaxie/beego"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -77,6 +81,20 @@ func (c *K8sNodeController) AddNodes() {
 
 // Add one or several nodes to the Kubernetes cluster
 func (c *K8sNodeController) DoAddNodes() {
+	contentType := c.Ctx.Request.Header.Get("Content-Type")
+	beego.Info(fmt.Sprintf("The header \"Content-Type\" is [%s]", contentType))
+
+	switch {
+	case strings.Contains(strings.ToLower(contentType), JsonContentType):
+		beego.Info(fmt.Sprintf("The input body should be json"))
+		c.DoAddNodesJson()
+	default:
+		beego.Info(fmt.Sprintf("The input body should be form"))
+		c.DoAddNodesForm()
+	}
+}
+
+func (c *K8sNodeController) DoAddNodesForm() {
 	nodeNum, err := c.GetInt("newNodeNumber")
 	if err != nil {
 		beego.Error(fmt.Sprintf("Get newNodeNumber error: %s", err.Error()))
@@ -98,6 +116,17 @@ func (c *K8sNodeController) DoAddNodes() {
 	}
 	beego.Info(logContent)
 
+	vmsJson, err := json.Marshal(vms)
+	if err != nil {
+		outErr := fmt.Errorf("json Marshal this: %v, error: %w", vms, err)
+		beego.Error(outErr)
+		c.Ctx.ResponseWriter.Header().Set("Content-Type", "text/plain")
+		c.Data["errorMessage"] = outErr.Error()
+		c.TplName = "error.tpl"
+		return
+	}
+	beego.Info(fmt.Sprintf("VMs json is\n%s", string(vmsJson)))
+
 	// add node
 	if errs := models.AddNodes(vms); len(errs) != 0 {
 		sumErr := models.HandleErrSlice(errs)
@@ -111,4 +140,36 @@ func (c *K8sNodeController) DoAddNodes() {
 	}
 
 	c.TplName = "addK8sNodesSuccess.tpl"
+}
+
+// test command:
+// curl -i -X POST -H Content-Type:application/json -d '[{"name":"hpe1","ips":["192.168.100.124"]},{"name":"cnode1","ips":["10.234.234.99"]},{"name":"nokia7","ips":["192.168.100.69"]}]' http://localhost:20000/k8sNode/doAdd
+func (c *K8sNodeController) DoAddNodesJson() {
+	var vms []models.IaasVm
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &vms); err != nil {
+		outErr := fmt.Errorf("json.Unmarshal the vms in RequestBody, error: %w", err)
+		beego.Error(outErr)
+		c.Ctx.ResponseWriter.WriteHeader(http.StatusBadRequest)
+		//c.Ctx.WriteString(outErr.Error())
+		if result, err := c.Ctx.ResponseWriter.Write([]byte(outErr.Error())); err != nil {
+			beego.Error("Write Error to response, error: %s, result: %d", err.Error(), result)
+		}
+		return
+	}
+
+	beego.Info(fmt.Sprintf("From json input, we successfully parsed vms [%v]", vms))
+
+	// Use the parsed vms to create VMs
+	if errs := models.AddNodes(vms); len(errs) != 0 {
+		outErr := models.HandleErrSlice(errs)
+		beego.Error(fmt.Sprintf("AddNodes Error: %s", outErr.Error()))
+		c.Ctx.ResponseWriter.WriteHeader(http.StatusInternalServerError)
+		c.Ctx.WriteString(outErr.Error())
+		return
+	}
+
+	//c.Ctx.ResponseWriter.WriteHeader(http.StatusCreated)
+	c.Ctx.Output.Status = http.StatusCreated
+	c.Data["json"] = vms
+	c.ServeJSON()
 }
