@@ -610,8 +610,22 @@ func getContainerResources(c *ApplicationController, containerIndex int) apiv1.R
 	return resources
 }
 
-// Used for front end request, input is form
 func (c *ApplicationController) DoNewApplication() {
+	contentType := c.Ctx.Request.Header.Get("Content-Type")
+	beego.Info(fmt.Sprintf("The header \"Content-Type\" is [%s]", contentType))
+
+	switch {
+	case strings.Contains(strings.ToLower(contentType), JsonContentType):
+		beego.Info(fmt.Sprintf("The input body should be json"))
+		c.DoNewAppJson()
+	default:
+		beego.Info(fmt.Sprintf("The input body should be form"))
+		c.DoNewAppForm()
+	}
+}
+
+// Used for front end request, input is form
+func (c *ApplicationController) DoNewAppForm() {
 	var app K8sApp
 
 	appName := c.GetString("name")
@@ -1078,7 +1092,7 @@ func CreateApplication(app K8sApp) error {
 
 // Used for json request, input is json
 // test command:
-// curl -i -X POST -H Content-Type:application/json -d '{"name":"test","replicas":3,"hostNetwork":true,"containers":[{"name":"printtime","image":"172.27.15.31:5000/printtime:v1","workDir":"/printtime","resources":{"limits":{"memory":"30Mi","cpu":"200m","storage":"2Gi"},"requests":{"memory":"20Mi","cpu":"100m","storage":"1Gi"}},"commands":["bash"],"args":["-c","python3 -u main.py \u003e /tmp/234/1111.log"],"env":[{"name":"PARAMETER1","value":"testRenderenv1"},{"name":"wwreewr","value":"fwerw"}],"mounts":[{"vmPath":"/tmp/asdff","containerPath":"/tmp/234"},{"vmPath":"/tmp/uyyyy","containerPath":"/tmp/2345"}],"ports":null},{"name":"nginx","image":"172.27.15.31:5000/nginx:1.17.0","workDir":"","resources":{"limits":{"memory":"","cpu":"","storage":""},"requests":{"memory":"","cpu":"","storage":""}},"commands":null,"args":null,"env":null,"mounts":null,"ports":[{"containerPort":80,"name":"fsd","protocol":"tcp","servicePort":"80","nodePort":"30001"}]},{"name":"ubuntu","image":"172.27.15.31:5000/ubuntu:latest","workDir":"","resources":{"limits":{"memory":"","cpu":"","storage":""},"requests":{"memory":"","cpu":"","storage":""}},"commands":["bash","-c","while true; do sleep 10; done"],"args":null,"env":[{"name":"asfasf","value":"asfasf"},{"name":"asdfsdf","value":"sfsdf"}],"mounts":[{"vmPath":"/tmp/asdff","containerPath":"/tmp/log"}],"ports":null}]}' http://localhost:20000/doNewAppJson
+// curl -i -X POST -H Content-Type:application/json -d '{"name":"test","replicas":3,"hostNetwork":true,"containers":[{"name":"printtime","image":"172.27.15.31:5000/printtime:v1","workDir":"/printtime","resources":{"limits":{"memory":"30Mi","cpu":"200m","storage":"2Gi"},"requests":{"memory":"20Mi","cpu":"100m","storage":"1Gi"}},"commands":["bash"],"args":["-c","python3 -u main.py > /tmp/234/1111.log"],"env":[{"name":"PARAMETER1","value":"testRenderenv1"},{"name":"wwreewr","value":"fwerw"}],"mounts":[{"vmPath":"/tmp/asdff","containerPath":"/tmp/234"},{"vmPath":"/tmp/uyyyy","containerPath":"/tmp/2345"}],"ports":null},{"name":"nginx","image":"172.27.15.31:5000/nginx:1.17.0","workDir":"","resources":{"limits":{"memory":"","cpu":"","storage":""},"requests":{"memory":"","cpu":"","storage":""}},"commands":null,"args":null,"env":null,"mounts":null,"ports":[{"containerPort":80,"name":"fsd","protocol":"tcp","servicePort":"80","nodePort":"30001"}]},{"name":"ubuntu","image":"172.27.15.31:5000/ubuntu:latest","workDir":"","resources":{"limits":{"memory":"","cpu":"","storage":""},"requests":{"memory":"","cpu":"","storage":""}},"commands":["bash","-c","while true; do sleep 10; done"],"args":null,"env":[{"name":"asfasf","value":"asfasf"},{"name":"asdfsdf","value":"sfsdf"}],"mounts":[{"vmPath":"/tmp/asdff","containerPath":"/tmp/log"}],"ports":null}]}' http://localhost:20000/doNewApplication
 func (c *ApplicationController) DoNewAppJson() {
 	var app K8sApp
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &app); err != nil {
