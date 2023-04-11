@@ -12,6 +12,7 @@ func init() {
 	beego.Router("/cloud/:cloudName", &controllers.CloudController{}, "get:GetSingleCloud")
 	beego.Router("/cloud/:cloudName/vm/:vmID", &controllers.VmController{}, "delete:DeleteVM")
 	beego.Router("/cloud/:cloudName/vm", &controllers.VmController{}, "post:CreateVM")
+	beego.Router("/cloud/:cloudName/vm/:vmID", &controllers.VmController{}, "get:GetVM")
 
 	beego.Router("/vm", &controllers.VmController{}, "get:ListVMsAllClouds")
 	beego.Router("/vm/new", &controllers.VmController{}, "get:NewVms")

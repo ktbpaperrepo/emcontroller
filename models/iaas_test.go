@@ -51,10 +51,11 @@ func TestCreateVms(t *testing.T) {
 		{Cloud: "CLAAUDIAweifan", Name: "cnode1", VCpu: 4, Ram: 32768, Storage: 100},
 		{Cloud: "CLAAUDIAweifan", Name: "cnode2", VCpu: 4, Ram: 32768, Storage: 100},
 	}
-	if err := CreateVms(vmsToCreate); err != nil {
+	if vms, err := CreateVms(vmsToCreate); err != nil {
 		t.Errorf("Create VMs error: %s", err.Error())
 	} else {
 		t.Logf("Create VMs successfully.")
+		t.Logf("Created VMs are: [%v].", vms)
 	}
 }
 

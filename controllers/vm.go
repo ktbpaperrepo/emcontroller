@@ -32,6 +32,24 @@ func (c *VmController) DeleteVM() {
 	c.Ctx.ResponseWriter.WriteHeader(200)
 }
 
+// test command:
+// curl -i -X GET http://localhost:20000/cloud/NOKIA7/vm/102
+// curl -i -X GET http://localhost:20000/cloud/CLAAUDIAweifan/vm/8117edb9-0fdc-4334-a1d9-51779e79f377
+func (c *VmController) GetVM() {
+	cloudName := c.Ctx.Input.Param(":cloudName")
+	vmID := c.Ctx.Input.Param(":vmID")
+
+	vm, err := models.Clouds[cloudName].GetVM(vmID)
+	if err != nil {
+		beego.Error(fmt.Sprintf("Get VM %s on cloud %s, error: %s.", vmID, cloudName, err.Error()))
+		c.Ctx.ResponseWriter.WriteHeader(500)
+		return
+	}
+	c.Ctx.Output.Status = http.StatusOK
+	c.Data["json"] = vm
+	c.ServeJSON()
+}
+
 func (c *VmController) CreateVM() {
 	cloudName := c.Ctx.Input.Param(":cloudName")
 
@@ -184,7 +202,7 @@ func (c *VmController) DoNewVmsForm() {
 	beego.Info(fmt.Sprintf("VMs json is\n%s", string(vmsJson)))
 
 	// create vms
-	if err = models.CreateVms(vms); err != nil {
+	if _, err = models.CreateVms(vms); err != nil {
 		outErr := fmt.Errorf("DoNewVms error: %w", err)
 		beego.Error(outErr)
 		c.Data["errorMessage"] = outErr.Error()
@@ -213,7 +231,8 @@ func (c *VmController) DoNewVmsJson() {
 	beego.Info(fmt.Sprintf("From json input, we successfully parsed vms [%v]", vms))
 
 	// Use the parsed vms to create VMs
-	if err := models.CreateVms(vms); err != nil {
+	outVms, err := models.CreateVms(vms)
+	if err != nil {
 		outErr := fmt.Errorf("Create VMs %v, error: %w", vms, err)
 		beego.Error(outErr)
 		c.Ctx.ResponseWriter.WriteHeader(http.StatusInternalServerError)
@@ -221,8 +240,10 @@ func (c *VmController) DoNewVmsJson() {
 		return
 	}
 
+	// If the user uses Json as the HTTP input body, he may need the information of the VMs such as IP addresses and VM IDs in the response body, so we put this information into the response body.
+
 	//c.Ctx.ResponseWriter.WriteHeader(http.StatusCreated)
 	c.Ctx.Output.Status = http.StatusCreated
-	c.Data["json"] = vms
+	c.Data["json"] = outVms
 	c.ServeJSON()
 }

@@ -245,6 +245,16 @@ func AddNode(vm IaasVm, joinCmd string) error {
 		return outErr
 	}
 
+	// Prevent users from adding some important VM into Kubernetes cluster.
+	k8sMasterIP := beego.AppConfig.String("k8sMasterIP")
+	dockerEngineIP := beego.AppConfig.String("dockerEngineIP")
+	dockerRegistryIP := beego.AppConfig.String("dockerRegistryIP")
+	if vm.IPs[0] == k8sMasterIP || vm.IPs[0] == dockerEngineIP || vm.IPs[0] == dockerRegistryIP {
+		outErr := fmt.Errorf("the input vm [%s] is an important VM, so we refuse this risky request", vm.Name)
+		beego.Error(outErr)
+		return outErr
+	}
+
 	// get the name and IP of the input VM
 	name, ip := vm.Name, vm.IPs[0]
 
@@ -261,8 +271,7 @@ func AddNode(vm IaasVm, joinCmd string) error {
 	defer sshClient.Close()
 
 	// replace the placeholder in containerd configuration file
-	K8sMasterIP := beego.AppConfig.String("k8sMasterIP")
-	if _, err := SshOneCommand(sshClient, fmt.Sprintf("sed -i 's/<IP>/%s/g' /etc/containerd/config.toml", K8sMasterIP)); err != nil {
+	if _, err := SshOneCommand(sshClient, fmt.Sprintf("sed -i 's/<IP>/%s/g' /etc/containerd/config.toml", k8sMasterIP)); err != nil {
 		outErr := fmt.Errorf("ssh error: %w", err)
 		beego.Error(outErr)
 		return outErr

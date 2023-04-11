@@ -130,11 +130,13 @@ func WaitForSshPasswdAndInit(user string, passwd string, sshIP string, sshPort i
 	})
 }
 
-func CreateVms(vms []IaasVm) error {
+func CreateVms(vms []IaasVm) ([]IaasVm, error) {
 	// create the VMs concurrently
 	// use one goroutine to create one VM
 	var errs []error
-	var errsMu sync.Mutex // the slice (errs) in golang is not safe for concurrent read/write
+	var createdVms []IaasVm
+	var errsMu sync.Mutex // the slice in golang is not safe for concurrent read/write
+	var createdVmsMu sync.Mutex
 	var wg sync.WaitGroup
 	for _, vm := range vms {
 		wg.Add(1)
@@ -148,8 +150,12 @@ func CreateVms(vms []IaasVm) error {
 				errsMu.Lock()
 				errs = append(errs, outErr)
 				errsMu.Unlock()
+			} else {
+				beego.Info(fmt.Sprintf("Successful! Create vm:\n%+v\n", createdVM))
+				createdVmsMu.Lock()
+				createdVms = append(createdVms, *createdVM)
+				createdVmsMu.Unlock()
 			}
-			beego.Info(fmt.Sprintf("Successful! Create vm:\n%+v\n", createdVM))
 		}(vm)
 	}
 	wg.Wait()
@@ -158,8 +164,8 @@ func CreateVms(vms []IaasVm) error {
 		sumErr := HandleErrSlice(errs)
 		outErr := fmt.Errorf("CreateVms, Error: %w", sumErr)
 		beego.Error(outErr)
-		return outErr
+		return createdVms, outErr
 	}
 
-	return nil
+	return createdVms, nil
 }
