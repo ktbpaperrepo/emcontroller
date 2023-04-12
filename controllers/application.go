@@ -87,6 +87,7 @@ type AppInfo struct {
 }
 
 type PodHost struct {
+	PodIP    string `json:"podIP"`
 	HostName string `json:"hostName"`
 	HostIP   string `json:"hostIP"`
 }
@@ -132,10 +133,18 @@ func getHosts(app v1.Deployment, pods []apiv1.Pod) []PodHost {
 		beego.Info(fmt.Sprintf("No pods belonging to the app %s/%s are got.", app.Namespace, app.Name))
 	}
 	for _, pod := range pods {
-		if len(pod.Spec.NodeName)+len(pod.Status.HostIP) == 0 {
+		var podIP string
+		if len(pod.Status.PodIPs) > 0 { // pkg/printers/internalversion/printers.go, func printPod, the kubectl code gets pod IP here
+			podIP = pod.Status.PodIPs[0].IP
+		} else if len(pod.Status.PodIP) > 0 {
+			podIP = pod.Status.PodIP
+		}
+
+		if len(pod.Spec.NodeName)+len(pod.Status.HostIP)+len(podIP) == 0 {
 			continue
 		}
 		hosts = append(hosts, PodHost{
+			PodIP:    podIP,
 			HostName: pod.Spec.NodeName,
 			HostIP:   pod.Status.HostIP,
 		})
@@ -187,12 +196,15 @@ func (c *ApplicationController) Get() {
 
 			// set the status of this application
 			if appRunning(d) {
-				thisApp.Status = "Stable Running"
+				thisApp.Status = RunningStatus
 			} else {
-				thisApp.Status = "Not Yet Stable"
+				thisApp.Status = NotStableStatus
 			}
 
-			svc, _ := models.GetService(models.KubernetesNamespace, svcName)
+			svc, err := models.GetService(models.KubernetesNamespace, svcName)
+			if err != nil {
+				beego.Error(fmt.Sprintf("GetService %s/%s error: %s", models.KubernetesNamespace, svcName, err.Error()))
+			}
 			if svc != nil {
 				thisApp.ClusterIP = svc.Spec.ClusterIP
 				if svc.Spec.Type == apiv1.ServiceTypeNodePort {
@@ -230,19 +242,96 @@ func (c *ApplicationController) DeleteApp() {
 
 	beego.Info(fmt.Sprintf("Delete deployment [%s/%s]", models.KubernetesNamespace, deployName))
 	if err := models.DeleteDeployment(models.KubernetesNamespace, deployName); err != nil {
-		beego.Error(fmt.Printf("Delete deployment [%s/%s] error: %s", models.KubernetesNamespace, deployName, err.Error()))
+		beego.Error(fmt.Sprintf("Delete deployment [%s/%s] error: %s", models.KubernetesNamespace, deployName, err.Error()))
 		return
 	}
 	beego.Info(fmt.Sprintf("Successful! Delete deployment [%s/%s]", models.KubernetesNamespace, deployName))
 
 	beego.Info(fmt.Sprintf("Delete service [%s/%s]", models.KubernetesNamespace, svcName))
 	if err := models.DeleteService(models.KubernetesNamespace, svcName); err != nil {
-		beego.Error(fmt.Printf("Delete deployment [%s/%s] error: %s", models.KubernetesNamespace, svcName, err.Error()))
+		beego.Error(fmt.Sprintf("Delete deployment [%s/%s] error: %s", models.KubernetesNamespace, svcName, err.Error()))
 		return
 	}
 	beego.Info(fmt.Sprintf("Successful! Delete service [%s/%s]", models.KubernetesNamespace, svcName))
 
 	c.Ctx.ResponseWriter.WriteHeader(200)
+}
+
+// test command:
+// curl -i -X GET http://localhost:20000/application/test
+func (c *ApplicationController) GetApp() {
+	appName := c.Ctx.Input.Param(":appName")
+
+	outApp, err, statusCode := GetApplication(appName)
+	if err != nil {
+		beego.Error(err)
+		c.Ctx.ResponseWriter.WriteHeader(statusCode)
+		c.Ctx.WriteString(err.Error())
+		return
+	}
+
+	c.Ctx.Output.Status = http.StatusOK
+	c.Data["json"] = outApp
+	c.ServeJSON()
+}
+
+func GetApplication(appName string) (AppInfo, error, int) {
+	deployName := appName + models.DeploymentSuffix
+	svcName := appName + models.ServiceSuffix
+
+	deploy, err := models.GetDeployment(models.KubernetesNamespace, deployName)
+	if err != nil {
+		outErr := fmt.Errorf("Get the deployment of app [%s], error: %w", appName, err)
+		beego.Error(outErr)
+		return AppInfo{}, outErr, http.StatusInternalServerError
+	}
+	if deploy == nil {
+		outErr := fmt.Errorf("The deployment of app [%s] not found", appName)
+		beego.Error(outErr)
+		return AppInfo{}, outErr, http.StatusNotFound
+	}
+	svc, err := models.GetService(models.KubernetesNamespace, svcName)
+	if err != nil {
+		outErr := fmt.Errorf("Get the service of app [%s], error: %w", appName, err)
+		beego.Error(outErr)
+		return AppInfo{}, outErr, http.StatusInternalServerError
+	}
+
+	var outApp AppInfo
+
+	pods := getAllPods(*deploy)
+
+	outApp.AppName = appName
+	outApp.SvcName = svcName
+	outApp.DeployName = deploy.Name
+	outApp.Hosts = getHosts(*deploy, pods)
+
+	// set the status of this application
+	if appRunning(*deploy) {
+		outApp.Status = RunningStatus
+	} else {
+		outApp.Status = NotStableStatus
+	}
+
+	if svc != nil {
+		outApp.ClusterIP = svc.Spec.ClusterIP
+		if svc.Spec.Type == apiv1.ServiceTypeNodePort {
+			outApp.NodePortIP = getNodePortIP(*deploy, pods)
+		} else {
+			outApp.NodePortIP = ""
+		}
+		for _, port := range svc.Spec.Ports {
+			outApp.SvcPort = append(outApp.SvcPort, strconv.FormatInt(int64(port.Port), 10))
+			outApp.NodePort = append(outApp.NodePort, strconv.FormatInt(int64(port.NodePort), 10))
+		}
+	} else {
+		outApp.ClusterIP = ""
+		outApp.NodePortIP = ""
+		outApp.SvcPort = []string{}
+		outApp.NodePort = []string{}
+	}
+
+	return outApp, nil, http.StatusOK
 }
 
 func (c *ApplicationController) NewApplication() {
@@ -539,7 +628,7 @@ func (c *ApplicationController) OldDoNewApplication() {
 
 	createdDeployment, err := models.CreateDeployment(deployment)
 	if err != nil {
-		beego.Error(fmt.Printf("Create deployment [%#v] error: %s", deployment, err.Error()))
+		beego.Error(fmt.Sprintf("Create deployment [%#v] error: %s", deployment, err.Error()))
 		return
 	}
 	beego.Info(fmt.Sprintf("Deployment %s/%s created successful.", createdDeployment.Namespace, createdDeployment.Name))
@@ -571,7 +660,7 @@ func (c *ApplicationController) OldDoNewApplication() {
 
 		createdService, err := models.CreateService(service)
 		if err != nil {
-			beego.Error(fmt.Printf("Create service [%#v] error: %s", service, err.Error()))
+			beego.Error(fmt.Sprintf("Create service [%#v] error: %s", service, err.Error()))
 			return
 		}
 		beego.Info(fmt.Sprintf("Service %s/%s created successful.", createdService.Namespace, createdService.Name))
@@ -1117,8 +1206,46 @@ func (c *ApplicationController) DoNewAppJson() {
 		return
 	}
 
+	// Here, we wait until the app status becomes running.
+	// We only do this behavior for json input, because for the form input, users can check the status on the web
+	// And we need to put the application information (including the service port, pod IP, or nodePort IP) in the response body, to let the user know the information.
+	beego.Info(fmt.Sprintf("Start to wait for the application [%s] running", app.Name))
+	if err := WaitForAppRunning(models.WaitForTimeOut, 10, app.Name); err != nil {
+		outErr := fmt.Errorf("Wait for application [%s] running, error: %w", app.Name, err)
+		beego.Error(outErr)
+		c.Ctx.ResponseWriter.WriteHeader(http.StatusInternalServerError)
+		c.Ctx.WriteString(outErr.Error())
+		return
+	}
+	beego.Info(fmt.Sprintf("The application [%s] is already running", app.Name))
+
+	outApp, err, statusCode := GetApplication(app.Name)
+	if err != nil {
+		beego.Error(err)
+		c.Ctx.ResponseWriter.WriteHeader(statusCode)
+		c.Ctx.WriteString(err.Error())
+		return
+	}
+
 	//c.Ctx.ResponseWriter.WriteHeader(http.StatusCreated)
 	c.Ctx.Output.Status = http.StatusCreated
-	c.Data["json"] = app
+	c.Data["json"] = outApp
 	c.ServeJSON()
+}
+
+func WaitForAppRunning(timeout int, checkInterval int, appName string) error {
+	return models.MyWaitFor(timeout, checkInterval, func() (bool, error) {
+		app, err, statusCode := GetApplication(appName)
+		if err != nil {
+			if statusCode == http.StatusNotFound {
+				return false, err
+			}
+			return false, nil
+		}
+		beego.Info(fmt.Sprintf("The status of the application [%s] is [%s]", appName, app.Status))
+		if app.Status == RunningStatus {
+			return true, nil
+		}
+		return false, nil
+	})
 }

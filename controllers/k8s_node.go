@@ -67,7 +67,7 @@ func (c *K8sNodeController) DeleteNode() {
 	nodeName := c.Ctx.Input.Param(":nodeName")
 	beego.Info(fmt.Sprintf("Delete node [%s] in Kubernetes Cluster", nodeName))
 	if err := models.UninstallNode(nodeName); err != nil {
-		beego.Error(fmt.Printf("Delete node [%s] in Kubernetes Cluster error: %s", nodeName, err.Error()))
+		beego.Error(fmt.Sprintf("Delete node [%s] in Kubernetes Cluster error: %s", nodeName, err.Error()))
 		c.Ctx.ResponseWriter.WriteHeader(500)
 		return
 	}
@@ -143,7 +143,7 @@ func (c *K8sNodeController) DoAddNodesForm() {
 }
 
 // test command:
-// curl -i -X POST -H Content-Type:application/json -d '[{"name":"hpe1","ips":["192.168.100.124"]},{"name":"cnode1","ips":["10.234.234.99"]},{"name":"nokia7","ips":["192.168.100.69"]}]' http://localhost:20000/k8sNode/doAdd
+// curl -i -X POST -H Content-Type:application/json -d '[{"name":"hpe1","ips":["192.168.100.124"]},{"name":"cnode1","ips":["10.234.234.99"]},{"name":"cnode2","ips":["10.234.234.99"]},{"name":"nokia7","ips":["192.168.100.69"]}]' http://localhost:20000/k8sNode/doAdd
 func (c *K8sNodeController) DoAddNodesJson() {
 	var vms []models.IaasVm
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &vms); err != nil {

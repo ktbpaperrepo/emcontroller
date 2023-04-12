@@ -30,12 +30,12 @@ func initKubernetesClient() *kubernetes.Clientset {
 	// Use the configuration of "kubeconfig" to access kubernetes
 	config, err := clientcmd.BuildConfigFromFlags("", KubeConfigPath)
 	if err != nil {
-		beego.Error(fmt.Printf("Build kubernetes config error: %s", err.Error()))
+		beego.Error(fmt.Sprintf("Build kubernetes config error: %s", err.Error()))
 		panic(err)
 	}
 	client, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		beego.Error(fmt.Printf("Create kubernetes client error: %s", err.Error()))
+		beego.Error(fmt.Sprintf("Create kubernetes client error: %s", err.Error()))
 		panic(err)
 	}
 	return client
@@ -45,17 +45,31 @@ func ListDeployment(namespace string) ([]v1.Deployment, error) {
 	ctx := context.Background()
 	deployments, err := kubernetesClient.AppsV1().Deployments(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		beego.Error(fmt.Printf("List deployments error: %s", err.Error()))
+		beego.Error(fmt.Sprintf("List deployments error: %s", err.Error()))
 		return []v1.Deployment{}, err
 	}
 	return deployments.Items, nil
+}
+
+func GetDeployment(namespace, name string) (*v1.Deployment, error) {
+	ctx := context.Background()
+	deployment, err := kubernetesClient.AppsV1().Deployments(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil && errors.IsNotFound(err) {
+		beego.Info(fmt.Sprintf("Deployment %s/%s not found: %s", namespace, name, err.Error()))
+		return nil, nil
+	}
+	if err != nil {
+		beego.Error(fmt.Sprintf("Get deployment %s/%s error: %s", namespace, name, err.Error()))
+		return nil, err
+	}
+	return deployment, nil
 }
 
 func CreateDeployment(d *v1.Deployment) (*v1.Deployment, error) {
 	ctx := context.Background()
 	createdDeployment, err := kubernetesClient.AppsV1().Deployments(d.Namespace).Create(ctx, d, metav1.CreateOptions{})
 	if err != nil {
-		beego.Error(fmt.Printf("Create deployment %s/%s error: %s", d.Namespace, d.Name, err.Error()))
+		beego.Error(fmt.Sprintf("Create deployment %s/%s error: %s", d.Namespace, d.Name, err.Error()))
 	}
 	return createdDeployment, err
 }
@@ -67,11 +81,11 @@ func DeleteDeployment(namespace, name string) error {
 		//PropagationPolicy: &deletePolicy,
 	})
 	if err != nil && errors.IsNotFound(err) {
-		beego.Info(fmt.Printf("Deployment %s/%s not found: %s, do nothing", namespace, name, err.Error()))
+		beego.Info(fmt.Sprintf("Deployment %s/%s not found: %s, do nothing", namespace, name, err.Error()))
 		return nil
 	}
 	if err != nil {
-		beego.Error(fmt.Printf("Delete deployment %s/%s error: %s", namespace, name, err.Error()))
+		beego.Error(fmt.Sprintf("Delete deployment %s/%s error: %s", namespace, name, err.Error()))
 		return err
 	}
 	return nil
@@ -81,7 +95,7 @@ func CreateService(s *apiv1.Service) (*apiv1.Service, error) {
 	ctx := context.Background()
 	createdService, err := kubernetesClient.CoreV1().Services(s.Namespace).Create(ctx, s, metav1.CreateOptions{})
 	if err != nil {
-		beego.Error(fmt.Printf("Create service %s/%s error: %s", s.Namespace, s.Name, err.Error()))
+		beego.Error(fmt.Sprintf("Create service %s/%s error: %s", s.Namespace, s.Name, err.Error()))
 	}
 	return createdService, err
 }
@@ -93,11 +107,11 @@ func DeleteService(namespace, name string) error {
 		//PropagationPolicy: &deletePolicy,
 	})
 	if err != nil && errors.IsNotFound(err) {
-		beego.Info(fmt.Printf("Service %s/%s not found: %s, do nothing", namespace, name, err.Error()))
+		beego.Info(fmt.Sprintf("Service %s/%s not found: %s, do nothing", namespace, name, err.Error()))
 		return nil
 	}
 	if err != nil {
-		beego.Error(fmt.Printf("Delete service %s/%s error: %s", namespace, name, err.Error()))
+		beego.Error(fmt.Sprintf("Delete service %s/%s error: %s", namespace, name, err.Error()))
 		return err
 	}
 	return nil
@@ -107,11 +121,11 @@ func GetService(namespace, name string) (*apiv1.Service, error) {
 	ctx := context.Background()
 	service, err := kubernetesClient.CoreV1().Services(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil && errors.IsNotFound(err) {
-		beego.Info(fmt.Printf("Service %s/%s not found: %s", namespace, name, err.Error()))
+		beego.Info(fmt.Sprintf("Service %s/%s not found: %s", namespace, name, err.Error()))
 		return nil, nil
 	}
 	if err != nil {
-		beego.Error(fmt.Printf("Get service %s/%s error: %s", namespace, name, err.Error()))
+		beego.Error(fmt.Sprintf("Get service %s/%s error: %s", namespace, name, err.Error()))
 		return nil, err
 	}
 	return service, nil
@@ -121,7 +135,7 @@ func ListPods(namespace string, listOptions metav1.ListOptions) ([]apiv1.Pod, er
 	ctx := context.Background()
 	pods, err := kubernetesClient.CoreV1().Pods(namespace).List(ctx, listOptions)
 	if err != nil {
-		beego.Error(fmt.Printf("List pods error: %s", err.Error()))
+		beego.Error(fmt.Sprintf("List pods error: %s", err.Error()))
 		return []apiv1.Pod{}, err
 	}
 	return pods.Items, nil
@@ -131,7 +145,7 @@ func ListNodes(listOptions metav1.ListOptions) ([]apiv1.Node, error) {
 	ctx := context.Background()
 	nodes, err := kubernetesClient.CoreV1().Nodes().List(ctx, listOptions)
 	if err != nil {
-		beego.Error(fmt.Printf("List nodes error: %s", err.Error()))
+		beego.Error(fmt.Sprintf("List nodes error: %s", err.Error()))
 		return []apiv1.Node{}, err
 	}
 	return nodes.Items, nil
@@ -141,7 +155,7 @@ func GetNode(name string, getOptions metav1.GetOptions) (*apiv1.Node, error) {
 	ctx := context.Background()
 	node, err := kubernetesClient.CoreV1().Nodes().Get(ctx, name, getOptions)
 	if err != nil {
-		beego.Error(fmt.Printf("Get node %s with options %v error: %s", name, getOptions, err.Error()))
+		beego.Error(fmt.Sprintf("Get node %s with options %v error: %s", name, getOptions, err.Error()))
 		return nil, err
 	}
 	return node, nil
@@ -151,7 +165,7 @@ func DeleteNode(name string, deleteOptions metav1.DeleteOptions) error {
 	ctx := context.Background()
 	err := kubernetesClient.CoreV1().Nodes().Delete(ctx, name, deleteOptions)
 	if err != nil {
-		beego.Error(fmt.Printf("Delete node %s with options %v error: %s", name, deleteOptions, err.Error()))
+		beego.Error(fmt.Sprintf("Delete node %s with options %v error: %s", name, deleteOptions, err.Error()))
 		return err
 	}
 	return nil

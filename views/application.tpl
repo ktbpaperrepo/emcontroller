@@ -29,7 +29,7 @@
     <h3>Existing Applications</h3>
 
     <table border = 1>
-        <tr> <th></th> <th>App Name</th> <th>Internal Access</th> <th>External Access</th> <th>Status</th> <th>Host Kubernetes Node<br>(Name/IP)</th> </tr>
+        <tr> <th></th> <th>App Name</th> <th>Internal Access</th> <th>External Access</th> <th>Status</th> <th>Host Kubernetes Node<br>(PodIP/NodeName/NodeIP)</th> </tr>
         {{range $appIdx, $app := .applicationList}}
             {{$statusID := printf "appStatus%s" $app.AppName}}
             <tr>
@@ -53,7 +53,7 @@
                 <td id="{{$statusID}}">{{$app.Status}}</td>
                 <td>
                     {{range $idx, $podHost := $app.Hosts}}
-                    {{$podHost.HostName}}/{{$podHost.HostIP}}<br>
+                    {{$podHost.PodIP}}/{{$podHost.HostName}}/{{$podHost.HostIP}}<br>
                     {{end}}
                 </td>
             </tr>

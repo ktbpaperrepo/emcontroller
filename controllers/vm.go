@@ -214,7 +214,7 @@ func (c *VmController) DoNewVmsForm() {
 }
 
 // test command:
-// curl -i -X POST -H Content-Type:application/json -d '[{"name":"cnode1","vcpu":4,"ram":32768,"storage":400,"cloud":"CLAAUDIAweifan"},{"name":"hpe1","vcpu":4,"ram":8192,"storage":100,"cloud":"HPE1"},{"name":"nokia7","vcpu":4,"ram":8192,"storage":100,"cloud":"NOKIA7"}]' http://localhost:20000/vm/doNew
+// curl -i -X POST -H Content-Type:application/json -d '[{"name":"cnode1","vcpu":4,"ram":32768,"storage":400,"cloud":"CLAAUDIAweifan"},{"name":"cnode2","vcpu":4,"ram":32768,"storage":400,"cloud":"CLAAUDIAweifan"},{"name":"hpe1","vcpu":4,"ram":8192,"storage":100,"cloud":"HPE1"},{"name":"nokia7","vcpu":4,"ram":8192,"storage":100,"cloud":"NOKIA7"}]' http://localhost:20000/vm/doNew
 func (c *VmController) DoNewVmsJson() {
 	var vms []models.IaasVm
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &vms); err != nil {

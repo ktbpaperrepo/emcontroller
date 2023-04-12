@@ -24,6 +24,7 @@ func init() {
 
 	beego.Router("/application", &controllers.ApplicationController{}, "get:Get")
 	beego.Router("/application/:appName", &controllers.ApplicationController{}, "delete:DeleteApp")
+	beego.Router("/application/:appName", &controllers.ApplicationController{}, "get:GetApp")
 	beego.Router("/newApplication", &controllers.ApplicationController{}, "get:NewApplication")
 	beego.Router("/doNewApplication", &controllers.ApplicationController{}, "post:DoNewApplication")
 

@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// go test $GOPATH/src/emcontroller/models/ --run TestListDeployment -v
+// go test $GOPATH/src/emcontroller/models/ --run TestListDeployment -v -count=1
 func TestListDeployment(t *testing.T) {
 	InitKubernetesClient()
 	testCases := []struct {
@@ -29,6 +29,51 @@ func TestListDeployment(t *testing.T) {
 			t.Logf("deployment %d: %#v\n", i, oneDeployment)
 		}
 		assert.Equal(t, testCase.expectedError, actualError, fmt.Sprintf("%s: Error is not expected", testCase.name))
+	}
+}
+
+func TestGetDeployment(t *testing.T) {
+	InitKubernetesClient()
+	testCases := []struct {
+		name          string
+		namespace     string
+		deployName    string
+		expectedError error
+	}{
+		{
+			name:          "case1",
+			namespace:     KubernetesNamespace,
+			deployName:    "test-deployment",
+			expectedError: nil,
+		},
+		{
+			name:          "case2",
+			namespace:     "kube-system",
+			deployName:    "coredns",
+			expectedError: nil,
+		},
+		{
+			name:          "case3",
+			namespace:     "kube-system",
+			deployName:    "coredns1",
+			expectedError: nil,
+		},
+		{
+			name:          "case4",
+			namespace:     "kube-system1",
+			deployName:    "coredns1",
+			expectedError: nil,
+		},
+	}
+	for _, testCase := range testCases {
+		t.Logf("test: %s", testCase.name)
+		actualResult, actualError := GetDeployment(testCase.namespace, testCase.deployName)
+		if testCase.expectedError == nil {
+			assert.NoError(t, actualError, fmt.Sprintf("%s: Error is not expected", testCase.name))
+		} else {
+			assert.Error(t, actualError, fmt.Sprintf("%s: Error is not expected", testCase.name))
+		}
+		t.Logf("Deploy: %s/%s, %v", testCase.namespace, testCase.deployName, actualResult)
 	}
 }
 
