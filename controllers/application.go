@@ -75,15 +75,16 @@ type PortInfo struct {
 }
 
 type AppInfo struct {
-	AppName    string    `json:"appName"`
-	SvcName    string    `json:"svcName"`
-	DeployName string    `json:"deployName"`
-	ClusterIP  string    `json:"clusterIP"`
-	NodePortIP string    `json:"nodePortIP"`
-	SvcPort    []string  `json:"svcPort"`
-	NodePort   []string  `json:"nodePort"`
-	Hosts      []PodHost `json:"hosts"`
-	Status     string    `json:"status"`
+	AppName       string    `json:"appName"`
+	SvcName       string    `json:"svcName"`
+	DeployName    string    `json:"deployName"`
+	ClusterIP     string    `json:"clusterIP"`
+	NodePortIP    string    `json:"nodePortIP"`
+	SvcPort       []string  `json:"svcPort"`
+	NodePort      []string  `json:"nodePort"`
+	ContainerPort []string  `json:"containerPort"`
+	Hosts         []PodHost `json:"hosts"`
+	Status        string    `json:"status"`
 }
 
 type PodHost struct {
@@ -215,6 +216,7 @@ func (c *ApplicationController) Get() {
 				for _, port := range svc.Spec.Ports {
 					thisApp.SvcPort = append(thisApp.SvcPort, strconv.FormatInt(int64(port.Port), 10))
 					thisApp.NodePort = append(thisApp.NodePort, strconv.FormatInt(int64(port.NodePort), 10))
+					thisApp.ContainerPort = append(thisApp.ContainerPort, port.TargetPort.String())
 				}
 			} else {
 				thisApp.ClusterIP = ""
@@ -323,6 +325,7 @@ func GetApplication(appName string) (AppInfo, error, int) {
 		for _, port := range svc.Spec.Ports {
 			outApp.SvcPort = append(outApp.SvcPort, strconv.FormatInt(int64(port.Port), 10))
 			outApp.NodePort = append(outApp.NodePort, strconv.FormatInt(int64(port.NodePort), 10))
+			outApp.ContainerPort = append(outApp.ContainerPort, port.TargetPort.String())
 		}
 	} else {
 		outApp.ClusterIP = ""
