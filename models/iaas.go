@@ -55,6 +55,7 @@ type ResSet struct {
 	Port    float64 `json:"port"`    // number of network ports
 }
 
+// the global variable to record all clouds
 var Clouds map[string]Iaas = make(map[string]Iaas)
 var iaasConfig *viper.Viper
 

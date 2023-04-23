@@ -2,9 +2,10 @@ package models
 
 import (
 	"fmt"
-	"github.com/astaxie/beego"
 	"strings"
 	"time"
+
+	"github.com/astaxie/beego"
 )
 
 // When getting the IPs of a VM, we do not need to IPs about containers. We can also require that the interface name must be something
@@ -67,4 +68,25 @@ func HandleErrSlice(errs []error) error {
 	}
 
 	return fmt.Errorf(sumErr)
+}
+
+// Execute a task periodically using time.Timer
+func CronTaskTimer(f func(), period time.Duration) {
+	var t *time.Timer
+	for {
+		t = time.NewTimer(period)
+		<-t.C
+
+		// execute f after the time of "period"
+		f()
+	}
+}
+
+// The function to measure network performance between every two clouds
+func MeasNetPerf() {
+	beego.Info("Start to measure network performance between every two clouds.")
+	for name, _ := range Clouds {
+		beego.Info(fmt.Sprintf("We have cloud %s", name))
+	}
+	beego.Info("Finish measuring network performance between every two clouds.")
 }

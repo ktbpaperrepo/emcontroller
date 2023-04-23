@@ -44,6 +44,8 @@ const (
 	ProxQSStopped      string        = "stopped"       // Proxmox Qemu Status stopped
 
 	K8sMasterNodeRole = "node-role.kubernetes.io/control-plane"
+
+	DefaultNetTestPeriodSec = 300
 )
 
 var (
