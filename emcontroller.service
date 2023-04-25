@@ -1,0 +1,16 @@
+# /usr/lib/systemd/system/emcontroller.service
+
+[Unit]
+Description=emcontroller
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=[[PROJECTPATH]]/run.sh
+PrivateTmp=true
+KillMode=control-group
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
