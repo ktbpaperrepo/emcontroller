@@ -81,12 +81,3 @@ func CronTaskTimer(f func(), period time.Duration) {
 		f()
 	}
 }
-
-// The function to measure network performance between every two clouds
-func MeasNetPerf() {
-	beego.Info("Start to measure network performance between every two clouds.")
-	for name, _ := range Clouds {
-		beego.Info(fmt.Sprintf("We have cloud %s", name))
-	}
-	beego.Info("Finish measuring network performance between every two clouds.")
-}

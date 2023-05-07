@@ -100,7 +100,7 @@ func (c *VmController) ListVMsAllClouds() {
 			defer wg.Done()
 			vms, err := c.ListAllVMs()
 			if err != nil {
-				outErr := fmt.Errorf("List vms in cloud [%s] type [%s], error %s.", c.ShowName(), c.ShowType(), err)
+				outErr := fmt.Errorf("List vms in cloud [%s] type [%s], error %w.", c.ShowName(), c.ShowType(), err)
 				beego.Error(outErr)
 				errsMu.Lock()
 				errs = append(errs, outErr)

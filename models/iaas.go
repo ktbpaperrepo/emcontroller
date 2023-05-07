@@ -170,3 +170,13 @@ func CreateVms(vms []IaasVm) ([]IaasVm, error) {
 
 	return createdVms, nil
 }
+
+// Check whether a vm name exists in a group of vms
+func VmNameExist(vmName string, vms []IaasVm) bool {
+	for _, vm := range vms {
+		if vmName == vm.Name {
+			return true
+		}
+	}
+	return false
+}
