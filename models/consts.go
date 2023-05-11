@@ -46,6 +46,8 @@ const (
 	K8sMasterNodeRole = "node-role.kubernetes.io/control-plane"
 
 	DefaultNetTestPeriodSec = 300
+
+	McmKey string = "mcm"
 )
 
 var (

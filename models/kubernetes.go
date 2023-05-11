@@ -13,6 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/retry"
 )
 
 var kubernetesClient *kubernetes.Clientset
@@ -201,6 +202,7 @@ func ExtractNodeStatus(node apiv1.Node) string {
 }
 
 // SSH to Kubernetes Master node to generate a kubeadm join command. The command will expire by default after 24 hours
+// A Kubernetes cluster can have more than one tokens at a time.
 func GetJoinCmd() (string, error) {
 	K8sMasterIP := beego.AppConfig.String("k8sMasterIP")
 	sshPrivateKey := beego.AppConfig.String("k8sVmSshPrivateKey")
@@ -249,6 +251,67 @@ func DrainNode(nodeName string) error {
 	}
 
 	return nil
+}
+
+// Add or update a taint to a node
+func TaintNode(nodeName string, taint *apiv1.Taint) error {
+	// When we use the update api, Kubernetes will compare the resource version of the node in our request and that of the node in etcd. If they are different, there will be a conflict error.
+	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		node, err := GetNode(nodeName, metav1.GetOptions{})
+		if err != nil {
+			outErr := fmt.Errorf("Kubernetes get node: error: %w", err)
+			beego.Error(outErr)
+			return outErr
+		}
+
+		// immitate the code in "k8s.io/kubernetes/pkg/util/taints#AddOrUpdateTaint"
+		nodeTaints := node.Spec.Taints
+		var newTaints []apiv1.Taint
+		updated := false
+		for i := range nodeTaints {
+			if taint.MatchTaint(&nodeTaints[i]) {
+				if TaintEqual(taint, &nodeTaints[i]) {
+					beego.Info(fmt.Sprintf("Node [%s] has already have the taint [%v]", nodeName, taint))
+					return nil
+				}
+				// A taint with Key and Effect exist but value is not the same, so we need to update this taint
+				newTaints = append(newTaints, *taint)
+				updated = true
+				continue
+			}
+
+			// this taint is different with what we need to add, we simply put it in the new taints
+			newTaints = append(newTaints, nodeTaints[i])
+		}
+
+		// the node does not have a taint with the Key and Effect, so we need to create a new taint for this node
+		if !updated {
+			newTaints = append(newTaints, *taint)
+		}
+
+		node.Spec.Taints = newTaints
+
+		ctx := context.Background()
+		if _, err = kubernetesClient.CoreV1().Nodes().Update(ctx, node, metav1.UpdateOptions{}); err != nil {
+			beego.Error(fmt.Sprintf("Update node [%s], error [%s]", nodeName, err))
+			return err
+		}
+
+		return nil
+	})
+
+	if retryErr != nil {
+		outErr := fmt.Errorf("Add taint [%s] to Node [%s], error", taint, nodeName, retryErr)
+		beego.Error(outErr)
+		return outErr
+	}
+	beego.Info(fmt.Sprintf("taint [%v] is added to Node [%s]", taint, nodeName))
+
+	return nil
+}
+
+func TaintEqual(t1 *apiv1.Taint, t2 *apiv1.Taint) bool {
+	return t1.Key == t2.Key && t1.Effect == t2.Effect && t1.Value == t2.Value
 }
 
 // add a new node into Kubernetes cluster

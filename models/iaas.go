@@ -172,11 +172,11 @@ func CreateVms(vms []IaasVm) ([]IaasVm, error) {
 }
 
 // Check whether a vm name exists in a group of vms
-func VmNameExist(vmName string, vms []IaasVm) bool {
+func FindVm(vmName string, vms []IaasVm) (*IaasVm, bool) {
 	for _, vm := range vms {
 		if vmName == vm.Name {
-			return true
+			return &vm, true
 		}
 	}
-	return false
+	return nil, false
 }
