@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"fmt"
+	"net/url"
 
 	"github.com/astaxie/beego"
 	"golang.org/x/crypto/ssh"
@@ -35,7 +36,15 @@ func (c *ImageController) Get() {
 
 // DeleteRepo delete a repository
 func (c *ImageController) DeleteRepo() {
-	repo := c.Ctx.Input.Param(":repo")
+	encodedRepo := c.Ctx.Input.Param(":repo")
+
+	// In the name of repository there may be the symbol '/', which should be encoded, or else HTTP can not split the URL correctly.
+	// Therefore, here we need to decode the repository name.
+	repo, err := url.QueryUnescape(encodedRepo)
+	if err != nil {
+		beego.Error(fmt.Sprintf("Decode HTTP URL error: [%s]", err.Error()))
+		return
+	}
 
 	beego.Info(fmt.Sprintf("Delete repository [%s]", repo))
 
@@ -47,7 +56,6 @@ func (c *ImageController) DeleteRepo() {
 	sshPrivateKey := beego.AppConfig.String("dockerRegiSshPrivateKey")
 
 	var sshClient *ssh.Client
-	var err error
 	if len(sshPrivateKey) == 0 {
 		beego.Info("Config \"dockerRegiSshPrivateKey\" is not provided, so we use password to SSH.")
 		sshClient, err = models.SshClientWithPasswd(sshUser, sshPassword, dockerRegistryIP, sshPort)

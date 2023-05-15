@@ -22,12 +22,17 @@ function deleteRepo(repository, messageID) {
     let imageMessage = document.getElementById(messageID);
     imageMessage.innerText = "Deleting";
     let xmlhttp = new XMLHttpRequest();
-    xmlhttp.open("DELETE", `/image/${repository}`);
+
+    // In the name of repository there may be the symbol '/', which should be encoded, or else HTTP can not split the URL correctly.
+    let encodedRepo = encodeURIComponent(repository);
+    console.log("encoded %s to %s", repository, encodedRepo);
+
+    xmlhttp.open("DELETE", `/image/${encodedRepo}`);
     xmlhttp.send();
-    console.log("delete %s request has been sent", repository);
+    console.log("delete %s request has been sent", encodedRepo);
     xmlhttp.onreadystatechange = function(){
         if(this.readyState==4 && this.status==200) {
-            console.log("delete %s response: %s", repository, xmlhttp.responseText);
+            console.log("delete %s response: %s", encodedRepo, xmlhttp.responseText);
             // reserve 1s for deleting
             setTimeout(unlockDeleteRepo, 1000);
         }
