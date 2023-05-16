@@ -296,8 +296,9 @@ function deleteElement(elementID) {
 
 // should be executed on load of Basic new application
 function initBasic() {
-    addContainer();
+    insertCommonPart();
 
+    addContainer();
     // delete the unnecessary container title
     let containerTitle = document.getElementById(`containerTitle${containerIndex-1}`)
     if (containerTitle != null) {
@@ -308,5 +309,35 @@ function initBasic() {
 
 // should be executed on load of Advanced new application
 function initAdvanced() {
+    insertCommonPart();
     addContainer();
+}
+
+function generateCommonPartHTML() {
+    return `
+Kubernetes node: <input type="text" name="nodeName"> <br> <br>
+<!--submit the nodeSelector Number-->
+<input type="hidden" id="nodeSelectorNum" name="nodeSelectorNumber" value="0">
+<p class="small-title">Kubernetes node selector:</p>
+<button id="addNodeSelectorButton" type="button" onclick="addNodeSelector()">Add node selector</button>
+<button id="deleteNodeSelectorButton" type="button" onclick="deleteNodeSelector('')">Delete node selector</button>
+<br><br>
+
+<!--        Checkbox for container network or host network-->
+<p class="small-title">Application network type: </p>
+<div>
+    <input type="radio" id="containerNet" name="networkType" value="container" checked>
+    <label for="containerNet">Container Network</label>
+</div>
+<div>
+    <input type="radio" id="hostNet" name="networkType" value="host">
+    <label for="hostNet">Host Network</label>
+</div>
+`;
+}
+
+function insertCommonPart() {
+    let containerNum = document.getElementById("containerNum");
+    let commonPartHTML = generateCommonPartHTML();
+    containerNum.insertAdjacentHTML('beforebegin', commonPartHTML);
 }
