@@ -314,6 +314,16 @@ func TaintEqual(t1 *apiv1.Taint, t2 *apiv1.Taint) bool {
 	return t1.Key == t2.Key && t1.Effect == t2.Effect && t1.Value == t2.Value
 }
 
+// Check whether a node has a taint
+func NodeHasTaint(node *apiv1.Node, taint *apiv1.Taint) bool {
+	for _, t := range node.Spec.Taints {
+		if TaintEqual(&t, taint) {
+			return true
+		}
+	}
+	return false
+}
+
 // add a new node into Kubernetes cluster
 func AddNode(vm IaasVm, joinCmd string) error {
 	if len(vm.IPs) == 0 {

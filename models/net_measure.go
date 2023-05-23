@@ -18,12 +18,18 @@ const (
 
 	mcmNetTestCpu  int = 2    // number of logical CPU cores
 	mcmNetTestMem  int = 2048 // memory size unit: MB
-	mcmNetTestDisk int = 10   // storage size unit: GB
+	mcmNetTestDisk int = 20   // storage size unit: GB (I tried 10 GB, but it is too small.)
 
 	taintValue   string                   = "net-test"
 	taintEffect  apiv1.TaintEffect        = apiv1.TaintEffectNoSchedule
 	tolerationOp apiv1.TolerationOperator = apiv1.TolerationOpEqual
 )
+
+var NetTestTaint *apiv1.Taint = &apiv1.Taint{
+	Key:    McmKey,
+	Effect: taintEffect,
+	Value:  taintValue,
+}
 
 // The function to measure network performance between every two clouds
 // This function should be executed every time period
@@ -210,13 +216,8 @@ func ensureK8sMg(vmMap map[string]*IaasVm) error {
 
 // Ensure that the nodes of VMs in Kubernetes have the network test taints.
 func ensureTaints(vmMap map[string]*IaasVm) error {
-	netTestTaint := &apiv1.Taint{
-		Key:    McmKey,
-		Effect: taintEffect,
-		Value:  taintValue,
-	}
 	for nodeName, _ := range vmMap {
-		if err := TaintNode(nodeName, netTestTaint); err != nil {
+		if err := TaintNode(nodeName, NetTestTaint); err != nil {
 			outErr := fmt.Errorf("ensureTaints, node [%s], error %w.", nodeName, err)
 			beego.Error(outErr)
 			return outErr

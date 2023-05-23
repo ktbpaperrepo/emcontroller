@@ -50,6 +50,10 @@ func (c *K8sNodeController) Get() {
 			beego.Info(fmt.Sprintf("node %s is a Master node, so we do not show it.", node.Name))
 			continue
 		}
+		if models.NodeHasTaint(&node, models.NetTestTaint) {
+			beego.Info(fmt.Sprintf("node %s is a network performance test node, so we do not show it.", node.Name))
+			continue
+		}
 
 		k8sNodeList = append(k8sNodeList, K8sNodeInfo{
 			Name:   node.Name,
