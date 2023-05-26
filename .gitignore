@@ -7,6 +7,9 @@
 node_modules/
 dist/
 
+# binary of multi-cloud manager
+emcontroller
+
 # Compiled Java class files
 *.class
 
