@@ -1,29 +1,18 @@
 # README #
 
-Edge and Multi-cloud controller.
+Edge and Multi-Cloud Manager.
 
-### What is this repository for? ###
+### How to build Multi-cloud Manager and clean the built files? ###
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+* `make` or `make emcontroller` will generate the binary `emcontroller`.
+* `make clean` will remove the binary `emcontroller`.
 
-### How do I get set up? ###
+### How do I run and stop Multi-Cloud Manager? ###
 
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
+* After building the binary `emcontroller`, in the root path of this project, execute `./emcontroller`.
+* `Ctrl + C` to stop.
 
-### Contribution guidelines ###
+### How do I set Multi-cloud Manager as a service of systemd and delete the service? ###
 
-* Writing tests
-* Code review
-* Other guidelines
-
-### Who do I talk to? ###
-
-* Repo owner or admin
-* Other community or team contact
+* After building the binary `emcontroller`, in the root path of this project, execute `bash install_service.sh`.
+* Execute `bash uninstall_service.sh` to delete the service.
