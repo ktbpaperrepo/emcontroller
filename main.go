@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"strconv"
 	"time"
@@ -11,7 +12,23 @@ import (
 	_ "emcontroller/routers"
 )
 
+var gitCommit, buildDate string
+
+func printVersion() {
+	fmt.Printf("Build time: [%s]. Git commit: [%s]\n", buildDate, gitCommit)
+}
+
 func main() {
+	versionFlag := flag.Bool("v", false, "Print the current version and exit.")
+	flag.Parse()
+	switch {
+	case *versionFlag:
+		printVersion()
+		return
+	default:
+		// continue with other stuff
+	}
+
 	models.InitDockerClient()
 	models.InitKubernetesClient()
 
