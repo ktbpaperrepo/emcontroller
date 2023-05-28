@@ -166,10 +166,19 @@ func getNodePortIP(app v1.Deployment, pods []apiv1.Pod) string {
 }
 
 func (c *ApplicationController) Get() {
+	appList, err := ListApplications()
+	if err != nil {
+		beego.Error(fmt.Sprintf("ListApplications error: %s", err.Error()))
+	}
+	c.Data["applicationList"] = appList
+	c.TplName = "application.tpl"
+}
+
+func ListApplications() ([]AppInfo, error) {
 	applications, err := models.ListDeployment(models.KubernetesNamespace)
 	if err != nil {
-		beego.Error(fmt.Sprintf("error: %s", err.Error()))
-		c.Data["applicationList"] = []AppInfo{}
+		beego.Error(fmt.Sprintf("ListDeployment error: %s", err.Error()))
+		return []AppInfo{}, err
 	}
 
 	var appList []AppInfo
@@ -234,31 +243,44 @@ func (c *ApplicationController) Get() {
 	}
 	wg.Wait()
 
-	c.Data["applicationList"] = appList
-	c.TplName = "application.tpl"
+	return appList, nil
 }
 
 // DeleteApp delete the deployment and service of the application
 func (c *ApplicationController) DeleteApp() {
 	appName := c.Ctx.Input.Param(":appName")
+
+	err, statusCode := DeleteApplication(appName)
+	if err != nil {
+		beego.Error(err)
+		c.Ctx.ResponseWriter.WriteHeader(statusCode)
+		c.Ctx.WriteString(err.Error())
+		return
+	}
+
+	c.Ctx.ResponseWriter.WriteHeader(statusCode)
+}
+
+func DeleteApplication(appName string) (error, int) {
 	deployName := appName + models.DeploymentSuffix
 	svcName := appName + models.ServiceSuffix
 
 	beego.Info(fmt.Sprintf("Delete deployment [%s/%s]", models.KubernetesNamespace, deployName))
 	if err := models.DeleteDeployment(models.KubernetesNamespace, deployName); err != nil {
-		beego.Error(fmt.Sprintf("Delete deployment [%s/%s] error: %s", models.KubernetesNamespace, deployName, err.Error()))
-		return
+		outErr := fmt.Errorf("Delete deployment [%s/%s] error: %s", models.KubernetesNamespace, deployName, err.Error())
+		beego.Error(outErr)
+		return outErr, http.StatusInternalServerError
 	}
 	beego.Info(fmt.Sprintf("Successful! Delete deployment [%s/%s]", models.KubernetesNamespace, deployName))
 
 	beego.Info(fmt.Sprintf("Delete service [%s/%s]", models.KubernetesNamespace, svcName))
 	if err := models.DeleteService(models.KubernetesNamespace, svcName); err != nil {
-		beego.Error(fmt.Sprintf("Delete deployment [%s/%s] error: %s", models.KubernetesNamespace, svcName, err.Error()))
-		return
+		outErr := fmt.Errorf("Delete deployment [%s/%s] error: %s", models.KubernetesNamespace, svcName, err.Error())
+		beego.Error(outErr)
+		return outErr, http.StatusInternalServerError
 	}
 	beego.Info(fmt.Sprintf("Successful! Delete service [%s/%s]", models.KubernetesNamespace, svcName))
-
-	c.Ctx.ResponseWriter.WriteHeader(200)
+	return nil, http.StatusOK
 }
 
 // test command:
