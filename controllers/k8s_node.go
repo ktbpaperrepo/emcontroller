@@ -17,12 +17,6 @@ type K8sNodeController struct {
 	beego.Controller
 }
 
-type K8sNodeInfo struct {
-	Name   string
-	IP     string
-	Status string
-}
-
 func (c *K8sNodeController) Get() {
 	// TODO: This code does not work, I do not know the reason.
 	//K8sMasterSelector := labels.NewSelector()
@@ -44,7 +38,7 @@ func (c *K8sNodeController) Get() {
 		models.K8sMasterNodeRole: "",
 	}))
 
-	var k8sNodeList []K8sNodeInfo
+	var k8sNodeList []models.K8sNodeInfo
 	for _, node := range nodes {
 		if selectorControlPlane.Matches(labels.Set(node.Labels)) {
 			beego.Info(fmt.Sprintf("node %s is a Master node, so we do not show it.", node.Name))
@@ -55,7 +49,7 @@ func (c *K8sNodeController) Get() {
 			continue
 		}
 
-		k8sNodeList = append(k8sNodeList, K8sNodeInfo{
+		k8sNodeList = append(k8sNodeList, models.K8sNodeInfo{
 			Name:   node.Name,
 			IP:     models.GetNodeInternalIp(node),
 			Status: models.ExtractNodeStatus(node),
