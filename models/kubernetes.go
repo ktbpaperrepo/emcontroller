@@ -301,7 +301,7 @@ func TaintNode(nodeName string, taint *apiv1.Taint) error {
 	})
 
 	if retryErr != nil {
-		outErr := fmt.Errorf("Add taint [%s] to Node [%s], error", taint, nodeName, retryErr)
+		outErr := fmt.Errorf("Add taint [%s] to Node [%s], error [%w]", taint, nodeName, retryErr)
 		beego.Error(outErr)
 		return outErr
 	}

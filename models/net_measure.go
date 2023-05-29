@@ -2,10 +2,12 @@ package models
 
 import (
 	"fmt"
+	"math"
 	"strings"
 	"sync"
 
 	"github.com/astaxie/beego"
+	_ "github.com/go-sql-driver/mysql"
 	apiv1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -223,6 +225,153 @@ func ensureTaints(vmMap map[string]*IaasVm) error {
 			return outErr
 		}
 	}
+
+	return nil
+}
+
+// Create the database, tables, and columns in MySQL.
+func InitNetPerfDB() error {
+	beego.Info("Create the database, tables, and columns in MySQL.")
+
+	beego.Info(fmt.Sprintf("Check existing database"))
+
+	dbs, err := ListDbs()
+	if err != nil {
+		outErr := fmt.Errorf("Check existing database, error %w.", err)
+		beego.Error(outErr)
+		return outErr
+	}
+
+	beego.Info(fmt.Sprintf("Existing databases: %v", dbs))
+
+	var oldDbExist bool
+	for _, db := range dbs {
+		if db == NetPerfDbName {
+			oldDbExist = true
+			break
+		}
+	}
+
+	if oldDbExist {
+		beego.Info(fmt.Sprintf("Database [%s] exists, so we delete it.", NetPerfDbName))
+		if err := DeleteDb(NetPerfDbName); err != nil {
+			outErr := fmt.Errorf("Delete database [%s], error %w.", NetPerfDbName, err)
+			beego.Error(outErr)
+			return outErr
+		}
+	} else {
+		beego.Info(fmt.Sprintf("Database [%s] does not exist, so we do not need to delete it.", NetPerfDbName))
+	}
+
+	beego.Info(fmt.Sprintf("Create new database: %s", NetPerfDbName))
+	if err := CreateDb(NetPerfDbName); err != nil {
+		outErr := fmt.Errorf("Create database [%s], error %w.", NetPerfDbName, err)
+		beego.Error(outErr)
+		return outErr
+	}
+
+	// In MySQL, we can use the command "use" to select a database.
+	// We can also specify the database name in every of our commands.
+	// For the purpose of learning, I implement both of the 2 ways, either of which is OK to use.
+
+	//if err := initDbTables(); err != nil {
+	if err := initDbTablesWithUse(); err != nil {
+		outErr := fmt.Errorf("Create and initialize tables for network performance in database [%s], error %w.", NetPerfDbName, err)
+		beego.Error(outErr)
+		return outErr
+	}
+
+	return nil
+}
+
+func initDbTables() error {
+	beego.Info(fmt.Sprintf("Create and initialize tables for network performance in database [%s].", NetPerfDbName))
+	db, err := NewMySqlCli()
+	if err != nil {
+		outErr := fmt.Errorf("Create MySQL client, error [%w].", err)
+		beego.Error(outErr)
+		return outErr
+	}
+	defer db.Close()
+
+	for cloudName, _ := range Clouds {
+		tableName := cloudName
+		query := fmt.Sprintf("create table %s.%s(%s varchar(768) not null,%s double not null, primary key(%s))", NetPerfDbName, tableName, DbFieldCloudName, DbFieldRtt, DbFieldCloudName)
+		result, err := db.Query(query)
+		if err != nil {
+			outErr := fmt.Errorf("Query [%s], error [%w].", query, err)
+			beego.Error(outErr)
+			return outErr
+		}
+		result.Close()
+		beego.Info(fmt.Sprintf("Query [%s] successfully.", query))
+
+		for targetCloudName, _ := range Clouds {
+			query := fmt.Sprintf("insert into %s.%s (%s, %s) values (?, ?)", NetPerfDbName, tableName, DbFieldCloudName, DbFieldRtt)
+			result, err := db.Query(query, targetCloudName, math.MaxFloat64)
+			if err != nil {
+				outErr := fmt.Errorf("Query [%s], args: [%s, %g], error [%w].", query, targetCloudName, math.MaxFloat64, err)
+				beego.Error(outErr)
+				return outErr
+			}
+			result.Close()
+			beego.Info(fmt.Sprintf("Query [%s], args: [%s, %g] successfully.", query, targetCloudName, math.MaxFloat64))
+		}
+	}
+	beego.Info(fmt.Sprintf("Successful! Create and initialize tables for network performance in database [%s].", NetPerfDbName))
+
+	return nil
+}
+
+func initDbTablesWithUse() error {
+	beego.Info(fmt.Sprintf("Create and initialize tables for network performance in database [%s].", NetPerfDbName))
+	db, err := NewMySqlCli()
+	if err != nil {
+		outErr := fmt.Errorf("Create MySQL client, error [%w].", err)
+		beego.Error(outErr)
+		return outErr
+	}
+	defer db.Close()
+
+	if err := UseDb(db, NetPerfDbName); err != nil {
+		outErr := fmt.Errorf("UseDb [%s], error %w.", NetPerfDbName, err)
+		beego.Error(outErr)
+		return outErr
+	}
+
+	curDb, err := ShowCurUsedDb(db)
+	if err != nil {
+		outErr := fmt.Errorf("ShowCurUsedDb(db), error %w.", err)
+		beego.Error(outErr)
+		return outErr
+	}
+	beego.Info(fmt.Sprintf("Currently database [%s] is used.", curDb))
+
+	for cloudName, _ := range Clouds {
+		tableName := cloudName
+		query := fmt.Sprintf("create table %s(%s varchar(768) not null,%s double not null, primary key(%s))", tableName, DbFieldCloudName, DbFieldRtt, DbFieldCloudName)
+		result, err := db.Query(query)
+		if err != nil {
+			outErr := fmt.Errorf("Query [%s], error [%w].", query, err)
+			beego.Error(outErr)
+			return outErr
+		}
+		result.Close()
+		beego.Info(fmt.Sprintf("Query [%s] successfully.", query))
+
+		for targetCloudName, _ := range Clouds {
+			query := fmt.Sprintf("insert into %s (%s, %s) values (?, ?)", tableName, DbFieldCloudName, DbFieldRtt)
+			result, err := db.Query(query, targetCloudName, math.MaxFloat64)
+			if err != nil {
+				outErr := fmt.Errorf("Query [%s], args: [%s, %g], error [%w].", query, targetCloudName, math.MaxFloat64, err)
+				beego.Error(outErr)
+				return outErr
+			}
+			result.Close()
+			beego.Info(fmt.Sprintf("Query [%s], args: [%s, %g] successfully.", query, targetCloudName, math.MaxFloat64))
+		}
+	}
+	beego.Info(fmt.Sprintf("Successful! Create and initialize tables for network performance in database [%s].", NetPerfDbName))
 
 	return nil
 }

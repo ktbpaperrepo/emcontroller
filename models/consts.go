@@ -45,7 +45,10 @@ const (
 
 	K8sMasterNodeRole = "node-role.kubernetes.io/control-plane"
 
-	DefaultNetTestPeriodSec = 300
+	DefaultNetTestPeriodSec        = 300
+	NetPerfDbName           string = "multi_cloud"
+	DbFieldCloudName        string = "target_cloud_name" // field in the tables of network performance database
+	DbFieldRtt              string = "rtt_ms"            // field in the tables of network performance database
 
 	McmKey string = "mcm"
 )
@@ -54,6 +57,11 @@ var (
 	DockerEngine   string = beego.AppConfig.String("dockerEngineIP") + ":" + beego.AppConfig.String("dockerEnginePort")
 	DockerRegistry string = beego.AppConfig.String("dockerRegistryIP") + ":" + beego.AppConfig.String("dockerRegistryPort")
 	KubeConfigPath string = beego.AppConfig.String("kubeConfigPath")
+
+	MySqlIp     string = beego.AppConfig.String("MySqlIp")
+	MySqlPort   string = beego.AppConfig.String("MySqlPort")
+	MySqlUser   string = beego.AppConfig.String("MySqlUser")
+	MySqlPasswd string = beego.AppConfig.String("MySqlPasswd")
 
 	// When checking resources, if not successful, return -1
 	errRs ResourceStatus = ResourceStatus{
