@@ -16,3 +16,7 @@ Edge and Multi-Cloud Manager.
 
 * After building the binary `emcontroller`, in the root path of this project, execute `bash install_service.sh`.
 * Execute `bash uninstall_service.sh` to delete the service.
+
+### How do I make network performance test container image? ###
+1. Put the folder `net-perf-container-image` to a VM with Docker installed.
+2. On that VM, `cd` into the folder `net-perf-container-image`, and execute `docker build -t mcnettest:latest .`.
