@@ -45,11 +45,6 @@ const (
 
 	K8sMasterNodeRole = "node-role.kubernetes.io/control-plane"
 
-	DefaultNetTestPeriodSec        = 300
-	NetPerfDbName           string = "multi_cloud"
-	DbFieldCloudName        string = "target_cloud_name" // field in the tables of network performance database
-	DbFieldRtt              string = "rtt_ms"            // field in the tables of network performance database
-
 	McmKey string = "mcm"
 )
 

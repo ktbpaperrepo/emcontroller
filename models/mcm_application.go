@@ -18,12 +18,13 @@ import (
 
 // used for the input of creating applications, so we need to define the json
 type K8sApp struct {
-	Name         string            `json:"name"`
-	Replicas     int32             `json:"replicas"`
-	HostNetwork  bool              `json:"hostNetwork"`
-	NodeName     string            `json:"nodeName,omitempty"`
-	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-	Containers   []K8sContainer    `json:"containers"`
+	Name         string              `json:"name"`
+	Replicas     int32               `json:"replicas"`
+	HostNetwork  bool                `json:"hostNetwork"`
+	NodeName     string              `json:"nodeName,omitempty"`
+	NodeSelector map[string]string   `json:"nodeSelector,omitempty"`
+	Tolerations  []corev1.Toleration `json:"tolerations,omitempty"`
+	Containers   []K8sContainer      `json:"containers"`
 }
 
 type K8sContainer struct {
@@ -235,13 +236,20 @@ func DeleteApplication(appName string) (error, int) {
 	deployName := appName + DeploymentSuffix
 	svcName := appName + ServiceSuffix
 
+	deploy, err := GetDeployment(KubernetesNamespace, deployName)
+	if err != nil {
+		outErr := fmt.Errorf("Get the deployment of app [%s], error: %w", appName, err)
+		beego.Error(outErr)
+		return outErr, http.StatusInternalServerError
+	}
+
 	beego.Info(fmt.Sprintf("Delete deployment [%s/%s]", KubernetesNamespace, deployName))
 	if err := DeleteDeployment(KubernetesNamespace, deployName); err != nil {
 		outErr := fmt.Errorf("Delete deployment [%s/%s] error: %s", KubernetesNamespace, deployName, err.Error())
 		beego.Error(outErr)
 		return outErr, http.StatusInternalServerError
 	}
-	beego.Info(fmt.Sprintf("Successful! Delete deployment [%s/%s]", KubernetesNamespace, deployName))
+	beego.Info(fmt.Sprintf("Successfully sent request to delete deployment [%s/%s]", KubernetesNamespace, deployName))
 
 	beego.Info(fmt.Sprintf("Delete service [%s/%s]", KubernetesNamespace, svcName))
 	if err := DeleteService(KubernetesNamespace, svcName); err != nil {
@@ -250,6 +258,16 @@ func DeleteApplication(appName string) (error, int) {
 		return outErr, http.StatusInternalServerError
 	}
 	beego.Info(fmt.Sprintf("Successful! Delete service [%s/%s]", KubernetesNamespace, svcName))
+
+	beego.Info(fmt.Sprintf("Start to wait for the deployment [%s/%s] deleted.", KubernetesNamespace, deployName))
+	if err := WaitForAppDeleted(WaitForTimeOut, 10, deploy); err != nil {
+		outErr := fmt.Errorf("Wait for the deployment [%s/%s] deleted, error: %w", KubernetesNamespace, deployName, err)
+		beego.Error(outErr)
+		return outErr, http.StatusInternalServerError
+	}
+	beego.Info(fmt.Sprintf("The deployment [%s/%s] is already deleted.", KubernetesNamespace, deployName))
+
+	beego.Info(fmt.Sprintf("Successful! Deleted deployment [%s/%s]", KubernetesNamespace, deployName))
 	return nil, http.StatusOK
 }
 
@@ -544,6 +562,11 @@ func CreateApplication(app K8sApp) error {
 		deployment.Spec.Template.Spec.NodeSelector = app.NodeSelector
 	}
 
+	// If the app in the request body has tolerations, we set them in K8s deployment
+	if len(app.Tolerations) > 0 {
+		deployment.Spec.Template.Spec.Tolerations = app.Tolerations
+	}
+
 	beego.Info(fmt.Sprintf("Create deployment [%#v]", deployment))
 	beego.Info(fmt.Sprintf(""))
 	deploymentJson, err := json.Marshal(deployment)
@@ -610,6 +633,17 @@ func WaitForAppRunning(timeout int, checkInterval int, appName string) error {
 		}
 		beego.Info(fmt.Sprintf("The status of the application [%s] is [%s]", appName, app.Status))
 		if app.Status == RunningStatus {
+			return true, nil
+		}
+		return false, nil
+	})
+}
+
+func WaitForAppDeleted(timeout int, checkInterval int, deploy *appsv1.Deployment) error {
+	return MyWaitFor(timeout, checkInterval, func() (bool, error) {
+		pods := getAllPods(*deploy)
+		beego.Info(fmt.Sprintf("Deployment [%s/%s] still has [%d] pods.", deploy.Namespace, deploy.Name, len(pods)))
+		if len(pods) == 0 {
 			return true, nil
 		}
 		return false, nil

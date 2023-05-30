@@ -5,6 +5,7 @@ import (
 	"math"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/astaxie/beego"
 	_ "github.com/go-sql-driver/mysql"
@@ -14,9 +15,15 @@ import (
 )
 
 const (
+	DefaultNetTestPeriodSec = 300
+
 	// The names of McmNetTestVMs are "CloudName+suffix"
 	mcmNetTestServerSuffix string = "-mcm-net-test-server"
 	mcmNetTestClientSuffix string = "-mcm-net-test-client"
+
+	// The names of mcm net test apps are "CloudName+suffix"
+	mcmNetTestServerAppSuffix string = "-mcm-nt-app-server"
+	mcmNetTestClientAppSuffix string = "-mcm-nt-app-client"
 
 	mcmNetTestCpu  int = 2    // number of logical CPU cores
 	mcmNetTestMem  int = 2048 // memory size unit: MB
@@ -25,12 +32,27 @@ const (
 	taintValue   string                   = "net-test"
 	taintEffect  apiv1.TaintEffect        = apiv1.TaintEffectNoSchedule
 	tolerationOp apiv1.TolerationOperator = apiv1.TolerationOpEqual
+
+	NetPerfDbName    string = "multi_cloud"
+	DbFieldCloudName string = "target_cloud_name" // field in the tables of network performance database
+	DbFieldRtt       string = "rtt_ms"            // field in the tables of network performance database
+)
+
+var (
+	NtContainerImage string = DockerRegistry + "/mcnettest:latest"
 )
 
 var NetTestTaint *apiv1.Taint = &apiv1.Taint{
 	Key:    McmKey,
 	Effect: taintEffect,
 	Value:  taintValue,
+}
+
+var NetTestToleration apiv1.Toleration = apiv1.Toleration{
+	Operator: tolerationOp,
+	Key:      McmKey,
+	Effect:   taintEffect,
+	Value:    taintValue,
 }
 
 // The function to measure network performance between every two clouds
@@ -68,9 +90,29 @@ func MeasNetPerf() {
 
 	beego.Info("Finish ensuring the network test preconditions for each cloud.")
 
-	// TODO
 	// Execute network test between every two clouds
 	beego.Info("Start to measure network performance between every two clouds.")
+
+	// Run server Deployments
+	if err := runNetTestServers(); err != nil {
+		outErr := fmt.Errorf("Cannot run network performance test servers, Error: %w", err)
+		beego.Error(outErr)
+		return
+	}
+
+	// Execute client Jobs
+	if err := executeNetTestClients(); err != nil {
+		outErr := fmt.Errorf("Cannot run network performance test servers, Error: %w", err)
+		beego.Error(outErr)
+		return
+	}
+
+	// Delete server Deployments
+	if err := deleteNetTestServers(); err != nil {
+		outErr := fmt.Errorf("Cannot delete network performance test servers, Error: %w", err)
+		beego.Error(outErr)
+		return
+	}
 
 	beego.Info("Finish measuring network performance between every two clouds.")
 }
@@ -183,6 +225,14 @@ func getNetTestClientName(cloud Iaas) string {
 	return strings.ToLower(cloud.ShowName()) + mcmNetTestClientSuffix
 }
 
+func getNetTestServerAppName(cloud Iaas) string {
+	return strings.ToLower(cloud.ShowName()) + mcmNetTestServerAppSuffix
+}
+
+func getNetTestClientAppName(cloud Iaas) string {
+	return strings.ToLower(cloud.ShowName()) + mcmNetTestClientAppSuffix
+}
+
 // Ensure that the VMs for network test are managed by Kubernetes
 func ensureK8sMg(vmMap map[string]*IaasVm) error {
 	for vmName, vm := range vmMap {
@@ -284,6 +334,7 @@ func InitNetPerfDB() error {
 	return nil
 }
 
+// Initialize the tables by specifying the name of the database in every command.
 func initDbTables() error {
 	beego.Info(fmt.Sprintf("Create and initialize tables for network performance in database [%s].", NetPerfDbName))
 	db, err := NewMySqlCli()
@@ -323,6 +374,7 @@ func initDbTables() error {
 	return nil
 }
 
+// Initialize the tables after executing the command `use <database name>;` without specifying the name of the database in every command.
 func initDbTablesWithUse() error {
 	beego.Info(fmt.Sprintf("Create and initialize tables for network performance in database [%s].", NetPerfDbName))
 	db, err := NewMySqlCli()
@@ -373,5 +425,135 @@ func initDbTablesWithUse() error {
 	}
 	beego.Info(fmt.Sprintf("Successful! Create and initialize tables for network performance in database [%s].", NetPerfDbName))
 
+	return nil
+}
+
+// run all network performance test servers
+func runNetTestServers() error {
+	beego.Info("Start to run the network performance test server Deployment on every net test server VM.")
+
+	// Do it in parallel
+	var wg sync.WaitGroup
+	var errsMu sync.Mutex // the slice in golang is not safe for concurrent read/write
+	var errs []error
+	for name, cloud := range Clouds {
+		beego.Info(fmt.Sprintf("Run the network test server for cloud %s", name))
+		wg.Add(1)
+		go func(c Iaas) {
+			defer wg.Done()
+			if err := runNetTestServer(c); err != nil {
+				outErr := fmt.Errorf("Cannot run the network test server for cloud [%s], error: [%w]", c.ShowName(), err)
+				beego.Error(outErr)
+				errsMu.Lock()
+				errs = append(errs, outErr)
+				errsMu.Unlock()
+				return
+			}
+		}(cloud)
+	}
+	wg.Wait()
+
+	if len(errs) != 0 {
+		sumErr := HandleErrSlice(errs)
+		outErr := fmt.Errorf("Failed to run the network performance test server Deployments, Error: %w", sumErr)
+		beego.Error(outErr)
+		return outErr
+	}
+
+	beego.Info("Finish running the network performance test server Deployment on every net test server VM.")
+	return nil
+}
+
+// run the network performance test server on a specified cloud
+func runNetTestServer(cloud Iaas) error {
+	serverVmName := getNetTestServerName(cloud)
+
+	var app K8sApp = K8sApp{
+		Name:        getNetTestServerAppName(cloud),
+		Replicas:    1,
+		HostNetwork: true, // Restricted by AAU CLAAUDIA network security rules, we can only use Host Network to cross different clouds
+		NodeName:    serverVmName,
+		Tolerations: []apiv1.Toleration{NetTestToleration},
+		Containers: []K8sContainer{
+			K8sContainer{
+				Name:  "nettestserver",
+				Image: NtContainerImage,
+			},
+		},
+	}
+
+	if err := CreateApplication(app); err != nil {
+		outErr := fmt.Errorf("Cloud [%s] type [%s], Create network test server application [%s], error: [%w].", cloud.ShowName(), cloud.ShowType(), app.Name, err)
+		beego.Error(outErr)
+		return outErr
+	}
+
+	beego.Info(fmt.Sprintf("Start to wait for the application [%s] running", app.Name))
+	if err := WaitForAppRunning(WaitForTimeOut, 10, app.Name); err != nil {
+		outErr := fmt.Errorf("Wait for application [%s] running, error: %w", app.Name, err)
+		beego.Error(outErr)
+		return outErr
+	}
+	beego.Info(fmt.Sprintf("The application [%s] is already running", app.Name))
+
+	return nil
+}
+
+// delete all network performance test servers
+func deleteNetTestServers() error {
+	beego.Info("Start to delete the network performance test server Deployment on every net test server VM.")
+
+	// Do it in parallel
+	var wg sync.WaitGroup
+	var errsMu sync.Mutex // the slice in golang is not safe for concurrent read/write
+	var errs []error
+	for name, cloud := range Clouds {
+		beego.Info(fmt.Sprintf("Delete the network test server for cloud %s", name))
+		wg.Add(1)
+		go func(c Iaas) {
+			defer wg.Done()
+			if err := deleteNetTestServer(c); err != nil {
+				outErr := fmt.Errorf("Cannot delete the network test server for cloud [%s], error: [%w]", c.ShowName(), err)
+				beego.Error(outErr)
+				errsMu.Lock()
+				errs = append(errs, outErr)
+				errsMu.Unlock()
+				return
+			}
+		}(cloud)
+	}
+	wg.Wait()
+
+	if len(errs) != 0 {
+		sumErr := HandleErrSlice(errs)
+		outErr := fmt.Errorf("Failed to delete the network performance test server Deployments, Error: %w", sumErr)
+		beego.Error(outErr)
+		return outErr
+	}
+
+	beego.Info("Finish deleting the network performance test server Deployment on every net test server VM.")
+	return nil
+}
+
+// delete the network performance test server on a specified cloud
+func deleteNetTestServer(cloud Iaas) error {
+	serverAppName := getNetTestServerAppName(cloud)
+
+	if err, _ := DeleteApplication(serverAppName); err != nil {
+		outErr := fmt.Errorf("Cloud [%s] type [%s], Delete network test server application [%s], error: [%w].", cloud.ShowName(), cloud.ShowType(), serverAppName, err)
+		beego.Error(outErr)
+		return outErr
+	}
+
+	beego.Info(fmt.Sprintf("The application [%s] is already deleted", serverAppName))
+
+	return nil
+}
+
+func executeNetTestClients() error {
+	beego.Info("Start to execute the network performance test client Job on every net test client VM.")
+	// TODO
+	time.Sleep(1 * time.Minute)
+	beego.Info("Finish executing the network performance test client Job on every net test client VM.")
 	return nil
 }

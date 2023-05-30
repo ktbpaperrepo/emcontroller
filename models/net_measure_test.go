@@ -13,3 +13,15 @@ func TestInitNetPerfDB(t *testing.T) {
 		t.Logf("Success")
 	}
 }
+
+func TestInnerRunNetTestServer(t *testing.T) {
+	InitDockerClient()
+	InitKubernetesClient()
+	InitClouds()
+	err := runNetTestServer(Clouds["NOKIA8"])
+	if err != nil {
+		t.Errorf("test error: %s", err.Error())
+	} else {
+		t.Logf("Success")
+	}
+}
