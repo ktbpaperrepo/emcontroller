@@ -11,6 +11,8 @@ PrivateTmp=true
 KillMode=control-group
 Restart=always
 RestartSec=10
+#StandardOutput=append:[[LOGPATH]]/emcontroller.log
+#StandardError=append:[[LOGPATH]]/emcontroller.log
 
 [Install]
 WantedBy=multi-user.target
