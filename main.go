@@ -35,7 +35,7 @@ func main() {
 	// viper is case-insensitive, so all keys in iaas.json should be lowercase
 	models.InitClouds()
 
-	if NetTestOn, err := beego.AppConfig.Bool("TurnOnNetTest"); err == nil && NetTestOn {
+	if netTestOn, err := beego.AppConfig.Bool("TurnOnNetTest"); err == nil && netTestOn {
 		beego.Info("Network performance test function is on.")
 		if err := models.InitNetPerfDB(); err != nil {
 			beego.Error(fmt.Sprintf("Initialize the database [%s] in MySQL failed, error: [%s]", models.NetPerfDbName, err.Error()))

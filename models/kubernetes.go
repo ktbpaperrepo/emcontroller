@@ -8,6 +8,7 @@ import (
 
 	"github.com/astaxie/beego"
 	v1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	apiv1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -92,6 +93,17 @@ func DeleteDeployment(namespace, name string) error {
 	return nil
 }
 
+func WaitForDeployDeleted(timeout int, checkInterval int, deploy *v1.Deployment) error {
+	return MyWaitFor(timeout, checkInterval, func() (bool, error) {
+		pods := getAllPods(*deploy)
+		beego.Info(fmt.Sprintf("Deployment [%s/%s] still has [%d] pods.", deploy.Namespace, deploy.Name, len(pods)))
+		if len(pods) == 0 {
+			return true, nil
+		}
+		return false, nil
+	})
+}
+
 func CreateService(s *apiv1.Service) (*apiv1.Service, error) {
 	ctx := context.Background()
 	createdService, err := kubernetesClient.CoreV1().Services(s.Namespace).Create(ctx, s, metav1.CreateOptions{})
@@ -130,6 +142,74 @@ func GetService(namespace, name string) (*apiv1.Service, error) {
 		return nil, err
 	}
 	return service, nil
+}
+
+func GetJob(namespace, name string) (*batchv1.Job, error) {
+	ctx := context.Background()
+	job, err := kubernetesClient.BatchV1().Jobs(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil && errors.IsNotFound(err) {
+		beego.Info(fmt.Sprintf("Job %s/%s not found: %s", namespace, name, err.Error()))
+		return nil, nil
+	}
+	if err != nil {
+		beego.Error(fmt.Sprintf("Get job %s/%s error: %s", namespace, name, err.Error()))
+		return nil, err
+	}
+	return job, nil
+}
+
+func CreateJob(j *batchv1.Job) (*batchv1.Job, error) {
+	ctx := context.Background()
+	createdJob, err := kubernetesClient.BatchV1().Jobs(j.Namespace).Create(ctx, j, metav1.CreateOptions{})
+	if err != nil {
+		beego.Error(fmt.Sprintf("Create job %s/%s error: %s", j.Namespace, j.Name, err.Error()))
+	}
+	return createdJob, err
+}
+
+func WaitForJobCompleted(timeout int, checkInterval int, jobNamespace string, jobName string) error {
+	return MyWaitFor(timeout, checkInterval, func() (bool, error) {
+		job, err := GetJob(jobNamespace, jobName)
+		if err != nil {
+			outErr := fmt.Errorf("Get Job [%s/%s], error: %w", jobNamespace, jobName, err)
+			beego.Error(outErr)
+			return false, nil
+		}
+
+		beego.Info(fmt.Sprintf("Job [%s/%s], job.Status.Active is [%d], job.Status.Failed is [%d], job.Status.Succeeded is [%d].", job.Namespace, job.Name, job.Status.Active, job.Status.Failed, job.Status.Succeeded))
+
+		if job.Status.Active > 0 {
+			beego.Info(fmt.Sprintf("Job [%s/%s] is running.", jobNamespace, jobName))
+			return false, nil
+		} else if job.Status.Failed > 0 {
+			outErr := fmt.Errorf("Job [%s/%s] has failed, error: %w", jobNamespace, jobName, err)
+			beego.Error(outErr)
+			return false, outErr
+		} else if job.Status.Succeeded > 0 {
+			beego.Info(fmt.Sprintf("Job [%s/%s] is completed.", jobNamespace, jobName))
+			return true, nil
+		} else {
+			beego.Info(fmt.Sprintf("Job [%s/%s] has not started yet.", jobNamespace, jobName))
+			return false, nil
+		}
+	})
+}
+
+func DeleteJob(namespace, name string) error {
+	ctx := context.Background()
+	deletePolicy := metav1.DeletePropagationForeground
+	err := kubernetesClient.BatchV1().Jobs(namespace).Delete(ctx, name, metav1.DeleteOptions{
+		PropagationPolicy: &deletePolicy,
+	})
+	if err != nil && errors.IsNotFound(err) {
+		beego.Info(fmt.Sprintf("Job %s/%s not found: %s, do nothing", namespace, name, err.Error()))
+		return nil
+	}
+	if err != nil {
+		beego.Error(fmt.Sprintf("Delete job %s/%s error: %s", namespace, name, err.Error()))
+		return err
+	}
+	return nil
 }
 
 func ListPods(namespace string, listOptions metav1.ListOptions) ([]apiv1.Pod, error) {

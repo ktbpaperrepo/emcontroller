@@ -260,7 +260,7 @@ func DeleteApplication(appName string) (error, int) {
 	beego.Info(fmt.Sprintf("Successful! Delete service [%s/%s]", KubernetesNamespace, svcName))
 
 	beego.Info(fmt.Sprintf("Start to wait for the deployment [%s/%s] deleted.", KubernetesNamespace, deployName))
-	if err := WaitForAppDeleted(WaitForTimeOut, 10, deploy); err != nil {
+	if err := WaitForDeployDeleted(WaitForTimeOut, 10, deploy); err != nil {
 		outErr := fmt.Errorf("Wait for the deployment [%s/%s] deleted, error: %w", KubernetesNamespace, deployName, err)
 		beego.Error(outErr)
 		return outErr, http.StatusInternalServerError
@@ -633,17 +633,6 @@ func WaitForAppRunning(timeout int, checkInterval int, appName string) error {
 		}
 		beego.Info(fmt.Sprintf("The status of the application [%s] is [%s]", appName, app.Status))
 		if app.Status == RunningStatus {
-			return true, nil
-		}
-		return false, nil
-	})
-}
-
-func WaitForAppDeleted(timeout int, checkInterval int, deploy *appsv1.Deployment) error {
-	return MyWaitFor(timeout, checkInterval, func() (bool, error) {
-		pods := getAllPods(*deploy)
-		beego.Info(fmt.Sprintf("Deployment [%s/%s] still has [%d] pods.", deploy.Namespace, deploy.Name, len(pods)))
-		if len(pods) == 0 {
 			return true, nil
 		}
 		return false, nil
