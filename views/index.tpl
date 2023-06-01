@@ -13,6 +13,8 @@
 <body>
     {{template "/public/header.tpl" .}}
     <h2 style="text-align:center">{{.Website}}</h2>
+    <br>
+    <h3 style="text-align:center">{{.VersionInfo}}</h3>
 
 </body>
 </html>

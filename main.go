@@ -15,10 +15,14 @@ import (
 var gitCommit, buildDate string
 
 func printVersion() {
-	fmt.Printf("Build time: [%s]. Git commit: [%s]\n", buildDate, gitCommit)
+	fmt.Printf("Build time: [%s]. Git commit: [%s]\n", models.BuildDate, models.GitCommit)
 }
 
 func main() {
+	// It seems that the -X parameter of go build -ldflags can only set the values for the variables in the main package
+	models.BuildDate = buildDate
+	models.GitCommit = gitCommit
+
 	versionFlag := flag.Bool("v", false, "Print the current version and exit.")
 	flag.Parse()
 	switch {
@@ -50,6 +54,9 @@ func main() {
 		}
 		beego.Info(fmt.Sprintf("The period of measuring network performance is %d seconds.", netTestPeriodSec))
 		go models.CronTaskTimer(models.MeasNetPerf, time.Duration(netTestPeriodSec)*time.Second)
+
+		models.NetTestFuncOn = true
+		models.NetTestPeriodSec = netTestPeriodSec
 	} else if err != nil {
 		beego.Error(fmt.Sprintf("Read \"TurnOnNetTest\" in app.conf, error: [%s]. We turn off the network performance test function.", err.Error()))
 	} else {

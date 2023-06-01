@@ -49,6 +49,10 @@ const (
 )
 
 var (
+	// the values will be set using go build -ldflags
+	GitCommit string
+	BuildDate string
+
 	DockerEngine   string = beego.AppConfig.String("dockerEngineIP") + ":" + beego.AppConfig.String("dockerEnginePort")
 	DockerRegistry string = beego.AppConfig.String("dockerRegistryIP") + ":" + beego.AppConfig.String("dockerRegistryPort")
 	KubeConfigPath string = beego.AppConfig.String("kubeConfigPath")

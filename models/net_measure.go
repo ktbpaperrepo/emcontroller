@@ -2,18 +2,21 @@ package models
 
 import (
 	"fmt"
+	"math"
+	"strings"
+	"sync"
+
 	"github.com/astaxie/beego"
 	_ "github.com/go-sql-driver/mysql"
 	batchv1 "k8s.io/api/batch/v1"
 	apiv1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"math"
-	"strings"
-	"sync"
 )
 
 const (
+	NetTestFuncOffMsg string = "Network State Measurement function is turned off."
+
 	DefaultNetTestPeriodSec = 300
 
 	// The names of McmNetTestVMs are "CloudName+suffix"
@@ -39,6 +42,8 @@ const (
 
 var (
 	NtContainerImage string = DockerRegistry + "/mcnettest:latest"
+	NetTestPeriodSec int
+	NetTestFuncOn    bool = false
 )
 
 var NetTestTaint *apiv1.Taint = &apiv1.Taint{

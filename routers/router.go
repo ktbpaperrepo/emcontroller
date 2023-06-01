@@ -32,4 +32,6 @@ func init() {
 	beego.Router("/k8sNode/:nodeName", &controllers.K8sNodeController{}, "delete:DeleteNode")
 	beego.Router("/k8sNode/add", &controllers.K8sNodeController{}, "get:AddNodes")
 	beego.Router("/k8sNode/doAdd", &controllers.K8sNodeController{}, "post:DoAddNodes")
+
+	beego.Router("/netState", &controllers.NetStateController{}, "get:Get")
 }
