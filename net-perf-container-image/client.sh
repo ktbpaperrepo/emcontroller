@@ -17,8 +17,23 @@ mysql_db_name="$7"
 this_cloud_name="$8"
 
 # measure the rtt between this cloud an the target cloud
-rtt_ms=$(ping -c 10 "${t_cloud_ip}" | tail -1 | awk '{print $4}' | cut -d '/' -f 2)
-echo "RTT from ${this_cloud_name} to ${t_cloud_name} is ${rtt_ms} ms."
+last_line_ping=$(ping -c 10 -w 30 "${t_cloud_ip}" | tail -1)
+
+# if reachable, the last line is like:
+# round-trip min/avg/max/stddev = 0.364/0.458/0.739/0.101 ms
+# contains '/' and '='
+# if unreachable, the last line is like:
+# 10 packets transmitted, 0 packets received, 100% packet loss
+# does not contain  '/' and '='
+rtt_ms=""
+if [[ "${last_line_ping}" == *=* && "${last_line_ping}" == */* ]]
+then
+  rtt_ms=$(echo "${last_line_ping}" | awk '{print $4}' | cut -d '/' -f 2)
+  echo "RTT from ${this_cloud_name} to ${t_cloud_name} is ${rtt_ms} ms."
+else
+  rtt_ms="250000" # very big value means unreachable
+  echo "Unreachable from ${this_cloud_name} to ${t_cloud_name}, so we set the RTT as ${rtt_ms} ms."
+fi
 
 # write the rtt in to the database
 mysql -u "${mysql_user}" --port "${mysql_port}" -h "${mysql_ip}" --password="${mysql_passwd}" -e "update ${mysql_db_name}.${this_cloud_name} set rtt_ms=${rtt_ms} where target_cloud_name='${t_cloud_name}'"
