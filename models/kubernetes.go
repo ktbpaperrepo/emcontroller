@@ -104,6 +104,10 @@ func DeleteDeployment(namespace, name string) error {
 
 func WaitForDeployDeleted(timeout int, checkInterval int, deploy *v1.Deployment) error {
 	return MyWaitFor(timeout, checkInterval, func() (bool, error) {
+		if deploy == nil {
+			beego.Info("Deployment does not exist.")
+			return true, nil
+		}
 		pods := getAllPods(*deploy)
 		beego.Info(fmt.Sprintf("Deployment [%s/%s] still has [%d] pods.", deploy.Namespace, deploy.Name, len(pods)))
 		if len(pods) == 0 {
