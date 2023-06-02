@@ -15,6 +15,9 @@
     <h2 style="text-align:center">{{.Website}}</h2>
     <br>
     <h3 style="text-align:center">{{.VersionInfo}}</h3>
+    <br>
+    <br>
+    <h2 style="text-align:center">Please use your browser's <span style="color: red; font-weight: bold;">Incognito Mode</span> to visit this website; otherwise, some cached resources will make some functions abnormal. </h2>
 
 </body>
 </html>

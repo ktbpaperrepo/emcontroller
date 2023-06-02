@@ -44,9 +44,9 @@
                     {{end}}
                 </td>
                 <td>
-                    {{if ne $app.NodePortIP ""}}
+                    {{range $idx, $nodePortIP := $app.NodePortIP}}
                         {{range $idx, $nodePort := $app.NodePort}}
-                        {{$app.NodePortIP}}:{{$nodePort}} <br>
+                            {{$nodePortIP}}:{{$nodePort}} <br>
                         {{end}}
                     {{end}}
                 </td>

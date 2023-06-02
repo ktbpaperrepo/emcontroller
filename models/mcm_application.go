@@ -76,7 +76,7 @@ type AppInfo struct {
 	SvcName       string    `json:"svcName"`
 	DeployName    string    `json:"deployName"`
 	ClusterIP     string    `json:"clusterIP"`
-	NodePortIP    string    `json:"nodePortIP"`
+	NodePortIP    []string  `json:"nodePortIP"`
 	SvcPort       []string  `json:"svcPort"`
 	NodePort      []string  `json:"nodePort"`
 	ContainerPort []string  `json:"containerPort"`
@@ -152,12 +152,25 @@ func getHosts(app appsv1.Deployment, pods []corev1.Pod) []PodHost {
 }
 
 // We list all pods of this deployment, and take the node IP of a pod as the NodePortIP.
-func getNodePortIP(app appsv1.Deployment, pods []corev1.Pod) string {
+func getNodePortIP(app appsv1.Deployment, pods []corev1.Pod) []string {
 	if len(pods) == 0 {
 		beego.Info(fmt.Sprintf("No pods belonging to the app %s/%s are got.", app.Namespace, app.Name))
-		return ""
+		return []string{}
 	}
-	return pods[0].Status.HostIP
+
+	var nodePortIPs []string
+	for i := 0; i < len(pods); i++ {
+		if len(pods[i].Status.HostIP) > 0 {
+			nodePortIPs = append(nodePortIPs, pods[i].Status.HostIP)
+		}
+	}
+
+	// We add kubernetes master IP only when this application is available.
+	if len(nodePortIPs) > 0 {
+		nodePortIPs = append(nodePortIPs, beego.AppConfig.String("k8sMasterIP"))
+	}
+
+	return nodePortIPs
 }
 
 func ListApplications() ([]AppInfo, error) {
@@ -208,7 +221,7 @@ func ListApplications() ([]AppInfo, error) {
 				if svc.Spec.Type == corev1.ServiceTypeNodePort {
 					thisApp.NodePortIP = getNodePortIP(d, pods)
 				} else {
-					thisApp.NodePortIP = ""
+					thisApp.NodePortIP = []string{}
 				}
 				for _, port := range svc.Spec.Ports {
 					thisApp.SvcPort = append(thisApp.SvcPort, strconv.FormatInt(int64(port.Port), 10))
@@ -217,7 +230,7 @@ func ListApplications() ([]AppInfo, error) {
 				}
 			} else {
 				thisApp.ClusterIP = ""
-				thisApp.NodePortIP = ""
+				thisApp.NodePortIP = []string{}
 				thisApp.SvcPort = []string{}
 				thisApp.NodePort = []string{}
 			}
@@ -314,7 +327,7 @@ func GetApplication(appName string) (AppInfo, error, int) {
 		if svc.Spec.Type == corev1.ServiceTypeNodePort {
 			outApp.NodePortIP = getNodePortIP(*deploy, pods)
 		} else {
-			outApp.NodePortIP = ""
+			outApp.NodePortIP = []string{}
 		}
 		for _, port := range svc.Spec.Ports {
 			outApp.SvcPort = append(outApp.SvcPort, strconv.FormatInt(int64(port.Port), 10))
@@ -323,7 +336,7 @@ func GetApplication(appName string) (AppInfo, error, int) {
 		}
 	} else {
 		outApp.ClusterIP = ""
-		outApp.NodePortIP = ""
+		outApp.NodePortIP = []string{}
 		outApp.SvcPort = []string{}
 		outApp.NodePort = []string{}
 	}
