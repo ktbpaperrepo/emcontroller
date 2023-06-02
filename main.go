@@ -33,11 +33,7 @@ func main() {
 		// continue with other stuff
 	}
 
-	models.InitDockerClient()
-	models.InitKubernetesClient()
-
-	// viper is case-insensitive, so all keys in iaas.json should be lowercase
-	models.InitClouds()
+	models.InitSomeThing()
 
 	if netTestOn, err := beego.AppConfig.Bool("TurnOnNetTest"); err == nil && netTestOn {
 		beego.Info("Network performance test function is on.")

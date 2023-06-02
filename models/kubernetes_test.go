@@ -10,7 +10,7 @@ import (
 
 // go test $GOPATH/src/emcontroller/models/ --run TestListDeployment -v -count=1
 func TestListDeployment(t *testing.T) {
-	InitKubernetesClient()
+	InitSomeThing()
 	testCases := []struct {
 		name          string
 		namespace     string
@@ -33,7 +33,7 @@ func TestListDeployment(t *testing.T) {
 }
 
 func TestGetDeployment(t *testing.T) {
-	InitKubernetesClient()
+	InitSomeThing()
 	testCases := []struct {
 		name          string
 		namespace     string
@@ -78,7 +78,7 @@ func TestGetDeployment(t *testing.T) {
 }
 
 func TestListNodes(t *testing.T) {
-	InitKubernetesClient()
+	InitSomeThing()
 	nodes, err := ListNodes(metav1.ListOptions{})
 	if err != nil {
 		t.Errorf("test error: %s", err.Error())
@@ -87,7 +87,7 @@ func TestListNodes(t *testing.T) {
 }
 
 func TestGetNode(t *testing.T) {
-	InitKubernetesClient()
+	InitSomeThing()
 	node, err := GetNode("node1", metav1.GetOptions{})
 	if err != nil {
 		t.Errorf("test error: %s", err.Error())
@@ -96,7 +96,7 @@ func TestGetNode(t *testing.T) {
 }
 
 func TestGetJoinCmd(t *testing.T) {
-	InitKubernetesClient()
+	InitSomeThing()
 	joinCmd, err := GetJoinCmd()
 	if err != nil {
 		t.Errorf("test error: %s", err.Error())
@@ -105,7 +105,7 @@ func TestGetJoinCmd(t *testing.T) {
 }
 
 func TestJoinOneNode(t *testing.T) {
-	InitKubernetesClient()
+	InitSomeThing()
 	joinCmd, err := GetJoinCmd()
 	if err != nil {
 		t.Errorf("GetJoinCmd error: %s", err.Error())
@@ -118,7 +118,7 @@ func TestJoinOneNode(t *testing.T) {
 }
 
 func TestJoinSeveralNodes(t *testing.T) {
-	InitKubernetesClient()
+	InitSomeThing()
 
 	vms := []IaasVm{
 		{Name: "node2", IPs: []string{"192.168.100.97"}},
@@ -139,7 +139,7 @@ func TestJoinSeveralNodes(t *testing.T) {
 }
 
 func TestUninstallNode(t *testing.T) {
-	InitKubernetesClient()
+	InitSomeThing()
 	err := UninstallNode("node1")
 	if err != nil {
 		t.Errorf("test error: %s", err.Error())

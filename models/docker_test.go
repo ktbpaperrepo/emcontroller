@@ -14,7 +14,7 @@ var generateFakeDockerClient client.Opt = client.WithHost("http://192.168.100.36
 
 // go test $GOPATH/src/emcontroller/models/ --run TestListImages -v
 func TestListImages(t *testing.T) {
-	InitDockerClient()
+	InitSomeThing()
 	err := generateFakeDockerClient(cli)
 	if err != nil {
 		t.Fatalf("Error: %s\n", err.Error())
@@ -39,7 +39,7 @@ func TestListImages(t *testing.T) {
 }
 
 func TestLoadImage(t *testing.T) {
-	InitDockerClient()
+	InitSomeThing()
 	err := generateFakeDockerClient(cli)
 	if err != nil {
 		t.Fatalf("Error: %s\n", err.Error())

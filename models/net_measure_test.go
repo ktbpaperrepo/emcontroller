@@ -5,7 +5,7 @@ import (
 )
 
 func TestInitNetPerfDB(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	err := InitNetPerfDB()
 	if err != nil {
 		t.Errorf("test error: %s", err.Error())
@@ -15,9 +15,7 @@ func TestInitNetPerfDB(t *testing.T) {
 }
 
 func TestInnerRunNetTestServer(t *testing.T) {
-	InitDockerClient()
-	InitKubernetesClient()
-	InitClouds()
+	InitSomeThing()
 	err := runNetTestServer(Clouds["NOKIA8"])
 	if err != nil {
 		t.Errorf("test error: %s", err.Error())

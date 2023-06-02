@@ -6,7 +6,7 @@ import (
 )
 
 func TestCheckResources(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	cloud := Clouds[testPCloudName]
 	resourceStatus, _ := cloud.CheckResources()
 	fmt.Printf("Limit: %#v\n", resourceStatus.Limit)
@@ -14,7 +14,7 @@ func TestCheckResources(t *testing.T) {
 }
 
 func TestGetVM(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	cloud := Clouds[testPCloudName]
 	vm, err := cloud.GetVM("100")
 	if err != nil {
@@ -24,17 +24,17 @@ func TestGetVM(t *testing.T) {
 }
 
 func TestListAllVMs(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	cloud := Clouds[testPCloudName]
-	vm, err := cloud.ListAllVMs()
+	vms, err := cloud.ListAllVMs()
 	if err != nil {
 		t.Errorf("error: %s\n", err.Error())
 	}
-	fmt.Printf("%+v\n", vm)
+	t.Logf("The result is: [%+v]\n", vms)
 }
 
 func TestCreateVM(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	cloud := Clouds[testOsCloudName]
 	vm, err := cloud.CreateVM("testiaasvm", 8, 16384, 150)
 	if err != nil {
@@ -44,7 +44,7 @@ func TestCreateVM(t *testing.T) {
 }
 
 func TestCreateVms(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	var vmsToCreate []IaasVm = []IaasVm{
 		{Cloud: "NOKIA10", Name: "node1", VCpu: 4, Ram: 32768, Storage: 100},
 		{Cloud: "NOKIA8", Name: "node2", VCpu: 4, Ram: 32768, Storage: 100},
@@ -60,7 +60,7 @@ func TestCreateVms(t *testing.T) {
 }
 
 func TestDeleteVM(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	cloud := Clouds[testOsCloudName]
 	err := cloud.DeleteVM("a3e02a3a-7213-462a-bbe4-5411a6f92be2")
 	if err != nil {
@@ -69,7 +69,7 @@ func TestDeleteVM(t *testing.T) {
 }
 
 func TestIsCreatedByMcm(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	cloud := Clouds[testOsCloudName]
 	is, err := cloud.IsCreatedByMcm("d2076789-f289-4ae1-b599-b8e20e7658b3")
 	if err != nil {

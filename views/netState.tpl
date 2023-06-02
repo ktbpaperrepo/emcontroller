@@ -17,9 +17,9 @@
         <br>
         <h3>{{ .netTestFuncOffMsg }}</h3>
     {{ else }}
+        <h4>The data is measured at intervals of {{.NetTestPeriodSec}} seconds.</h4>
         <br>
         <h3>Round-Trip Time (RTT) with unit millisecond (ms)</h3>
-        <h4>The data is measured at intervals of {{.NetTestPeriodSec}} seconds.</h4>
 
         {{ $netStateLen := len .netState }}
 

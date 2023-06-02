@@ -35,6 +35,15 @@ func initKubernetesClient() *kubernetes.Clientset {
 		beego.Error(fmt.Sprintf("Build kubernetes config error: %s", err.Error()))
 		panic(err)
 	}
+
+	// We weaken the throttling of the client, because in Multi-Cloud Manager, all requests to the Kubernetes use this only client. If we use the default throttling, the response will be very slow during the network performance measurement.
+	var clientQPS float32 = float32(len(Clouds) * len(Clouds) * 2)
+
+	config.QPS = clientQPS
+	config.Burst = int(clientQPS) * 2
+
+	beego.Info(fmt.Sprintf("Because multi-cloud manager manages %d clouds, we set the Kubernetes clientset QPS as %g and Burst as %d", len(Clouds), config.QPS, config.Burst))
+
 	client, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		beego.Error(fmt.Sprintf("Create kubernetes client error: %s", err.Error()))

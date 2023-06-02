@@ -6,9 +6,7 @@ import (
 )
 
 func TestGetNetState(t *testing.T) {
-	InitDockerClient()
-	InitKubernetesClient()
-	InitClouds()
+	InitSomeThing()
 	netState, err := GetNetState()
 	if err != nil {
 		t.Errorf("GetNetState() error: %s", err.Error())

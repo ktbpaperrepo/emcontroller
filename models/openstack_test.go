@@ -66,7 +66,7 @@ func TestGophercloud(t *testing.T) {
 }
 
 func TestNoConfig(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	for _, cloud := range Clouds {
 		switch cloud.(type) {
 		case *Openstack:
@@ -78,7 +78,7 @@ func TestNoConfig(t *testing.T) {
 }
 
 func TestGetComputeQuota(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	cloud := Clouds[testOsCloudName]
 	switch cloud.(type) {
 	case *Openstack:
@@ -88,7 +88,7 @@ func TestGetComputeQuota(t *testing.T) {
 }
 
 func TestGetNetworkQuota(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	cloud := Clouds[testOsCloudName]
 	switch cloud.(type) {
 	case *Openstack:
@@ -99,7 +99,7 @@ func TestGetNetworkQuota(t *testing.T) {
 }
 
 func TestGetStorageQuota(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	cloud := Clouds[testOsCloudName]
 	switch cloud.(type) {
 	case *Openstack:
@@ -110,7 +110,7 @@ func TestGetStorageQuota(t *testing.T) {
 }
 
 func TestListAllVolumes(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	cloud := Clouds[testOsCloudName]
 	switch cloud.(type) {
 	case *Openstack:
@@ -124,7 +124,7 @@ func TestListAllVolumes(t *testing.T) {
 }
 
 func TestCreateVolume(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	cloud := Clouds[testOsCloudName]
 	switch cloud.(type) {
 	case *Openstack:
@@ -140,7 +140,7 @@ func TestCreateVolume(t *testing.T) {
 }
 
 func TestGetVolume(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	cloud := Clouds[testOsCloudName]
 	switch cloud.(type) {
 	case *Openstack:
@@ -151,7 +151,7 @@ func TestGetVolume(t *testing.T) {
 }
 
 func TestDeleteVolume(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	cloud := Clouds[testOsCloudName]
 	switch cloud.(type) {
 	case *Openstack:
@@ -161,7 +161,7 @@ func TestDeleteVolume(t *testing.T) {
 }
 
 func TestListAllFavors(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	cloud := Clouds[testOsCloudName]
 	switch cloud.(type) {
 	case *Openstack:
@@ -173,7 +173,7 @@ func TestListAllFavors(t *testing.T) {
 }
 
 func TestGetFlavor(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	cloud := Clouds[testOsCloudName]
 	switch cloud.(type) {
 	case *Openstack:
@@ -184,7 +184,7 @@ func TestGetFlavor(t *testing.T) {
 }
 
 func TestListAllServers(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	cloud := Clouds[testOsCloudName]
 	switch cloud.(type) {
 	case *Openstack:
@@ -197,7 +197,7 @@ func TestListAllServers(t *testing.T) {
 }
 
 func TestCreateServer(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	cloud := Clouds[testOsCloudName]
 	switch cloud.(type) {
 	case *Openstack:
@@ -232,7 +232,7 @@ func TestCreateServer(t *testing.T) {
 }
 
 func TestGetServerAndExtractIPs(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	cloud := Clouds[testOsCloudName]
 	switch cloud.(type) {
 	case *Openstack:
@@ -247,7 +247,7 @@ func TestGetServerAndExtractIPs(t *testing.T) {
 }
 
 func TestDeleteServer(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	cloud := Clouds[testOsCloudName]
 	switch cloud.(type) {
 	case *Openstack:

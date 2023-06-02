@@ -8,7 +8,7 @@ import (
 const testPCloudName = "NOKIA8"
 
 func TestNodeStatus(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	for _, cloud := range Clouds {
 		switch cloud.(type) {
 		case *Proxmox:
@@ -19,7 +19,7 @@ func TestNodeStatus(t *testing.T) {
 }
 
 func TestListQemus(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	for _, cloud := range Clouds {
 		switch cloud.(type) {
 		case *Proxmox:
@@ -30,7 +30,7 @@ func TestListQemus(t *testing.T) {
 }
 
 func TestGetQemu(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	cloud := Clouds[testPCloudName]
 	qemu, err := cloud.(*Proxmox).GetQemu("100")
 	if err != nil {
@@ -40,7 +40,7 @@ func TestGetQemu(t *testing.T) {
 }
 
 func TestShutdownQemu(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	cloud := Clouds[testPCloudName]
 	resp, err := cloud.(*Proxmox).ShutdownQemu("102")
 	if err != nil {
@@ -50,7 +50,7 @@ func TestShutdownQemu(t *testing.T) {
 }
 
 func TestDeleteQemu(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	cloud := Clouds[testPCloudName]
 	resp, err := cloud.(*Proxmox).DeleteQemu("102")
 	if err != nil {
@@ -60,7 +60,7 @@ func TestDeleteQemu(t *testing.T) {
 }
 
 func TestGetTaskStatus(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	cloud := Clouds[testPCloudName]
 	taskStatus, err := cloud.(*Proxmox).GetTaskStatus("UPID:NOKIA8:00355E3A:0A280A27:63FC6BB4:qmclone:103:root@pam!multicloud:")
 	if err != nil {
@@ -70,7 +70,7 @@ func TestGetTaskStatus(t *testing.T) {
 }
 
 func TestGetQemuConfig(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	cloud := Clouds[testPCloudName]
 	config, err := cloud.(*Proxmox).GetQemuConfig("102")
 	if err != nil {
@@ -83,7 +83,7 @@ func TestGetQemuConfig(t *testing.T) {
 }
 
 func TestInnerGetDiskName(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	cloud := Clouds[testPCloudName]
 	diskName, err := cloud.(*Proxmox).getDiskName("102")
 	if err != nil {
@@ -93,7 +93,7 @@ func TestInnerGetDiskName(t *testing.T) {
 }
 
 func TestCloneQemu(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	cloud := Clouds[testPCloudName]
 	resp, err := cloud.(*Proxmox).CloneQemu("104", "testcode")
 	if err != nil {
@@ -103,7 +103,7 @@ func TestCloneQemu(t *testing.T) {
 }
 
 func TestConfigCoreRam(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	cloud := Clouds[testPCloudName]
 	resp, err := cloud.(*Proxmox).ConfigCoreRam(102, 16384, 8)
 	if err != nil {
@@ -116,7 +116,7 @@ func TestConfigCoreRam(t *testing.T) {
 }
 
 func TestResizeDisk(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	cloud := Clouds[testPCloudName]
 	resp, err := cloud.(*Proxmox).ResizeDisk(102, "scsi0", "150G")
 	if err != nil {
@@ -126,7 +126,7 @@ func TestResizeDisk(t *testing.T) {
 }
 
 func TestStartQemu(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	cloud := Clouds[testPCloudName]
 	resp, err := cloud.(*Proxmox).StartQemu(104)
 	if err != nil {
@@ -136,7 +136,7 @@ func TestStartQemu(t *testing.T) {
 }
 
 func TestGetNetInterfaces(t *testing.T) {
-	InitClouds()
+	InitSomeThing()
 	for _, cloud := range Clouds {
 		switch cloud.(type) {
 		case *Proxmox:
