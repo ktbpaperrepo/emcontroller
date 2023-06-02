@@ -166,7 +166,8 @@ func getNodePortIP(app appsv1.Deployment, pods []corev1.Pod) []string {
 	}
 
 	// We add kubernetes master IP only when this application is available.
-	if len(nodePortIPs) > 0 {
+	// And in our environment in AAU 5G Smart Production Lab, Kubernetes master node cannot access the container IPs (I do not have time to figure out why), so we only show Kubernetes Master IP for NodePort for the applications with HostNetwork.
+	if len(nodePortIPs) > 0 && pods[0].Spec.HostNetwork {
 		nodePortIPs = append(nodePortIPs, beego.AppConfig.String("k8sMasterIP"))
 	}
 
