@@ -15,6 +15,7 @@
 </head>
 <body onload="initImagePage()">
     {{template "/public/header.tpl" .}}
+    {{template "/public/nameRules.tpl" .}}
     <h2>Container Image</h2>
 
     <br>

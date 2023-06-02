@@ -1,0 +1,1 @@
+<h4 style="color:red;">Note: All names should follow the DNS label standard as defined in RFC 1123, which is "contain at most 63 characters", "contain only lowercase alphanumeric characters or '-'", "start with an alphanumeric character", and "end with an alphanumeric character".</h4>

@@ -16,6 +16,7 @@
 
 </head>
 <body onload="initBasic()">
+    {{template "/public/nameRules.tpl" .}}
     <a href="/application">
         <button>Back</button>
     </a>

@@ -14,6 +14,7 @@
 
 </head>
 <body onload="addOneNode()">
+    {{template "/public/nameRules.tpl" .}}
     <a href="/k8sNode">
         <button>Back</button>
     </a>

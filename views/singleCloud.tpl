@@ -12,6 +12,7 @@
 </head>
 <body>
     {{template "/public/header.tpl" .}}
+    {{template "/public/nameRules.tpl" .}}
     <a href="/cloud">
         <button>Back</button>
     </a>

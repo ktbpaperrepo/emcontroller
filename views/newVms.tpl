@@ -14,6 +14,7 @@
 
 </head>
 <body onload="addOneVm()">
+    {{template "/public/nameRules.tpl" .}}
     <a href="/vm">
         <button>Back</button>
     </a>
