@@ -43,9 +43,11 @@ func ListClouds() ([]CloudInfo, []error) {
 			}
 			thisCloud.Resources = resources
 
+			beego.Info(fmt.Sprintf("Cloud [%s], type [%s], resources [%+v]", thisCloud.Name, thisCloud.Type, thisCloud.Resources))
 			cloudListMu.Lock()
 			cloudList = append(cloudList, thisCloud)
 			cloudListMu.Unlock()
+			beego.Info(fmt.Sprintf("Cloud [%s], type [%s] added to cloudList", thisCloud.Name, thisCloud.Type))
 		}(cloud)
 	}
 	wg.Wait()
