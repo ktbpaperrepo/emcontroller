@@ -27,6 +27,8 @@ func (c *NetStateController) Get() {
 	}
 }
 
+// test command:
+// curl -i -X GET -H Content-Type:application/json http://172.27.15.31:20000/netState
 func (c *NetStateController) GetJson() {
 	if !models.NetTestFuncOn {
 		beego.Info(models.NetTestFuncOffMsg)
