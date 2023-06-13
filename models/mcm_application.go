@@ -18,13 +18,15 @@ import (
 
 // used for the input of creating applications, so we need to define the json
 type K8sApp struct {
-	Name         string              `json:"name"`
-	Replicas     int32               `json:"replicas"`
-	HostNetwork  bool                `json:"hostNetwork"`
-	NodeName     string              `json:"nodeName,omitempty"`
-	NodeSelector map[string]string   `json:"nodeSelector,omitempty"`
-	Tolerations  []corev1.Toleration `json:"tolerations,omitempty"`
-	Containers   []K8sContainer      `json:"containers"`
+	Name          string              `json:"name"`
+	Replicas      int32               `json:"replicas"`
+	HostNetwork   bool                `json:"hostNetwork"`
+	NodeName      string              `json:"nodeName,omitempty"`
+	NodeSelector  map[string]string   `json:"nodeSelector,omitempty"`
+	Tolerations   []corev1.Toleration `json:"tolerations,omitempty"`
+	Containers    []K8sContainer      `json:"containers"`
+	Priority      int                 `json:"priority"`
+	AutoScheduled bool                `json:"autoScheduled"`
 }
 
 type K8sContainer struct {
@@ -82,6 +84,8 @@ type AppInfo struct {
 	ContainerPort []string  `json:"containerPort"`
 	Hosts         []PodHost `json:"hosts"`
 	Status        string    `json:"status"`
+	Priority      int       `json:"priority"`
+	AutoScheduled bool      `json:"autoScheduled"`
 }
 
 type PodHost struct {
@@ -194,47 +198,7 @@ func ListApplications() ([]AppInfo, error) {
 		go func(d appsv1.Deployment) {
 			defer wg.Done()
 
-			var thisApp AppInfo
-			var appName, svcName string
-			appName = strings.TrimSuffix(d.Name, DeploymentSuffix)
-			svcName = appName + ServiceSuffix
-
-			pods := getAllPods(d)
-
-			thisApp.AppName = appName
-			thisApp.SvcName = svcName
-			thisApp.DeployName = d.Name
-			thisApp.Hosts = getHosts(d, pods)
-
-			// set the status of this application
-			if appRunning(d) {
-				thisApp.Status = RunningStatus
-			} else {
-				thisApp.Status = NotStableStatus
-			}
-
-			svc, err := GetService(KubernetesNamespace, svcName)
-			if err != nil {
-				beego.Error(fmt.Sprintf("GetService %s/%s error: %s", KubernetesNamespace, svcName, err.Error()))
-			}
-			if svc != nil {
-				thisApp.ClusterIP = svc.Spec.ClusterIP
-				if svc.Spec.Type == corev1.ServiceTypeNodePort {
-					thisApp.NodePortIP = getNodePortIP(d, pods)
-				} else {
-					thisApp.NodePortIP = []string{}
-				}
-				for _, port := range svc.Spec.Ports {
-					thisApp.SvcPort = append(thisApp.SvcPort, strconv.FormatInt(int64(port.Port), 10))
-					thisApp.NodePort = append(thisApp.NodePort, strconv.FormatInt(int64(port.NodePort), 10))
-					thisApp.ContainerPort = append(thisApp.ContainerPort, port.TargetPort.String())
-				}
-			} else {
-				thisApp.ClusterIP = ""
-				thisApp.NodePortIP = []string{}
-				thisApp.SvcPort = []string{}
-				thisApp.NodePort = []string{}
-			}
+			thisApp, _ := getAppInfoDeploy(d)
 
 			appListMu.Lock()
 			appList = append(appList, thisApp)
@@ -244,6 +208,100 @@ func ListApplications() ([]AppInfo, error) {
 	wg.Wait()
 
 	return appList, nil
+}
+
+func GetApplication(appName string) (AppInfo, error, int) {
+	deployName := appName + DeploymentSuffix
+
+	deploy, err := GetDeployment(KubernetesNamespace, deployName)
+	if err != nil {
+		outErr := fmt.Errorf("Get the deployment of app [%s], error: %w", appName, err)
+		beego.Error(outErr)
+		return AppInfo{}, outErr, http.StatusInternalServerError
+	}
+	if deploy == nil {
+		outErr := fmt.Errorf("The deployment of app [%s] not found", appName)
+		beego.Error(outErr)
+		return AppInfo{}, outErr, http.StatusNotFound
+	}
+
+	outApp, err := getAppInfoDeploy(*deploy)
+	if err != nil {
+		outErr := fmt.Errorf("getAppInfoDeploy, app [%s], error: %w", appName, err)
+		beego.Error(outErr)
+		return outApp, outErr, http.StatusInternalServerError
+	}
+
+	return outApp, nil, http.StatusOK
+}
+
+// get application info from a Kubernetes deployment
+func getAppInfoDeploy(d appsv1.Deployment) (AppInfo, error) {
+	var thisApp AppInfo
+	var appName, svcName string
+	appName = strings.TrimSuffix(d.Name, DeploymentSuffix)
+	svcName = appName + ServiceSuffix
+
+	pods := getAllPods(d)
+
+	thisApp.AppName = appName
+	thisApp.SvcName = svcName
+	thisApp.DeployName = d.Name
+	thisApp.Hosts = getHosts(d, pods)
+
+	// set the status of this application
+	if appRunning(d) {
+		thisApp.Status = RunningStatus
+	} else {
+		thisApp.Status = NotStableStatus
+	}
+
+	// read annotation to get the autoschedule value
+	autoScheduled, err := strconv.ParseBool(d.Annotations[AutoScheduledAnno])
+	if err != nil {
+		beego.Info(fmt.Sprintf("Parse %s to bool, error [%s], app [%s] AutoScheduled should be automatically set to \"false\".", d.Annotations[AutoScheduledAnno], err.Error(), appName))
+	}
+	thisApp.AutoScheduled = autoScheduled
+
+	// read annotation to get the priority value
+	if priority, err := strconv.Atoi(d.Annotations[PriorityAnno]); err == nil {
+		thisApp.Priority = priority
+	} else {
+		beego.Info(fmt.Sprintf("Parse %s to int, error [%s], app [%s] Priority should be automatically set to \"0\".", d.Annotations[PriorityAnno], err.Error(), appName))
+		thisApp.Priority = 0
+	}
+
+	svc, err := GetService(KubernetesNamespace, svcName)
+	if err != nil {
+		outErr := fmt.Errorf("GetService %s/%s error: %w", KubernetesNamespace, svcName, err)
+		beego.Error(outErr)
+
+		thisApp.ClusterIP = ""
+		thisApp.NodePortIP = []string{}
+		thisApp.SvcPort = []string{}
+		thisApp.NodePort = []string{}
+
+		return thisApp, outErr
+	}
+	if svc != nil {
+		thisApp.ClusterIP = svc.Spec.ClusterIP
+		if svc.Spec.Type == corev1.ServiceTypeNodePort {
+			thisApp.NodePortIP = getNodePortIP(d, pods)
+		} else {
+			thisApp.NodePortIP = []string{}
+		}
+		for _, port := range svc.Spec.Ports {
+			thisApp.SvcPort = append(thisApp.SvcPort, strconv.FormatInt(int64(port.Port), 10))
+			thisApp.NodePort = append(thisApp.NodePort, strconv.FormatInt(int64(port.NodePort), 10))
+			thisApp.ContainerPort = append(thisApp.ContainerPort, port.TargetPort.String())
+		}
+	} else {
+		thisApp.ClusterIP = ""
+		thisApp.NodePortIP = []string{}
+		thisApp.SvcPort = []string{}
+		thisApp.NodePort = []string{}
+	}
+	return thisApp, nil
 }
 
 func DeleteApplication(appName string) (error, int) {
@@ -285,68 +343,13 @@ func DeleteApplication(appName string) (error, int) {
 	return nil, http.StatusOK
 }
 
-func GetApplication(appName string) (AppInfo, error, int) {
-	deployName := appName + DeploymentSuffix
-	svcName := appName + ServiceSuffix
-
-	deploy, err := GetDeployment(KubernetesNamespace, deployName)
-	if err != nil {
-		outErr := fmt.Errorf("Get the deployment of app [%s], error: %w", appName, err)
-		beego.Error(outErr)
-		return AppInfo{}, outErr, http.StatusInternalServerError
-	}
-	if deploy == nil {
-		outErr := fmt.Errorf("The deployment of app [%s] not found", appName)
-		beego.Error(outErr)
-		return AppInfo{}, outErr, http.StatusNotFound
-	}
-	svc, err := GetService(KubernetesNamespace, svcName)
-	if err != nil {
-		outErr := fmt.Errorf("Get the service of app [%s], error: %w", appName, err)
-		beego.Error(outErr)
-		return AppInfo{}, outErr, http.StatusInternalServerError
-	}
-
-	var outApp AppInfo
-
-	pods := getAllPods(*deploy)
-
-	outApp.AppName = appName
-	outApp.SvcName = svcName
-	outApp.DeployName = deploy.Name
-	outApp.Hosts = getHosts(*deploy, pods)
-
-	// set the status of this application
-	if appRunning(*deploy) {
-		outApp.Status = RunningStatus
-	} else {
-		outApp.Status = NotStableStatus
-	}
-
-	if svc != nil {
-		outApp.ClusterIP = svc.Spec.ClusterIP
-		if svc.Spec.Type == corev1.ServiceTypeNodePort {
-			outApp.NodePortIP = getNodePortIP(*deploy, pods)
-		} else {
-			outApp.NodePortIP = []string{}
-		}
-		for _, port := range svc.Spec.Ports {
-			outApp.SvcPort = append(outApp.SvcPort, strconv.FormatInt(int64(port.Port), 10))
-			outApp.NodePort = append(outApp.NodePort, strconv.FormatInt(int64(port.NodePort), 10))
-			outApp.ContainerPort = append(outApp.ContainerPort, port.TargetPort.String())
-		}
-	} else {
-		outApp.ClusterIP = ""
-		outApp.NodePortIP = []string{}
-		outApp.SvcPort = []string{}
-		outApp.NodePort = []string{}
-	}
-
-	return outApp, nil, http.StatusOK
-}
-
 // for an application, we need to create a Deployment and a Service for it
 func CreateApplication(app K8sApp) error {
+	if err := ValidateK8sApp(app); err != nil {
+		outErr := fmt.Errorf("Validate app [%s] error: %w", app.Name, err)
+		beego.Error(outErr)
+		return outErr
+	}
 
 	// Kubernetes labels of the pods of this application
 	labels := map[string]string{
@@ -473,7 +476,7 @@ func CreateApplication(app K8sApp) error {
 		// get ports
 		for j := 0; j < len(app.Containers[i].Ports); j++ {
 			var onePort PortInfo = app.Containers[i].Ports[j]
-			beego.Info(fmt.Sprintf("Container [%d], Port [%d]: [%#v].", i, j, onePort))
+			beego.Info(fmt.Sprintf("Container [%d], Port [%d]: [%+v].", i, j, onePort))
 
 			// put port information into the container of the deployment
 			thisContainer.Ports = append(thisContainer.Ports, corev1.ContainerPort{
@@ -581,7 +584,16 @@ func CreateApplication(app K8sApp) error {
 		deployment.Spec.Template.Spec.Tolerations = app.Tolerations
 	}
 
-	beego.Info(fmt.Sprintf("Create deployment [%#v]", deployment))
+	// for auto scheduled applications, we add this annotation, to enable it to be migrated
+	if app.AutoScheduled {
+		if deployment.Annotations == nil { // avoid panic
+			deployment.Annotations = make(map[string]string)
+		}
+		deployment.Annotations[AutoScheduledAnno] = strconv.FormatBool(app.AutoScheduled)
+		deployment.Annotations[PriorityAnno] = strconv.Itoa(app.Priority)
+	}
+
+	beego.Info(fmt.Sprintf("Create deployment [%+v]", deployment))
 	beego.Info(fmt.Sprintf(""))
 	deploymentJson, err := json.Marshal(deployment)
 	if err != nil {
@@ -591,7 +603,7 @@ func CreateApplication(app K8sApp) error {
 
 	createdDeployment, err := CreateDeployment(deployment)
 	if err != nil {
-		outErr := fmt.Errorf("Create deployment [%#v] error: %w", deployment, err)
+		outErr := fmt.Errorf("Create deployment [%+v] error: %w", deployment, err)
 		beego.Error(outErr)
 		return outErr
 	}
@@ -614,7 +626,7 @@ func CreateApplication(app K8sApp) error {
 			service.Spec.Type = corev1.ServiceTypeNodePort
 		}
 
-		beego.Info(fmt.Sprintf("Create service [%#v]", service))
+		beego.Info(fmt.Sprintf("Create service [%+v]", service))
 		beego.Info(fmt.Sprintf(""))
 		serviceJson, err := json.Marshal(service)
 		if err != nil {
@@ -626,7 +638,7 @@ func CreateApplication(app K8sApp) error {
 
 		createdService, err := CreateService(service)
 		if err != nil {
-			outErr := fmt.Errorf("Create service [%#v] error: %w", service, err)
+			outErr := fmt.Errorf("Create service [%+v] error: %w", service, err)
 			beego.Error(outErr)
 			return outErr
 		}

@@ -49,7 +49,7 @@ func GetNetState() (map[string]map[string]NetworkState, error) {
 		return nil, outErr
 	}
 
-	beego.Info("Finish running the network performance test server Deployment on every net test server VM.")
+	beego.Info("Finish checking network state.")
 	return allNetSt, nil
 }
 

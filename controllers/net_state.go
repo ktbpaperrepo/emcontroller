@@ -53,26 +53,29 @@ func (c *NetStateController) GetJson() {
 }
 
 func (c *NetStateController) GetForm() {
-	netState, err := models.GetNetState()
-	if err != nil {
-		outErr := fmt.Errorf("Check network state from MySQL Error: %w", err)
-		beego.Error(outErr)
-		c.Ctx.ResponseWriter.Header().Set("Content-Type", "text/plain")
-		c.Data["errorMessage"] = outErr.Error()
-		c.TplName = "error.tpl"
-		return
-	}
+	if models.NetTestFuncOn {
+		netState, err := models.GetNetState()
+		if err != nil {
+			outErr := fmt.Errorf("Check network state from MySQL Error: %w", err)
+			beego.Error(outErr)
+			c.Ctx.ResponseWriter.Header().Set("Content-Type", "text/plain")
+			c.Data["errorMessage"] = outErr.Error()
+			c.TplName = "error.tpl"
+			return
+		}
 
-	// we should give an order to the frontend to read the information in the map
-	var netStateKeys []string
-	for key, _ := range netState {
-		netStateKeys = append(netStateKeys, key)
-	}
+		// we should give an order to the frontend to read the information in the map
+		var netStateKeys []string
+		for key, _ := range netState {
+			netStateKeys = append(netStateKeys, key)
+		}
 
-	c.Data["netTestFuncOffMsg"] = models.NetTestFuncOffMsg
+		c.Data["NetTestPeriodSec"] = models.NetTestPeriodSec
+		c.Data["netStateKeys"] = netStateKeys
+		c.Data["netState"] = netState
+	} else {
+		c.Data["netTestFuncOffMsg"] = models.NetTestFuncOffMsg
+	}
 	c.Data["NetTestFuncOn"] = models.NetTestFuncOn
-	c.Data["NetTestPeriodSec"] = models.NetTestPeriodSec
-	c.Data["netStateKeys"] = netStateKeys
-	c.Data["netState"] = netState
 	c.TplName = "netState.tpl"
 }

@@ -25,6 +25,8 @@ func (c *ApplicationController) Get() {
 }
 
 // DeleteApp delete the deployment and service of the application
+// test command:
+// curl -i -X DELETE http://localhost:20000/application/test
 func (c *ApplicationController) DeleteApp() {
 	appName := c.Ctx.Input.Param(":appName")
 
@@ -266,7 +268,7 @@ func (c *ApplicationController) DoNewAppForm() {
 				c.TplName = "error.tpl"
 				return
 			}
-			beego.Info(fmt.Sprintf("Container [%d], Port [%d]: [%#v].", i, j, onePort))
+			beego.Info(fmt.Sprintf("Container [%d], Port [%d]: [%+v].", i, j, onePort))
 			thisContainer.Ports = append(thisContainer.Ports, onePort)
 		}
 
@@ -286,7 +288,7 @@ func (c *ApplicationController) DoNewAppForm() {
 
 	// Use the parsed app to create an application
 	if err := models.CreateApplication(app); err != nil {
-		outErr := fmt.Errorf("Create application %v, error: %w", app, err)
+		outErr := fmt.Errorf("Create application %+v, error: %w", app, err)
 		beego.Error(outErr)
 		c.Ctx.ResponseWriter.Header().Set("Content-Type", "text/plain")
 		c.Data["errorMessage"] = outErr.Error()
@@ -299,7 +301,7 @@ func (c *ApplicationController) DoNewAppForm() {
 
 // Used for json request, input is json
 // test command:
-// curl -i -X POST -H Content-Type:application/json -d '{"name":"test","replicas":2,"hostNetwork":true,"tolerations":[{"key":"mcm","operator":"Equal","effect": "NoSchedule","value": "net-test"}],"nodeName":"node1","nodeSelector":{"lnginx":"isnginx","lnginx2":"isnginx2"},"containers":[{"name":"printtime","image":"172.27.15.31:5000/printtime:v1","workDir":"/printtime","resources":{"limits":{"memory":"30Mi","cpu":"200m","storage":"2Gi"},"requests":{"memory":"20Mi","cpu":"100m","storage":"1Gi"}},"commands":["bash"],"args":["-c","python3 -u main.py > $LOGFILE"],"env":[{"name":"PARAMETER1","value":"testRenderenv1"},{"name":"LOGFILE","value":"/tmp/234/printtime.log"}],"mounts":[{"vmPath":"/tmp/asdff","containerPath":"/tmp/234"},{"vmPath":"/tmp/uyyyy","containerPath":"/tmp/2345"}],"ports":null},{"name":"nginx","image":"172.27.15.31:5000/nginx:1.17.1","workDir":"","resources":{"limits":{"memory":"","cpu":"","storage":""},"requests":{"memory":"","cpu":"","storage":""}},"commands":null,"args":null,"env":null,"mounts":null,"ports":[{"containerPort":80,"name":"fsd","protocol":"tcp","servicePort":"80","nodePort":"30001"}]},{"name":"ubuntu","image":"172.27.15.31:5000/ubuntu:latest","workDir":"","resources":{"limits":{"memory":"","cpu":"","storage":""},"requests":{"memory":"","cpu":"","storage":""}},"commands":["bash","-c","while true;do sleep 10;done"],"args":null,"env":[{"name":"asfasf","value":"asfasf"},{"name":"asdfsdf","value":"sfsdf"}],"mounts":[{"vmPath":"/tmp/asdff","containerPath":"/tmp/log"}],"ports":null}]}' http://localhost:20000/doNewApplication
+// curl -i -X POST -H Content-Type:application/json -d '{"priority":-1,"autoScheduled":true,"name":"test","replicas":2,"hostNetwork":true,"tolerations":[{"key":"mcm","operator":"Equal","effect": "NoSchedule","value": "net-test"}],"nodeName":"node1","nodeSelector":{"lnginx":"isnginx","lnginx2":"isnginx2"},"containers":[{"name":"printtime","image":"172.27.15.31:5000/printtime:v1","workDir":"/printtime","resources":{"limits":{"memory":"30Mi","cpu":"200m","storage":"2Gi"},"requests":{"memory":"20Mi","cpu":"100m","storage":"1Gi"}},"commands":["bash"],"args":["-c","python3 -u main.py > $LOGFILE"],"env":[{"name":"PARAMETER1","value":"testRenderenv1"},{"name":"LOGFILE","value":"/tmp/234/printtime.log"}],"mounts":[{"vmPath":"/tmp/asdff","containerPath":"/tmp/234"},{"vmPath":"/tmp/uyyyy","containerPath":"/tmp/2345"}],"ports":null},{"name":"nginx","image":"172.27.15.31:5000/nginx:1.17.1","workDir":"","resources":{"limits":{"memory":"","cpu":"","storage":""},"requests":{"memory":"","cpu":"","storage":""}},"commands":null,"args":null,"env":null,"mounts":null,"ports":[{"containerPort":80,"name":"fsd","protocol":"tcp","servicePort":"80","nodePort":"30001"}]},{"name":"ubuntu","image":"172.27.15.31:5000/ubuntu:latest","workDir":"","resources":{"limits":{"memory":"","cpu":"","storage":""},"requests":{"memory":"","cpu":"","storage":""}},"commands":["bash","-c","while true;do sleep 10;done"],"args":null,"env":[{"name":"asfasf","value":"asfasf"},{"name":"asdfsdf","value":"sfsdf"}],"mounts":[{"vmPath":"/tmp/asdff","containerPath":"/tmp/log"}],"ports":null}]}' http://localhost:20000/doNewApplication
 func (c *ApplicationController) DoNewAppJson() {
 	var app models.K8sApp
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &app); err != nil {
@@ -313,11 +315,11 @@ func (c *ApplicationController) DoNewAppJson() {
 		return
 	}
 
-	beego.Info(fmt.Sprintf("From json input, we successfully parsed application [%v]", app))
+	beego.Info(fmt.Sprintf("From json input, we successfully parsed application [%+v]", app))
 
 	// Use the parsed app to create an application
 	if err := models.CreateApplication(app); err != nil {
-		outErr := fmt.Errorf("Create application %v, error: %w", app, err)
+		outErr := fmt.Errorf("Create application %+v, error: %w", app, err)
 		beego.Error(outErr)
 		c.Ctx.ResponseWriter.WriteHeader(http.StatusInternalServerError)
 		c.Ctx.WriteString(outErr.Error())
