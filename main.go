@@ -38,7 +38,9 @@ func main() {
 	if netTestOn, err := beego.AppConfig.Bool("TurnOnNetTest"); err == nil && netTestOn {
 		beego.Info("Network performance test function is on.")
 		if err := models.InitNetPerfDB(); err != nil {
-			beego.Error(fmt.Sprintf("Initialize the database [%s] in MySQL failed, error: [%s]", models.NetPerfDbName, err.Error()))
+			outErr := fmt.Errorf("Initialize the database [%s] in MySQL failed, error: [%w]", models.NetPerfDbName, err)
+			beego.Error(outErr)
+			panic(outErr)
 		}
 		// When multi-cloud manager starts up, we do measure the network performance once instantly, because we need the network performance information to schedule applications when deploying them.
 		models.MeasNetPerf()

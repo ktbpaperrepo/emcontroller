@@ -1,6 +1,7 @@
 package models
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"time"
@@ -57,7 +58,7 @@ func ListDbs() ([]string, error) {
 func DeleteDb(dbName string) error {
 	db, err := NewMySqlCli()
 	if err != nil {
-		outErr := fmt.Errorf("Create MySQL client, error [%w].", err)
+		outErr := fmt.Errorf("Delete MySQL client, error [%w].", err)
 		beego.Error(outErr)
 		return outErr
 	}
@@ -65,7 +66,13 @@ func DeleteDb(dbName string) error {
 
 	query := fmt.Sprintf("drop database %s", dbName)
 
-	result, err := db.Query(query)
+	// I set a timeout for this delete database request,
+	// because I find a problem:
+	// when the VM of the MySQL server has not space left on the disk, the "delete database request" will be stuck forever without a timeout at the client side.
+	ctx, cancel := context.WithTimeout(context.Background(), ReqShortTimeout)
+	defer cancel()
+
+	result, err := db.QueryContext(ctx, query)
 	if err != nil {
 		outErr := fmt.Errorf("Query [%s], error [%w].", query, err)
 		beego.Error(outErr)

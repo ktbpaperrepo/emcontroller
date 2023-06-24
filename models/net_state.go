@@ -1,6 +1,7 @@
 package models
 
 import (
+	"context"
 	"fmt"
 	"github.com/astaxie/beego"
 	"sync"
@@ -65,7 +66,10 @@ func GetNetStateOneCloud(cloudName string) (map[string]NetworkState, error) {
 
 	query := fmt.Sprintf("select * from %s.%s", NetPerfDbName, cloudName)
 
-	result, err := db.Query(query)
+	// without timeout, this request may be stuck forever if there are some problems
+	ctx, cancel := context.WithTimeout(context.Background(), ReqShortTimeout)
+	defer cancel()
+	result, err := db.QueryContext(ctx, query)
 	if err != nil {
 		outErr := fmt.Errorf("Query [%s], error [%w].", query, err)
 		beego.Error(outErr)

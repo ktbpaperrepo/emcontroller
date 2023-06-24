@@ -27,6 +27,8 @@ const (
 	SshPort     int           = 22
 	SshTimeout  time.Duration = 10 * time.Second
 
+	ReqShortTimeout time.Duration = 10 * time.Second
+
 	Os404Substr string = "itemNotFound" // this string exists in the "not found" error of Openstack
 
 	DiskInitCmd string = "fsname=$(df -h / | grep -v Filesystem | awk '{print $1}'); diskname=$(echo ${fsname} | sed 's/2$//'); echo \"d\n2\nn\n2\n\n\nNo\nw\" | fdisk ${diskname}; resize2fs ${fsname}"
