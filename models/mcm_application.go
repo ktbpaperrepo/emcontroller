@@ -524,7 +524,14 @@ func CreateApplication(app K8sApp) error {
 		containers = append(containers, thisContainer)
 	}
 
+	// When a deployment's Replicas is 1, we should set the maxUnavailable as 0, and MaxSurge as 1. Then minAvailable will be 1 - 0 = 1.
+	// In this condition, only when the new pod is available, the availablePodCount will be 2 > 1, then, the old pod will be deleted. This is seamless.
+	// If we set maxUnavailable as 1, and MaxSurge as 1, the old pod will be deleted before the new pod is available, so it will not be seamless.
 	maxUnavailable := intstr.FromInt(1)
+	if app.Replicas == 1 {
+		beego.Info(fmt.Sprintf("app [%s], app.Replicas is 1, so we set maxUnavailable as 0, to enable seamless rolling update.", app.Name))
+		maxUnavailable = intstr.FromInt(0)
+	}
 	maxSurge := intstr.FromInt(1)
 
 	deployment := &appsv1.Deployment{
