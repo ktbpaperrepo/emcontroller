@@ -396,6 +396,17 @@ func CreateApplication(app K8sApp) error {
 		var thisContainer corev1.Container = corev1.Container{
 			ImagePullPolicy: corev1.PullIfNotPresent,
 		}
+
+		// After rolling update, if we want the rolling update seamless and does not have downtime, we need to give some time to the loadbalancing update before the signal "kill -15" to delete the old pod, so we set this preStop hook to all containers by default.
+		var defaultLifecycle *corev1.Lifecycle = &corev1.Lifecycle{
+			PreStop: &corev1.LifecycleHandler{
+				Exec: &corev1.ExecAction{
+					Command: []string{"/bin/sh", "-c", "sleep 10"},
+				},
+			},
+		}
+		thisContainer.Lifecycle = defaultLifecycle
+
 		beego.Info(fmt.Sprintf("Get the configuration of container %d", i))
 		thisContainer.Name = app.Containers[i].Name
 		thisContainer.Image = app.Containers[i].Image
