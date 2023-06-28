@@ -1,6 +1,7 @@
 package models
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"strings"
@@ -38,6 +39,8 @@ const (
 	NetPerfDbName    string = "multi_cloud"
 	DbFieldCloudName string = "target_cloud_name" // field in the tables of network performance database
 	DbFieldRtt       string = "rtt_ms"            // field in the tables of network performance database
+
+	UnreachableRttMs float64 = 250000 // when a cloud is unreachable from another, in the database, we set this value as the RTT between them. This value should be consistent with that in "net-perf-container-image/client.sh"
 )
 
 var (
@@ -428,7 +431,7 @@ func initDbTablesWithUse() error {
 
 		for targetCloudName, _ := range Clouds {
 			query := fmt.Sprintf("insert into %s (%s, %s) values (?, ?)", tableName, DbFieldCloudName, DbFieldRtt)
-			result, err := db.Query(query, targetCloudName, math.MaxFloat64)
+			result, err := db.Query(query, targetCloudName, UnreachableRttMs)
 			if err != nil {
 				outErr := fmt.Errorf("Query [%s], args: [%s, %g], error [%w].", query, targetCloudName, math.MaxFloat64, err)
 				beego.Error(outErr)
@@ -612,6 +615,16 @@ func executeNetTestClients() error {
 
 // Run a network performance test Job on cloudFrom to measure the RTT from cloudFrom to cloudTo, and write the RTT value in the MySQL database.
 func executeNetTestClient(cloudFrom, cloudTo Iaas) error {
+	var errExist bool = false
+	defer func() {
+		if errExist {
+			beego.Info(fmt.Sprintf("executeNetTestClient from [%s] to [%s] error exist, so we set the unreachable RTT between these 2 clouds in the database.", cloudFrom.ShowName(), cloudTo.ShowName()))
+			if err := setUnreachableRtt(cloudFrom.ShowName(), cloudTo.ShowName()); err != nil {
+				beego.Error(fmt.Sprintf("setUnreachableRtt from [%s] to [%s] error: [%s]", cloudFrom.ShowName(), cloudTo.ShowName(), err.Error()))
+			}
+		}
+	}()
+
 	srcK8sNodeName := getNetTestClientName(cloudFrom)
 	dstK8sAppName := getNetTestServerAppName(cloudTo)
 	cliK8sJobName := getNetTestClientAppName(cloudFrom, cloudTo)
@@ -620,16 +633,19 @@ func executeNetTestClient(cloudFrom, cloudTo Iaas) error {
 	if err != nil {
 		outErr := fmt.Errorf("Get dstK8sApp [%s], error: %w", dstK8sAppName, err)
 		beego.Error(outErr)
+		errExist = true
 		return outErr
 	}
 	if len(dstK8sApp.Hosts) == 0 {
 		outErr := fmt.Errorf("len(dstK8sApp.Hosts) is [%d], so we cannot get the IP of the target pod", len(dstK8sApp.Hosts))
 		beego.Error(outErr)
+		errExist = true
 		return outErr
 	}
 	if len(dstK8sApp.Hosts[0].PodIP) == 0 {
 		outErr := fmt.Errorf("len(dstK8sApp.Hosts[0].PodIP) is [%d], so we cannot get the IP of the target pod", len(dstK8sApp.Hosts))
 		beego.Error(outErr)
+		errExist = true
 		return outErr
 	}
 	dstPodIp := dstK8sApp.Hosts[0].PodIP
@@ -675,6 +691,7 @@ func executeNetTestClient(cloudFrom, cloudTo Iaas) error {
 	if err != nil {
 		outErr := fmt.Errorf("CreateJob [%v], error: [%w]", job, err)
 		beego.Error(outErr)
+		errExist = true
 		return outErr
 	}
 
@@ -684,6 +701,7 @@ func executeNetTestClient(cloudFrom, cloudTo Iaas) error {
 	if err := WaitForJobCompleted(WaitForTimeOut, 10, createdJob.Namespace, createdJob.Name); err != nil {
 		outErr := fmt.Errorf("Wait for the Job [%s/%s] completed, error: %w", createdJob.Namespace, createdJob.Name, err)
 		beego.Error(outErr)
+		errExist = true
 		return outErr
 	}
 	beego.Info(fmt.Sprintf("The Job [%s/%s] is already completed.", createdJob.Namespace, createdJob.Name))
@@ -737,5 +755,32 @@ func deleteNetTestClient(cloudFrom, cloudTo Iaas) error {
 		beego.Error(outErr)
 		return outErr
 	}
+	return nil
+}
+
+// when a cloud is cannot access another, in the database, we set a very big RTT value between them.
+// we only need to do it in executeNetTestClient, no need for runNetTestServer, because if the server does not work, the client will fail, so doing it only for clients is enough.
+func setUnreachableRtt(nameCloudFrom, nameCloudTo string) error {
+	db, err := NewMySqlCli()
+	if err != nil {
+		outErr := fmt.Errorf("Create MySQL client, error [%w].", err)
+		beego.Error(outErr)
+		return outErr
+	}
+	defer db.Close()
+
+	query := fmt.Sprintf("update %s.%s set rtt_ms=%g where %s='%s'", NetPerfDbName, nameCloudFrom, UnreachableRttMs, DbFieldCloudName, nameCloudTo)
+
+	// without timeout, this request may be stuck forever if there are some problems
+	ctx, cancel := context.WithTimeout(context.Background(), ReqShortTimeout)
+	defer cancel()
+	result, err := db.QueryContext(ctx, query)
+	if err != nil {
+		outErr := fmt.Errorf("Query [%s], error [%w].", query, err)
+		beego.Error(outErr)
+		return outErr
+	}
+	defer result.Close()
+
 	return nil
 }

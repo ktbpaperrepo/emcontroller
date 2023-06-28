@@ -122,6 +122,7 @@ func UseDb(db *sql.DB, dbName string) error {
 	return nil
 }
 
+// show which databse is used currently
 func ShowCurUsedDb(db *sql.DB) (string, error) {
 	query := "select database() from dual"
 	result, err := db.Query(query)

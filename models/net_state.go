@@ -3,8 +3,9 @@ package models
 import (
 	"context"
 	"fmt"
-	"github.com/astaxie/beego"
 	"sync"
+	
+	"github.com/astaxie/beego"
 )
 
 type NetworkState struct {
