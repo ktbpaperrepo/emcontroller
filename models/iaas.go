@@ -49,10 +49,10 @@ type IaasVm struct {
 type ResSet struct {
 	VCpu    float64 `json:"vcpu"`    // number of logical CPU cores
 	Ram     float64 `json:"ram"`     // memory size unit: MB
-	Vm      float64 `json:"vm"`      // number of virtual machines
-	Volume  float64 `json:"volume"`  // number of volumes
+	Vm      float64 `json:"vm"`      // number of virtual machines, negative values, such as -1, means unlimited
+	Volume  float64 `json:"volume"`  // number of volumes, negative values, such as -1, means unlimited
 	Storage float64 `json:"storage"` // storage size unit: GB
-	Port    float64 `json:"port"`    // number of network ports
+	Port    float64 `json:"port"`    // number of network ports, negative values, such as -1, means unlimited
 }
 
 // the global variable to record all clouds
