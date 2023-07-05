@@ -81,3 +81,30 @@ func CronTaskTimer(f func(), period time.Duration) {
 		f()
 	}
 }
+
+// Calculate the available Vcpu of a VM
+func CalcVmAvailVcpu(totalVcpu float64) float64 {
+	provisionalResult := totalVcpu - ReservedCPULogicCore
+	if provisionalResult < 0 {
+		provisionalResult = 0
+	}
+	return provisionalResult
+}
+
+// Calculate the available Memory (MiB) of a VM
+func CalcVmAvailRamMiB(totalRamMiB float64) float64 {
+	provisionalResult := totalRamMiB - ReservedRamMiB
+	if provisionalResult < 0 {
+		provisionalResult = 0
+	}
+	return provisionalResult
+}
+
+// Calculate the available Storage (GiB) of a VM
+func CalcVmAvailStorGiB(totalStorGiB float64) float64 {
+	provisionalResult := totalStorGiB - (totalStorGiB*ReservedStoragePercentage + ReservedStorageGiB)
+	if provisionalResult < 0 {
+		provisionalResult = 0
+	}
+	return provisionalResult
+}

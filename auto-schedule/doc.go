@@ -10,4 +10,8 @@ In the scheduling, I use map for the clouds and applications, rather than slice.
 The key is the cloud name and application name.
 */
 
+/*
+For migration,
+*/
+
 package auto_schedule

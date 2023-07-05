@@ -194,7 +194,7 @@ func (c *VmController) DoNewVmsJson() {
 		c.Ctx.ResponseWriter.WriteHeader(http.StatusBadRequest)
 		//c.Ctx.WriteString(outErr.Error())
 		if result, err := c.Ctx.ResponseWriter.Write([]byte(outErr.Error())); err != nil {
-			beego.Error("Write Error to response, error: %s, result: %d", err.Error(), result)
+			beego.Error(fmt.Sprintf("Write Error to response, error: %s, result: %d", err.Error(), result))
 		}
 		return
 	}

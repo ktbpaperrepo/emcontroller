@@ -29,8 +29,8 @@ const (
 	mcmNetTestClientAppSuffix string = "-mcm-nt-app-client"
 
 	mcmNetTestCpu  int = 2    // number of logical CPU cores
-	mcmNetTestMem  int = 2048 // memory size unit: MB
-	mcmNetTestDisk int = 20   // storage size unit: GB (I tried 10 GB, but it is too small.)
+	mcmNetTestMem  int = 2048 // memory size unit: MiB
+	mcmNetTestDisk int = 20   // storage size unit: GiB (I tried 10 GiB, but it is too small.)
 
 	taintValue   string                   = "net-test"
 	taintEffect  apiv1.TaintEffect        = apiv1.TaintEffectNoSchedule

@@ -4,6 +4,8 @@ const (
 	RunningStatus   = "Stable Running"
 	NotStableStatus = "Not Yet Stable"
 
-	AutoScheduledAnno string = "autoschedule"
-	PriorityAnno      string = "priority"
+	// Kubernetes Annotation keys for the auto-schedule functionality
+	AutoScheduledAnno    string = "auto-schedule"
+	PriorityAnno         string = "priority"
+	AutoScheduleInfoAnno string = "auto-schedule/info"
 )

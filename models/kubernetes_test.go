@@ -77,6 +77,17 @@ func TestGetDeployment(t *testing.T) {
 	}
 }
 
+func TestListPodsOnNode(t *testing.T) {
+	InitSomeThing()
+	pods, err := ListPodsOnNode("", "n4test")
+	if err != nil {
+		t.Errorf("test error: %s", err.Error())
+	}
+	for _, pod := range pods {
+		t.Logf("%s/%s", pod.Namespace, pod.Name)
+	}
+}
+
 func TestListNodes(t *testing.T) {
 	InitSomeThing()
 	nodes, err := ListNodes(metav1.ListOptions{})

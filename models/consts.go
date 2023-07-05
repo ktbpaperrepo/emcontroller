@@ -48,6 +48,13 @@ const (
 	K8sMasterNodeRole = "node-role.kubernetes.io/control-plane"
 
 	McmKey string = "mcm"
+
+	// resources reserved for Linux System and Kubernetes
+	// Now, what I know is that auto-schedule will use them, and maybe other functioins also need them.
+	ReservedCPULogicCore      float64 = 1
+	ReservedRamMiB            float64 = 1024
+	ReservedStorageGiB        float64 = 10
+	ReservedStoragePercentage float64 = 0.15 // for the storage we should reserve "totalStorage * ReservedStoragePercentage + ReservedStorageGiB"
 )
 
 var (

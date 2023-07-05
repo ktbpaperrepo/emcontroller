@@ -27,6 +27,16 @@ type K8sApp struct {
 	Containers    []K8sContainer      `json:"containers"`
 	Priority      int                 `json:"priority"`
 	AutoScheduled bool                `json:"autoScheduled"`
+	Dependencies  []Dependency        `json:"dependencies,omitempty"` // The information of all applications that this application depends on, only useful for
+}
+
+// This is for the functionality of auto-schedule
+// In Dependency, only AppName is enough, because:
+// 1. Bandwidth is not considered in this model;
+// 2. RTT is not a hard requirement, but soft, which means that the smaller RTT the better, but high RTT is also OK.
+// A high RTT will only make the response slow, but the application will still work.
+type Dependency struct {
+	AppName string `json:"appName"` // the name of the dependent application
 }
 
 type K8sContainer struct {
@@ -50,6 +60,10 @@ type K8sResList struct {
 	Memory  string `json:"memory"`
 	CPU     string `json:"cpu"`
 	Storage string `json:"storage"`
+}
+
+func (krl1 K8sResList) Equal(krl2 K8sResList) bool {
+	return krl1.Memory == krl2.Memory && krl1.CPU == krl2.CPU && krl1.Storage == krl2.Storage
 }
 
 // Environment Variables

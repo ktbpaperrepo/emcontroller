@@ -235,6 +235,23 @@ func ListPods(namespace string, listOptions metav1.ListOptions) ([]apiv1.Pod, er
 	return pods.Items, nil
 }
 
+// list all pods on a node in a namespace
+func ListPodsOnNode(namespace string, nodeName string) ([]apiv1.Pod, error) {
+	ctx := context.Background()
+	pods, err := kubernetesClient.CoreV1().Pods(namespace).List(
+		ctx,
+		metav1.ListOptions{
+			FieldSelector: fmt.Sprintf("spec.nodeName=%s", nodeName),
+		},
+	)
+	if err != nil {
+		ourErr := fmt.Errorf("List pods on node [%s] error: %w", nodeName, err)
+		beego.Error(ourErr)
+		return []apiv1.Pod{}, ourErr
+	}
+	return pods.Items, nil
+}
+
 func ListNodes(listOptions metav1.ListOptions) ([]apiv1.Node, error) {
 	ctx := context.Background()
 	nodes, err := kubernetesClient.CoreV1().Nodes().List(ctx, listOptions)

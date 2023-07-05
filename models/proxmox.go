@@ -367,7 +367,7 @@ func (p *Proxmox) GetTaskStatus(upid string) ([]byte, error) {
 	return body, nil
 }
 
-// Config CPU and Memory of a VM, the unit of the input RAM is MB, and they must be integers, which means we cannot set the 15555.5555MB Ram, or 5.55 cores
+// Config CPU and Memory of a VM, the unit of the input RAM is MiB, and they must be integers, which means we cannot set the 15555.5555MiB Ram, or 5.55 cores
 func (p *Proxmox) ConfigCoreRam(vmid, ramMB, cores int) ([]byte, error) {
 	beego.Info(fmt.Sprintf("Cloud name [%s], type [%s], Config VM [%d], Memory [%d]MB, CPU cores [%d].", p.Name, p.Type, vmid, ramMB, cores))
 
@@ -777,18 +777,18 @@ func (p *Proxmox) CheckResources() (ResourceStatus, error) {
 	return ResourceStatus{
 		Limit: ResSet{
 			VCpu:    totalCPU,
-			Ram:     totalMemoryUnitB / 1024 / 1024, // unit MB
+			Ram:     totalMemoryUnitB / 1024 / 1024, // unit MiB
 			Vm:      -1,
 			Volume:  -1,
-			Storage: totalStorageUnitB / 1024 / 1024 / 1024, // unit GB
+			Storage: totalStorageUnitB / 1024 / 1024 / 1024, // unit GiB
 			Port:    -1,
 		},
 		InUse: ResSet{
 			VCpu:    usedCPU,
-			Ram:     usedMemoryUnitB / 1024 / 1024, // unit MB
+			Ram:     usedMemoryUnitB / 1024 / 1024, // unit MiB
 			Vm:      -1,
 			Volume:  -1,
-			Storage: usedStorageUnitB / 1024 / 1024 / 1024, // unit GB
+			Storage: usedStorageUnitB / 1024 / 1024 / 1024, // unit GiB
 			Port:    -1,
 		},
 	}, nil
@@ -828,8 +828,8 @@ func (p *Proxmox) GetVM(vmid string) (*IaasVm, error) {
 		Name:      qemu["data"].(map[string]interface{})["name"].(string),
 		IPs:       p.getVmIps(vmid),
 		VCpu:      qemu["data"].(map[string]interface{})["cpus"].(float64),
-		Ram:       qemu["data"].(map[string]interface{})["maxmem"].(float64) / 1024 / 1024,         // unit MB
-		Storage:   qemu["data"].(map[string]interface{})["maxdisk"].(float64) / 1024 / 1024 / 1024, // unit GB
+		Ram:       qemu["data"].(map[string]interface{})["maxmem"].(float64) / 1024 / 1024,         // unit MiB
+		Storage:   qemu["data"].(map[string]interface{})["maxdisk"].(float64) / 1024 / 1024 / 1024, // unit GiB
 		Status:    qemu["data"].(map[string]interface{})["status"].(string),
 		Cloud:     p.Name,
 		CloudType: p.Type,
@@ -891,8 +891,8 @@ func (p *Proxmox) ListAllVMs() ([]IaasVm, error) {
 				Name:      q.(map[string]interface{})["name"].(string),
 				IPs:       ips,
 				VCpu:      q.(map[string]interface{})["cpus"].(float64),
-				Ram:       q.(map[string]interface{})["maxmem"].(float64) / 1024 / 1024,         // unit MB
-				Storage:   q.(map[string]interface{})["maxdisk"].(float64) / 1024 / 1024 / 1024, // unit GB
+				Ram:       q.(map[string]interface{})["maxmem"].(float64) / 1024 / 1024,         // unit MiB
+				Storage:   q.(map[string]interface{})["maxdisk"].(float64) / 1024 / 1024 / 1024, // unit GiB
 				Status:    q.(map[string]interface{})["status"].(string),
 				Cloud:     p.Name,
 				CloudType: p.Type,

@@ -37,8 +37,8 @@ type IaasVm struct {
 	IPs []string `json:"ips"`
 
 	VCpu      float64 `json:"vcpu"`    // number of logical CPU cores
-	Ram       float64 `json:"ram"`     // memory size unit: MB
-	Storage   float64 `json:"storage"` // storage size unit: GB
+	Ram       float64 `json:"ram"`     // memory size unit: MiB
+	Storage   float64 `json:"storage"` // storage size unit: GiB
 	Status    string  `json:"status"`
 	Cloud     string  `json:"cloud"` // the name of the cloud that this VM belongs to
 	CloudType string  `json:"cloudType"`
@@ -48,10 +48,10 @@ type IaasVm struct {
 // Resource set
 type ResSet struct {
 	VCpu    float64 `json:"vcpu"`    // number of logical CPU cores
-	Ram     float64 `json:"ram"`     // memory size unit: MB
+	Ram     float64 `json:"ram"`     // memory size unit: MiB
 	Vm      float64 `json:"vm"`      // number of virtual machines, negative values, such as -1, means unlimited
 	Volume  float64 `json:"volume"`  // number of volumes, negative values, such as -1, means unlimited
-	Storage float64 `json:"storage"` // storage size unit: GB
+	Storage float64 `json:"storage"` // storage size unit: GiB
 	Port    float64 `json:"port"`    // number of network ports, negative values, such as -1, means unlimited
 }
 
@@ -143,7 +143,7 @@ func CreateVms(vms []IaasVm) ([]IaasVm, error) {
 		wg.Add(1)
 		go func(v IaasVm) {
 			defer wg.Done()
-			beego.Info(fmt.Sprintf("Start to create vm Name [%s] CLoud [%s], vcpu cores [%f], ram [%f MB], storage [%f GB].", v.Name, v.Cloud, v.VCpu, v.Ram, v.Storage))
+			beego.Info(fmt.Sprintf("Start to create vm Name [%s] CLoud [%s], vcpu cores [%f], ram [%f MiB], storage [%f GiB].", v.Name, v.Cloud, v.VCpu, v.Ram, v.Storage))
 			createdVM, err := Clouds[v.Cloud].CreateVM(v.Name, int(v.VCpu), int(v.Ram), int(v.Storage))
 			if err != nil {
 				outErr := fmt.Errorf("Create vm %s error %w.", v.Name, err)
