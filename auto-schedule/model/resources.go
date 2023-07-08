@@ -16,12 +16,9 @@ const (
 	StorageUnitSuffix string = "Gi"
 )
 
+// We use a different Object for the applications resources, in case of some special scenarios.
 type AppResources struct {
 	GenericResources `json:",inline"`
-
-	// number of CPU logical cores allocated to this application, only useful when the application is deployed. We have this resource because CPU core is a soft requirement, which means we do not have to allocate all required CPU cores to an application.
-	// For example, if an application requires 4 CPU cores, but we only allocate 2 CPU cores to it, in the containerSpec of it, we will set the required CPU is 2 and the Limit CPU is 4.
-	AllocatedCpuCore float64 `json:"cpuCore"`
 }
 
 type GenericResources struct {

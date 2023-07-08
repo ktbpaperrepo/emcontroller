@@ -17,4 +17,9 @@ type Solution map[string]SingleAppSolution
 // The scheduling scheme for a single application
 type SingleAppSolution struct {
 	TargetCloudName string `json:"targetCloudName"`
+
+	// number of CPU logical cores allocated to this application.
+	// CPU core is a soft requirement, which means we do not have to allocate all required CPU cores to an application.
+	// For example, if an application requires 4 CPU cores, but we only allocate 2 CPU cores to it, in the containerSpec of it, we will set the required CPU is 2 and the Limit CPU is 4.
+	AllocatedCpuCore float64 `json:"allocatedCpuCore"`
 }
