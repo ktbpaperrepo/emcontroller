@@ -64,5 +64,11 @@ func (c *AppGroupController) DoNewAppJson() {
 }
 
 func (c *AppGroupController) DoNewAppForm() {
-	beego.Error(fmt.Sprintf("Please set the \"Content-Type\" as \"%s\", because the functions to handle other content types have not been implemented.", JsonContentType))
+	outErr := fmt.Errorf("Please set the \"Content-Type\" as \"%s\", because the functions to handle other content types have not been implemented.", JsonContentType)
+	beego.Error(outErr)
+	c.Ctx.ResponseWriter.WriteHeader(http.StatusMethodNotAllowed)
+	if result, err := c.Ctx.ResponseWriter.Write([]byte(outErr.Error())); err != nil {
+		beego.Error(fmt.Sprintf("Write Error to response, error: %s, result: %d", err.Error(), result))
+	}
+	return
 }
