@@ -51,10 +51,10 @@ func TestValidateAutoScheduleApp(t *testing.T) {
 			expectedErrNum: 1,
 		},
 		{
-			name: "priority0",
+			name: "priority1",
 			app: models.K8sApp{
-				Name:          "priority0",
-				Priority:      0,
+				Name:          "priority1",
+				Priority:      1,
 				Replicas:      1,
 				AutoScheduled: true,
 			},
@@ -522,7 +522,7 @@ func TestValidateAutoScheduleApp(t *testing.T) {
 	for i, testCase := range testCases {
 		t.Logf("test: %d, %s", i, testCase.name)
 		errs := ValidateAutoScheduleApp(testCase.app)
-		fmt.Println("errors:", models.HandleErrSlice(errs))
+		t.Log("errors:", models.HandleErrSlice(errs))
 		assert.Equal(t, testCase.expectedErrNum, len(errs), fmt.Sprintf("%s: result is not expected", testCase.name))
 	}
 }

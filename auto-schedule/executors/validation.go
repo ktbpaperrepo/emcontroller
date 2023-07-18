@@ -11,7 +11,7 @@ import (
 
 const (
 	maxPriority int = 10
-	minPriority int = 0
+	minPriority int = 1
 )
 
 func ValidateAutoScheduleApps(apps []models.K8sApp) []error {
