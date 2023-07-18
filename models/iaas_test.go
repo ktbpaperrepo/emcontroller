@@ -3,6 +3,8 @@ package models
 import (
 	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCheckResources(t *testing.T) {
@@ -76,4 +78,210 @@ func TestIsCreatedByMcm(t *testing.T) {
 		t.Errorf("error: %s\n", err.Error())
 	}
 	fmt.Printf("%t\n", is)
+}
+
+func TestAllMoreThan(t *testing.T) {
+	testCases := []struct {
+		name           string
+		resStatus      ResourceStatus
+		expectedResult bool
+	}{
+		{
+			name: "all more",
+			resStatus: ResourceStatus{
+				Limit: ResSet{
+					VCpu:    7,
+					Ram:     4096,
+					Storage: 4096,
+					Vm:      -1,
+					Volume:  -1,
+					Port:    -1,
+				},
+				InUse: ResSet{
+					VCpu:    6,
+					Ram:     2048,
+					Storage: 2048,
+					Vm:      -1,
+					Volume:  -1,
+					Port:    -1,
+				},
+			},
+			expectedResult: true,
+		},
+		{
+			name: "cpuLess",
+			resStatus: ResourceStatus{
+				Limit: ResSet{
+					VCpu:    5,
+					Ram:     4096,
+					Storage: 4096,
+					Vm:      -1,
+					Volume:  -1,
+					Port:    -1,
+				},
+				InUse: ResSet{
+					VCpu:    6,
+					Ram:     2048,
+					Storage: 2048,
+					Vm:      -1,
+					Volume:  -1,
+					Port:    -1,
+				},
+			},
+			expectedResult: false,
+		},
+		{
+			name: "RamEqual",
+			resStatus: ResourceStatus{
+				Limit: ResSet{
+					VCpu:    7,
+					Ram:     4096,
+					Storage: 4096,
+					Vm:      -1,
+					Volume:  -1,
+					Port:    -1,
+				},
+				InUse: ResSet{
+					VCpu:    6,
+					Ram:     4096,
+					Storage: 2048,
+					Vm:      -1,
+					Volume:  -1,
+					Port:    -1,
+				},
+			},
+			expectedResult: false,
+		},
+		{
+			name: "vmEqual",
+			resStatus: ResourceStatus{
+				Limit: ResSet{
+					VCpu:    7,
+					Ram:     4096,
+					Storage: 4096,
+					Vm:      5,
+					Volume:  -1,
+					Port:    -1,
+				},
+				InUse: ResSet{
+					VCpu:    6,
+					Ram:     2048,
+					Storage: 2048,
+					Vm:      5,
+					Volume:  -1,
+					Port:    -1,
+				},
+			},
+			expectedResult: false,
+		},
+	}
+
+	for i, testCase := range testCases {
+		t.Logf("test: %d, %s", i, testCase.name)
+		actualResult := testCase.resStatus.Limit.AllMoreThan(testCase.resStatus.InUse)
+		assert.Equal(t, testCase.expectedResult, actualResult, fmt.Sprintf("%s: result is not expected", testCase.name))
+	}
+}
+
+func TestLeastRemainPct(t *testing.T) {
+	testCases := []struct {
+		name           string
+		resStatus      ResourceStatus
+		expectedResult float64
+	}{
+		{
+			name: "cpu least",
+			resStatus: ResourceStatus{
+				Limit: ResSet{
+					VCpu:    7,
+					Ram:     4096,
+					Storage: 4096,
+					Vm:      -1,
+					Volume:  -1,
+					Port:    -1,
+				},
+				InUse: ResSet{
+					VCpu:    6,
+					Ram:     2048,
+					Storage: 2048,
+					Vm:      -1,
+					Volume:  -1,
+					Port:    -1,
+				},
+			},
+			expectedResult: 1.0 / 7.0,
+		},
+		{
+			name: "cpu Ram both least ",
+			resStatus: ResourceStatus{
+				Limit: ResSet{
+					VCpu:    8,
+					Ram:     4096,
+					Storage: 4096,
+					Vm:      -1,
+					Volume:  -1,
+					Port:    -1,
+				},
+				InUse: ResSet{
+					VCpu:    4,
+					Ram:     2048,
+					Storage: 1024,
+					Vm:      -1,
+					Volume:  -1,
+					Port:    -1,
+				},
+			},
+			expectedResult: 0.5,
+		},
+		{
+			name: "ram used up",
+			resStatus: ResourceStatus{
+				Limit: ResSet{
+					VCpu:    7,
+					Ram:     4096,
+					Storage: 4096,
+					Vm:      -1,
+					Volume:  -1,
+					Port:    -1,
+				},
+				InUse: ResSet{
+					VCpu:    3,
+					Ram:     4096,
+					Storage: 2048,
+					Vm:      -1,
+					Volume:  -1,
+					Port:    -1,
+				},
+			},
+			expectedResult: 0.0,
+		},
+		{
+			name: "storage least",
+			resStatus: ResourceStatus{
+				Limit: ResSet{
+					VCpu:    7,
+					Ram:     4096,
+					Storage: 4096,
+					Vm:      5,
+					Volume:  -1,
+					Port:    -1,
+				},
+				InUse: ResSet{
+					VCpu:    2,
+					Ram:     2048,
+					Storage: 4000,
+					Vm:      5,
+					Volume:  -1,
+					Port:    -1,
+				},
+			},
+			expectedResult: 96.0 / 4096.0,
+		},
+	}
+
+	for i, testCase := range testCases {
+		t.Logf("test: %d, %s", i, testCase.name)
+		actualResult := testCase.resStatus.LeastRemainPct()
+		assert.Equal(t, testCase.expectedResult, actualResult, fmt.Sprintf("%s: result is not expected", testCase.name))
+	}
 }

@@ -2,11 +2,10 @@ package models
 
 import (
 	"fmt"
-	"sync"
-
 	"github.com/astaxie/beego"
 	"github.com/gophercloud/gophercloud"
 	"github.com/spf13/viper"
+	"sync"
 )
 
 type Iaas interface {
@@ -24,6 +23,24 @@ type Iaas interface {
 type ResourceStatus struct {
 	Limit ResSet `json:"limit"` // total amounts of resources
 	InUse ResSet `json:"inUse"` // the amounts of resources being used
+}
+
+// Get remaining percentage of the resource with the least remaining percentage, only considering CPU, Memory, and Storage
+func (rs ResourceStatus) LeastRemainPct() float64 {
+	leastPct := 1.0
+	pctVCpu := (rs.Limit.VCpu - rs.InUse.VCpu) / rs.Limit.VCpu
+	if pctVCpu < leastPct {
+		leastPct = pctVCpu
+	}
+	pctRam := (rs.Limit.Ram - rs.InUse.Ram) / rs.Limit.Ram
+	if pctRam < leastPct {
+		leastPct = pctRam
+	}
+	pctStorage := (rs.Limit.Storage - rs.InUse.Storage) / rs.Limit.Storage
+	if pctStorage < leastPct {
+		leastPct = pctStorage
+	}
+	return leastPct
 }
 
 // The backend APIs (Create VMs and Add K8s Nodes) request uses this struct, so we need to define the json of it.
@@ -53,6 +70,29 @@ type ResSet struct {
 	Volume  float64 `json:"volume"`  // number of volumes, negative values, such as -1, means unlimited
 	Storage float64 `json:"storage"` // storage size unit: GiB
 	Port    float64 `json:"port"`    // number of network ports, negative values, such as -1, means unlimited
+}
+
+// check whether all items in r1 are more than those in r2
+func (r1 ResSet) AllMoreThan(r2 ResSet) bool {
+	if r1.VCpu <= r2.VCpu && r1.VCpu >= 0 {
+		return false
+	}
+	if r1.Ram <= r2.Ram && r1.Ram >= 0 {
+		return false
+	}
+	if r1.Vm <= r2.Vm && r1.Vm >= 0 {
+		return false
+	}
+	if r1.Volume <= r2.Volume && r1.Volume >= 0 {
+		return false
+	}
+	if r1.Storage <= r2.Storage && r1.Storage >= 0 {
+		return false
+	}
+	if r1.Port <= r2.Port && r1.Port >= 0 {
+		return false
+	}
+	return true
 }
 
 // the global variable to record all clouds

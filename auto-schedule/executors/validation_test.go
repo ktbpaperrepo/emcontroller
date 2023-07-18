@@ -488,6 +488,37 @@ func TestValidateAutoScheduleApp(t *testing.T) {
 	}
 	testCases = append(testCases, testCasesMultiContainer...)
 
+	// test no app name
+	testCasesNoAppName := []oneTestCase{
+		{
+			name: "no name",
+			app: models.K8sApp{
+				Name:          "",
+				Priority:      10,
+				Replicas:      1,
+				AutoScheduled: true,
+				Containers: []models.K8sContainer{
+					{
+						Resources: models.K8sResReq{
+							Limits: models.K8sResList{
+								Memory:  "10Mi",
+								CPU:     "1",
+								Storage: "10Gi",
+							},
+							Requests: models.K8sResList{
+								Memory:  "10Mi",
+								CPU:     "1",
+								Storage: "10Gi",
+							},
+						},
+					},
+				},
+			},
+			expectedErrNum: 1,
+		},
+	}
+	testCases = append(testCases, testCasesNoAppName...)
+
 	for i, testCase := range testCases {
 		t.Logf("test: %d, %s", i, testCase.name)
 		errs := ValidateAutoScheduleApp(testCase.app)

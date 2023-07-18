@@ -5,6 +5,7 @@ go 1.20
 require github.com/astaxie/beego v1.12.3
 
 require (
+	github.com/KeepTheBeats/routing-algorithms v0.0.0-20230711130822-c7f70dac810d
 	github.com/docker/docker v20.10.17+incompatible
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/gophercloud/gophercloud v1.1.1

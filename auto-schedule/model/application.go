@@ -18,6 +18,14 @@ type Application struct {
 	Dependencies []models.Dependency `json:"dependencies"` // The information of all applications that this application depends on.
 }
 
+func AppMapCopy(src map[string]Application) map[string]Application {
+	var dst map[string]Application = make(map[string]Application)
+	for name, app := range src {
+		dst[name] = app
+	}
+	return dst
+}
+
 func GenerateApplications(inputApps []models.K8sApp) (map[string]Application, error) {
 	var outApps map[string]Application = make(map[string]Application)
 

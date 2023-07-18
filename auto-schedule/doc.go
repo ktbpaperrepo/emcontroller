@@ -6,11 +6,6 @@ Thus, "controllers" will import "this package" and "models", "this package" will
 */
 
 /*
-In the scheduling, I use map for the clouds and applications, rather than slice.
-The key is the cloud name and application name.
-*/
-
-/*
 For migration,
 */
 

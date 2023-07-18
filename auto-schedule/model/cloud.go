@@ -2,6 +2,8 @@ package model
 
 import (
 	"fmt"
+	"math"
+	"strings"
 
 	"github.com/astaxie/beego"
 	apiv1 "k8s.io/api/core/v1"
@@ -12,9 +14,60 @@ import (
 
 type Cloud struct {
 	Name      string                         `json:"name"`
+	Type      string                         `json:"type"`
 	Resources models.ResourceStatus          `json:"resources"` // used and all resources of this cloud. Here we start with struct defined in "models" package, and in the future if we find that this cannot meet the needs here, we can define new structs.
 	NetState  map[string]models.NetworkState `json:"netState"`  // the network state from this cloud to every cloud
 	K8sNodes  []K8sNode                      `json:"k8sNodes"`  // all existing Kubernetes nodes whose VMs are on this cloud
+}
+
+// the set of all cloud types that support creating new VMs when auto-scheduling
+var typesCanCreateNewVM map[string]struct{} = map[string]struct{}{
+	models.ProxmoxIaas: struct{}{},
+}
+
+// Not all cloud types support creating new VMs.
+// For example, CLAAUDIA does not allow users to create flavors in Openstack, so if we want to create new VMs in auto-scheduling, this will be more complicated, so we do not support creating new VMs in auto-scheduling.
+func (c Cloud) SupportCreateNewVM() bool {
+	if _, exist := typesCanCreateNewVM[c.Type]; exist {
+		return true
+	}
+	return false
+}
+
+// According to the inpur resource percentage, this function can generate the information of the VM to create.
+func (c Cloud) GetInfoVmToCreate(resPct float64) K8sNode {
+	return K8sNode{
+		Name: c.getNameVmToCreate(),
+		ResidualResources: GenericResources{
+			CpuCore: math.Floor(resPct * c.Resources.Limit.VCpu),
+			Memory:  math.Floor(resPct * c.Resources.Limit.Ram),
+			Storage: math.Floor(resPct * c.Resources.Limit.Storage),
+		},
+	}
+}
+
+// auto-schedule vms should have special prefixes
+func (c Cloud) getNameVmToCreate() string {
+	var vmName string
+OUTLOOP:
+	for i := 0; i < math.MaxInt; i++ {
+		vmName = fmt.Sprintf("%s%s-%d", ASVmNamePrefix, strings.ToLower(c.Name), i)
+		for _, existingVm := range c.K8sNodes {
+			if existingVm.Name == vmName {
+				continue OUTLOOP // the intended vmName is already used, we continue to try the next possible name.
+			}
+		}
+		return vmName // the intended vmName is not used, so we can use it.
+	}
+	panic(fmt.Sprintf("Cloud [%s], all available auto-schedule vm names are used up. There are [%d] existing auto-schedule vms on this cloud.", c.Name, len(c.K8sNodes)))
+}
+
+func CloudMapCopy(src map[string]Cloud) map[string]Cloud {
+	var dst map[string]Cloud = make(map[string]Cloud)
+	for name, cloud := range src {
+		dst[name] = cloud
+	}
+	return dst
 }
 
 // generate a group of Cloud from a group of models.Iaas
@@ -66,6 +119,7 @@ func GenerateOneCloud(inCloud models.Iaas, cloudNetStates map[string]models.Netw
 
 	var outCloud Cloud = Cloud{
 		Name:      inCloud.ShowName(),
+		Type:      inCloud.ShowType(),
 		NetState:  cloudNetStates,
 		Resources: resources,
 		K8sNodes:  k8sNodesOnCloud,

@@ -35,10 +35,12 @@ func CreateAutoScheduleApps(apps []models.K8sApp) ([]models.AppInfo, error, int)
 		beego.Error(outErr)
 		return []models.AppInfo{}, outErr, http.StatusInternalServerError
 	}
+	// In some steps of scheduling, we need a fixed order of applications.
+	appsOrder := algorithms.GenerateAppsOrder(appsForScheduling)
 
 	// call the Schedule method in mcasga.go
-	mcssgaInstance := algorithms.Mcssga{}
-	solution, err := mcssgaInstance.Schedule(cloudsForScheduling, appsForScheduling)
+	mcssgaInstance := algorithms.NewMcssga(100, 5000, 0.7, 0.2, 200)
+	solution, err := mcssgaInstance.Schedule(cloudsForScheduling, appsForScheduling, appsOrder)
 	if err != nil {
 		outErr := fmt.Errorf("Run the Schedule method of Mcssga, Error: [%w]", err)
 		beego.Error(outErr)
