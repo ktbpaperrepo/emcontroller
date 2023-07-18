@@ -119,7 +119,8 @@ func cloudAppsSolnForIterTest() (asmodel.Cloud, map[string]asmodel.Application, 
 	}
 	apps := map[string]asmodel.Application{
 		"app1": asmodel.Application{
-			Name: "app1",
+			Name:     "app1",
+			Priority: 5,
 			Resources: asmodel.AppResources{
 				GenericResources: asmodel.GenericResources{
 					CpuCore: 2.4,
@@ -129,7 +130,8 @@ func cloudAppsSolnForIterTest() (asmodel.Cloud, map[string]asmodel.Application, 
 			},
 		},
 		"app2": asmodel.Application{
-			Name: "app2",
+			Name:     "app2",
+			Priority: 10,
 			Resources: asmodel.AppResources{
 				GenericResources: asmodel.GenericResources{
 					CpuCore: 3.9,
@@ -139,7 +141,8 @@ func cloudAppsSolnForIterTest() (asmodel.Cloud, map[string]asmodel.Application, 
 			},
 		},
 		"app3": asmodel.Application{
-			Name: "app3",
+			Name:     "app3",
+			Priority: 1,
 			Resources: asmodel.AppResources{
 				GenericResources: asmodel.GenericResources{
 					CpuCore: 1.4,
@@ -149,7 +152,8 @@ func cloudAppsSolnForIterTest() (asmodel.Cloud, map[string]asmodel.Application, 
 			},
 		},
 		"app4": asmodel.Application{
-			Name: "app4",
+			Name:     "app4",
+			Priority: 3,
 			Resources: asmodel.AppResources{
 				GenericResources: asmodel.GenericResources{
 					CpuCore: 5.0,
@@ -159,7 +163,8 @@ func cloudAppsSolnForIterTest() (asmodel.Cloud, map[string]asmodel.Application, 
 			},
 		},
 		"app5": asmodel.Application{
-			Name: "app5",
+			Name:     "app5",
+			Priority: 2,
 			Resources: asmodel.AppResources{
 				GenericResources: asmodel.GenericResources{
 					CpuCore: 5.0,
@@ -169,7 +174,8 @@ func cloudAppsSolnForIterTest() (asmodel.Cloud, map[string]asmodel.Application, 
 			},
 		},
 		"app6": asmodel.Application{
-			Name: "app6",
+			Name:     "app6",
+			Priority: 7,
 			Resources: asmodel.AppResources{
 				GenericResources: asmodel.GenericResources{
 					CpuCore: 4.0,
@@ -179,7 +185,8 @@ func cloudAppsSolnForIterTest() (asmodel.Cloud, map[string]asmodel.Application, 
 			},
 		},
 		"app7": asmodel.Application{
-			Name: "app7",
+			Name:     "app7",
+			Priority: 10,
 			Resources: asmodel.AppResources{
 				GenericResources: asmodel.GenericResources{
 					CpuCore: 3.0,
@@ -189,7 +196,8 @@ func cloudAppsSolnForIterTest() (asmodel.Cloud, map[string]asmodel.Application, 
 			},
 		},
 		"app8": asmodel.Application{
-			Name: "app8",
+			Name:     "app8",
+			Priority: 8,
 			Resources: asmodel.AppResources{
 				GenericResources: asmodel.GenericResources{
 					CpuCore: 2.0,
@@ -344,4 +352,63 @@ func TestInnerAppOneCloudIter(t *testing.T) {
 	curAppName = appsThisCloudIter.nextAppName()
 	assert.Equal(t, 0, len(curAppName))
 
+	func() {
+		t.Log()
+		t.Log("Then, we test copying and max priority.")
+		appsThisCloudIter = newAppOneCloudIter(appsThisCloud, appsOrder)
+		curAppName = appsThisCloudIter.nextMaxPriAppName()
+		t.Logf("curAppName: %s\n", curAppName)
+
+		t.Log("Now, we copy an iterator")
+		iterCopy := appsThisCloudIter.Copy()
+		curAppNameCopy := curAppName
+
+		t.Log("Now, we run the original iterator.")
+		for {
+			curAppName = appsThisCloudIter.nextMaxPriAppName()
+			t.Logf("curAppName: %s\n", curAppName)
+			if len(curAppName) == 0 {
+				break
+			}
+		}
+
+		t.Log("Now, we run the copied iterator, and it should work from the point where we copied.")
+		for {
+			curAppNameCopy = iterCopy.nextMaxPriAppName()
+			t.Logf("curAppNameCopy: %s\n", curAppNameCopy)
+			if len(curAppNameCopy) == 0 {
+				break
+			}
+		}
+	}()
+
+	func() {
+		t.Log()
+		t.Log("Then, we test copying and not max priority.")
+		appsThisCloudIter = newAppOneCloudIter(appsThisCloud, appsOrder)
+		curAppName = appsThisCloudIter.nextNotMaxPriAppName()
+		t.Logf("curAppName: %s\n", curAppName)
+
+		t.Log("Now, we copy an iterator")
+		iterCopy := appsThisCloudIter.Copy()
+		curAppNameCopy := curAppName
+
+		t.Log("Now, we run the original iterator.")
+		for {
+			curAppName = appsThisCloudIter.nextNotMaxPriAppName()
+			t.Logf("curAppName: %s\n", curAppName)
+			if len(curAppName) == 0 {
+				break
+			}
+		}
+
+		t.Log("Now, we run the copied iterator, and it should work from the point where we copied.")
+		for {
+			curAppNameCopy = iterCopy.nextNotMaxPriAppName()
+			t.Logf("curAppNameCopy: %s\n", curAppNameCopy)
+			if len(curAppNameCopy) == 0 {
+				break
+			}
+		}
+	}()
 }

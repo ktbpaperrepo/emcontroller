@@ -47,7 +47,7 @@ func resAccOneCloud(cloud asmodel.Cloud, apps map[string]asmodel.Application, ap
 	// Step 1. use up the resources of existing VMs
 	for _, vm := range cloud.K8sNodes { // this vm is only the copy, so the change of it will not affect the original cloud
 		// For every VM, if the resources of this vm can meet all rest applications, it means that the resources of this cloud is enough for the applications scheduled to it.
-		if vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter, true) {
+		if vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextAppName, true) {
 			return true
 		}
 	}
@@ -77,7 +77,7 @@ func resAccOneCloud(cloud asmodel.Cloud, apps map[string]asmodel.Application, ap
 		curAppNameCopy := curAppName
 
 		// If vmToCreate have enough resources for the applications, it means this cloud has enough resources.
-		if vmResMeetAllRestApps(vmToCreate, apps, &curAppNameCopy, iterCopy, true) {
+		if vmResMeetAllRestApps(vmToCreate, apps, &curAppNameCopy, iterCopy.nextAppName, true) {
 			return true
 		}
 	} else if cloudLeastResPct > smallerVmResPct { // try 2
@@ -87,7 +87,7 @@ func resAccOneCloud(cloud asmodel.Cloud, apps map[string]asmodel.Application, ap
 		iterCopy := appsThisCloudIter.Copy()
 		curAppNameCopy := curAppName
 
-		if vmResMeetAllRestApps(vmToCreate, apps, &curAppNameCopy, iterCopy, true) {
+		if vmResMeetAllRestApps(vmToCreate, apps, &curAppNameCopy, iterCopy.nextAppName, true) {
 			return true
 		}
 	}
@@ -96,7 +96,7 @@ func resAccOneCloud(cloud asmodel.Cloud, apps map[string]asmodel.Application, ap
 	// or if the vmToCreate in the above tried 1 or 2 cannot meet all rest applications scheduled to this cloud,
 	// we try 3.
 	vmToCreate := cloud.GetInfoVmToCreate(allRestVmResPct)
-	if vmResMeetAllRestApps(vmToCreate, apps, &curAppName, appsThisCloudIter, true) {
+	if vmResMeetAllRestApps(vmToCreate, apps, &curAppName, appsThisCloudIter.nextAppName, true) {
 		return true
 	}
 
@@ -136,12 +136,16 @@ func subRes(vm *asmodel.K8sNode, app asmodel.Application, minCpu bool) {
 }
 
 // check whether the resources of the input VM can support all rest applications.
-func vmResMeetAllRestApps(vm asmodel.K8sNode, apps map[string]asmodel.Application, curAppName *string, appsThisCloudIter *appOneCloudIter, minCpu bool) bool {
+func vmResMeetAllRestApps(vm asmodel.K8sNode, apps map[string]asmodel.Application, curAppName *string, nextAppNameFunc func() string, minCpu bool) bool {
 	// we loop until the resources of this VM is used up.
 	for isResEnough(vm, apps[*curAppName], minCpu) {
-		subRes(&vm, apps[*curAppName], minCpu) // simulate deploying this application on this VM.
+		// simulate deploying this application on this VM.
+		subRes(&vm, apps[*curAppName], minCpu)
+
 		// After the current applications is deployed, we go to the next application.
-		*curAppName = appsThisCloudIter.nextAppName() // curAppName and appsThisCloudIter are pointers, so the value change will affect the variables outside this function.
+		// curAppName is a pointer, so the value change will affect the variables outside this function.
+		// nextAppNameFunc should be a method of *appOneCloudIter, which is also a pointer, so the value will also affect it outside this function.
+		*curAppName = nextAppNameFunc()
 		if len(*curAppName) == 0 {
 			return true // this means that all applications are already deployed, so the resources are enough.
 		}

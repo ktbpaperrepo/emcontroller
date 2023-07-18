@@ -9,11 +9,6 @@ import (
 	"emcontroller/models"
 )
 
-const (
-	maxPriority int = 10
-	minPriority int = 1
-)
-
 func ValidateAutoScheduleApps(apps []models.K8sApp) []error {
 	var allErrs []error
 
@@ -36,8 +31,8 @@ func ValidateAutoScheduleApp(app models.K8sApp) []error {
 		allErrs = append(allErrs, fmt.Errorf("Auto-schedule application [%s] does not have a name. len(app.Name) is [%d].", app.Name, len(app.Name)))
 	}
 
-	if app.Priority > maxPriority || app.Priority < minPriority {
-		allErrs = append(allErrs, fmt.Errorf("Auto-schedule application [%s], app.Priority should be in [%d, %d], but the input app.Priority is %d.", app.Name, minPriority, maxPriority, app.Priority))
+	if app.Priority > asmodel.MaxPriority || app.Priority < asmodel.MinPriority {
+		allErrs = append(allErrs, fmt.Errorf("Auto-schedule application [%s], app.Priority should be in [%d, %d], but the input app.Priority is %d.", app.Name, asmodel.MinPriority, asmodel.MaxPriority, app.Priority))
 	}
 
 	if !app.AutoScheduled {

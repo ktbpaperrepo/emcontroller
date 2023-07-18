@@ -354,7 +354,13 @@ func TestInnerSubRes(t *testing.T) {
 	}()
 }
 
-func TestInnerVmResMeetAllRestApps(t *testing.T) {
+func TestInnerVmResMeetAllRestAppsAll(t *testing.T) {
+	TestInnerVmResMeetAllRestAppsNoPriLimit(t)
+	TestInnerVmResMeetAllRestAppsMaxPri(t)
+	TestInnerVmResMeetAllRestAppsNotMaxPri(t)
+}
+
+func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 	cloud, apps, soln := cloudAppsSolnForIterTest()
 	appsThisCloud := findAppsOneCloud(cloud, apps, soln) // need 0.4 CPU, 3214 Memory, 66 Storage in total.
 	appsOrder := GenerateAppsOrder(apps)
@@ -380,7 +386,7 @@ func TestInnerVmResMeetAllRestApps(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter, true))
+	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextAppName, true))
 
 	t.Log()
 	t.Log("case 2")
@@ -390,12 +396,23 @@ func TestInnerVmResMeetAllRestApps(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.3,
+			CpuCore: 0.2,
 			Memory:  10240,
 			Storage: 100,
 		},
 	}
-	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter, true))
+	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextAppName, true))
+	t.Log("curAppName:", curAppName)
+
+	vm = asmodel.K8sNode{
+		Name: "vm",
+		ResidualResources: asmodel.GenericResources{
+			CpuCore: 0.1,
+			Memory:  10240,
+			Storage: 100,
+		},
+	}
+	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextAppName, true))
 	t.Log("curAppName:", curAppName)
 
 	vm = asmodel.K8sNode{
@@ -406,7 +423,7 @@ func TestInnerVmResMeetAllRestApps(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter, true))
+	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextAppName, true))
 	t.Log("curAppName:", curAppName)
 
 	t.Log()
@@ -418,11 +435,22 @@ func TestInnerVmResMeetAllRestApps(t *testing.T) {
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
 			CpuCore: 0.6,
-			Memory:  3000,
+			Memory:  2000,
 			Storage: 100,
 		},
 	}
-	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter, true))
+	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextAppName, true))
+	t.Log("curAppName:", curAppName)
+
+	vm = asmodel.K8sNode{
+		Name: "vm",
+		ResidualResources: asmodel.GenericResources{
+			CpuCore: 0.6,
+			Memory:  1200,
+			Storage: 100,
+		},
+	}
+	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextAppName, true))
 	t.Log("curAppName:", curAppName)
 
 	vm = asmodel.K8sNode{
@@ -433,7 +461,7 @@ func TestInnerVmResMeetAllRestApps(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter, true))
+	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextAppName, true))
 	t.Log("curAppName:", curAppName)
 
 	t.Log()
@@ -448,7 +476,7 @@ func TestInnerVmResMeetAllRestApps(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter, true))
+	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextAppName, true))
 	t.Log("curAppName:", curAppName)
 
 	t.Log("copy 1, should be true")
@@ -462,7 +490,7 @@ func TestInnerVmResMeetAllRestApps(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy1, iterCopy1, true))
+	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy1, iterCopy1.nextAppName, true))
 	t.Log("curAppNameCopy1:", curAppNameCopy1)
 
 	t.Log("copy 2, should be false")
@@ -476,7 +504,7 @@ func TestInnerVmResMeetAllRestApps(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy2, iterCopy2, true))
+	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy2, iterCopy2.nextAppName, true))
 	t.Log("curAppNameCopy2:", curAppNameCopy2)
 
 	t.Log("copy 3, should be true")
@@ -486,11 +514,11 @@ func TestInnerVmResMeetAllRestApps(t *testing.T) {
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
 			CpuCore: 0.6,
-			Memory:  1000,
+			Memory:  1200,
 			Storage: 100,
 		},
 	}
-	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy3, iterCopy3, true))
+	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy3, iterCopy3.nextAppName, true))
 	t.Log("curAppNameCopy3:", curAppNameCopy3)
 
 	t.Log("copy 4, should be false")
@@ -504,7 +532,7 @@ func TestInnerVmResMeetAllRestApps(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy4, iterCopy4, true))
+	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy4, iterCopy4.nextAppName, true))
 	t.Log("curAppNameCopy4:", curAppNameCopy4)
 
 	func() {
@@ -520,7 +548,7 @@ func TestInnerVmResMeetAllRestApps(t *testing.T) {
 				Storage: 1000,
 			},
 		}
-		assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter, false))
+		assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextAppName, false))
 		t.Log("curAppName:", curAppName)
 
 		t.Log("copy 1, should be true")
@@ -534,7 +562,7 @@ func TestInnerVmResMeetAllRestApps(t *testing.T) {
 				Storage: 1000,
 			},
 		}
-		assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy1, iterCopy1, false))
+		assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy1, iterCopy1.nextAppName, false))
 		t.Log("curAppNameCopy1:", curAppNameCopy1)
 
 		t.Log("copy 2, should be false")
@@ -548,7 +576,7 @@ func TestInnerVmResMeetAllRestApps(t *testing.T) {
 				Storage: 1000,
 			},
 		}
-		assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy2, iterCopy2, false))
+		assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy2, iterCopy2.nextAppName, false))
 		t.Log("curAppNameCopy2:", curAppNameCopy2)
 
 		t.Log("copy 3, should be true")
@@ -562,7 +590,7 @@ func TestInnerVmResMeetAllRestApps(t *testing.T) {
 				Storage: 1000,
 			},
 		}
-		assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy3, iterCopy3, false))
+		assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy3, iterCopy3.nextAppName, false))
 		t.Log("curAppNameCopy3:", curAppNameCopy3)
 
 		t.Log("copy 4, should be false")
@@ -576,7 +604,496 @@ func TestInnerVmResMeetAllRestApps(t *testing.T) {
 				Storage: 1000,
 			},
 		}
-		assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy4, iterCopy4, false))
+		assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy4, iterCopy4.nextAppName, false))
+		t.Log("curAppNameCopy4:", curAppNameCopy4)
+	}()
+
+}
+
+func TestInnerVmResMeetAllRestAppsMaxPri(t *testing.T) {
+	cloud, apps, soln := cloudAppsSolnForIterTest()
+	appsThisCloud := findAppsOneCloud(cloud, apps, soln) // need 0.4 CPU, 3214 Memory, 66 Storage in total.
+	appsOrder := GenerateAppsOrder(apps)
+
+	t.Log()
+	t.Log("list the MaxPri apps scheduled to this cloud in order")
+	var appsThisCloudIter *appOneCloudIter = newAppOneCloudIter(appsThisCloud, appsOrder)
+	var curAppName string = appsThisCloudIter.nextMaxPriAppName()
+	for len(curAppName) != 0 {
+		t.Logf("curApp: %+v\n", appsThisCloud[curAppName])
+		curAppName = appsThisCloudIter.nextMaxPriAppName()
+	}
+
+	t.Log()
+	t.Log("case 1")
+	appsThisCloudIter = newAppOneCloudIter(appsThisCloud, appsOrder)
+	curAppName = appsThisCloudIter.nextMaxPriAppName()
+	vm := asmodel.K8sNode{
+		Name: "vm",
+		ResidualResources: asmodel.GenericResources{
+			CpuCore: 2,
+			Memory:  10240,
+			Storage: 100,
+		},
+	}
+	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextMaxPriAppName, true))
+
+	t.Log()
+	t.Log("case 2")
+	appsThisCloudIter = newAppOneCloudIter(appsThisCloud, appsOrder)
+	curAppName = appsThisCloudIter.nextMaxPriAppName()
+
+	vm = asmodel.K8sNode{
+		Name: "vm",
+		ResidualResources: asmodel.GenericResources{
+			CpuCore: 0.1,
+			Memory:  10240,
+			Storage: 100,
+		},
+	}
+	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextMaxPriAppName, true))
+	t.Log("curAppName:", curAppName)
+
+	vm = asmodel.K8sNode{
+		Name: "vm",
+		ResidualResources: asmodel.GenericResources{
+			CpuCore: 0.05,
+			Memory:  10240,
+			Storage: 100,
+		},
+	}
+	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextMaxPriAppName, true))
+	t.Log("curAppName:", curAppName)
+
+	vm = asmodel.K8sNode{
+		Name: "vm",
+		ResidualResources: asmodel.GenericResources{
+			CpuCore: 0.3,
+			Memory:  10240,
+			Storage: 100,
+		},
+	}
+	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextMaxPriAppName, true))
+	t.Log("curAppName:", curAppName)
+
+	t.Log()
+	t.Log("case 3")
+	appsThisCloudIter = newAppOneCloudIter(appsThisCloud, appsOrder)
+	curAppName = appsThisCloudIter.nextMaxPriAppName()
+
+	vm = asmodel.K8sNode{
+		Name: "vm",
+		ResidualResources: asmodel.GenericResources{
+			CpuCore: 0.6,
+			Memory:  1000,
+			Storage: 100,
+		},
+	}
+	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextMaxPriAppName, true))
+	t.Log("curAppName:", curAppName)
+
+	vm = asmodel.K8sNode{
+		Name: "vm",
+		ResidualResources: asmodel.GenericResources{
+			CpuCore: 0.6,
+			Memory:  1000,
+			Storage: 100,
+		},
+	}
+	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextMaxPriAppName, true))
+	t.Log("curAppName:", curAppName)
+
+	t.Log()
+	t.Log("case 4: copy")
+	appsThisCloudIter = newAppOneCloudIter(appsThisCloud, appsOrder)
+	curAppName = appsThisCloudIter.nextMaxPriAppName()
+	vm = asmodel.K8sNode{
+		Name: "vm",
+		ResidualResources: asmodel.GenericResources{
+			CpuCore: 0.6,
+			Memory:  1000,
+			Storage: 100,
+		},
+	}
+	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextMaxPriAppName, true))
+	t.Log("curAppName:", curAppName)
+
+	t.Log("copy 1, should be true")
+	iterCopy1 := appsThisCloudIter.Copy()
+	curAppNameCopy1 := curAppName
+	vm = asmodel.K8sNode{
+		Name: "vm",
+		ResidualResources: asmodel.GenericResources{
+			CpuCore: 0.6,
+			Memory:  1000,
+			Storage: 100,
+		},
+	}
+	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy1, iterCopy1.nextMaxPriAppName, true))
+	t.Log("curAppNameCopy1:", curAppNameCopy1)
+
+	t.Log("copy 2, should be false")
+	iterCopy2 := appsThisCloudIter.Copy()
+	curAppNameCopy2 := curAppName
+	vm = asmodel.K8sNode{
+		Name: "vm",
+		ResidualResources: asmodel.GenericResources{
+			CpuCore: 0.6,
+			Memory:  10,
+			Storage: 100,
+		},
+	}
+	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy2, iterCopy2.nextMaxPriAppName, true))
+	t.Log("curAppNameCopy2:", curAppNameCopy2)
+
+	t.Log("copy 3, should be true")
+	iterCopy3 := appsThisCloudIter.Copy()
+	curAppNameCopy3 := curAppName
+	vm = asmodel.K8sNode{
+		Name: "vm",
+		ResidualResources: asmodel.GenericResources{
+			CpuCore: 0.6,
+			Memory:  1200,
+			Storage: 100,
+		},
+	}
+	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy3, iterCopy3.nextMaxPriAppName, true))
+	t.Log("curAppNameCopy3:", curAppNameCopy3)
+
+	t.Log("copy 4, should be false")
+	iterCopy4 := appsThisCloudIter.Copy()
+	curAppNameCopy4 := curAppName
+	vm = asmodel.K8sNode{
+		Name: "vm",
+		ResidualResources: asmodel.GenericResources{
+			CpuCore: 0.6,
+			Memory:  10,
+			Storage: 100,
+		},
+	}
+	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy4, iterCopy4.nextMaxPriAppName, true))
+	t.Log("curAppNameCopy4:", curAppNameCopy4)
+
+	func() {
+		t.Log()
+		t.Log("case 5: copy without minCpu")
+		appsThisCloudIter = newAppOneCloudIter(appsThisCloud, appsOrder)
+		curAppName = appsThisCloudIter.nextMaxPriAppName()
+		vm = asmodel.K8sNode{
+			Name: "vm",
+			ResidualResources: asmodel.GenericResources{
+				CpuCore: 4.0,
+				Memory:  30000,
+				Storage: 1000,
+			},
+		}
+		assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextMaxPriAppName, false))
+		t.Log("curAppName:", curAppName)
+
+		t.Log("copy 1, should be true")
+		iterCopy1 := appsThisCloudIter.Copy()
+		curAppNameCopy1 := curAppName
+		vm = asmodel.K8sNode{
+			Name: "vm",
+			ResidualResources: asmodel.GenericResources{
+				CpuCore: 4,
+				Memory:  30000,
+				Storage: 1000,
+			},
+		}
+		assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy1, iterCopy1.nextMaxPriAppName, false))
+		t.Log("curAppNameCopy1:", curAppNameCopy1)
+
+		t.Log("copy 2, should be false")
+		iterCopy2 := appsThisCloudIter.Copy()
+		curAppNameCopy2 := curAppName
+		vm = asmodel.K8sNode{
+			Name: "vm",
+			ResidualResources: asmodel.GenericResources{
+				CpuCore: 2.5,
+				Memory:  30000,
+				Storage: 1000,
+			},
+		}
+		assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy2, iterCopy2.nextMaxPriAppName, false))
+		t.Log("curAppNameCopy2:", curAppNameCopy2)
+
+		t.Log("copy 3, should be true")
+		iterCopy3 := appsThisCloudIter.Copy()
+		curAppNameCopy3 := curAppName
+		vm = asmodel.K8sNode{
+			Name: "vm",
+			ResidualResources: asmodel.GenericResources{
+				CpuCore: 4,
+				Memory:  30000,
+				Storage: 1000,
+			},
+		}
+		assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy3, iterCopy3.nextMaxPriAppName, false))
+		t.Log("curAppNameCopy3:", curAppNameCopy3)
+
+		t.Log("copy 4, should be false")
+		iterCopy4 := appsThisCloudIter.Copy()
+		curAppNameCopy4 := curAppName
+		vm = asmodel.K8sNode{
+			Name: "vm",
+			ResidualResources: asmodel.GenericResources{
+				CpuCore: 2.5,
+				Memory:  30000,
+				Storage: 1000,
+			},
+		}
+		assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy4, iterCopy4.nextMaxPriAppName, false))
+		t.Log("curAppNameCopy4:", curAppNameCopy4)
+	}()
+
+}
+
+func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
+	cloud, apps, soln := cloudAppsSolnForIterTest()
+	appsThisCloud := findAppsOneCloud(cloud, apps, soln) // need 0.4 CPU, 3214 Memory, 66 Storage in total.
+	appsOrder := GenerateAppsOrder(apps)
+
+	t.Log()
+	t.Log("list the NotMaxPri apps scheduled to this cloud in order")
+	var appsThisCloudIter *appOneCloudIter = newAppOneCloudIter(appsThisCloud, appsOrder)
+	var curAppName string = appsThisCloudIter.nextNotMaxPriAppName()
+	for len(curAppName) != 0 {
+		t.Logf("curApp: %+v\n", appsThisCloud[curAppName])
+		curAppName = appsThisCloudIter.nextNotMaxPriAppName()
+	}
+
+	t.Log()
+	t.Log("case 1")
+	appsThisCloudIter = newAppOneCloudIter(appsThisCloud, appsOrder)
+	curAppName = appsThisCloudIter.nextNotMaxPriAppName()
+	vm := asmodel.K8sNode{
+		Name: "vm",
+		ResidualResources: asmodel.GenericResources{
+			CpuCore: 2,
+			Memory:  10240,
+			Storage: 100,
+		},
+	}
+	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextNotMaxPriAppName, true))
+
+	t.Log()
+	t.Log("case 2")
+	appsThisCloudIter = newAppOneCloudIter(appsThisCloud, appsOrder)
+	curAppName = appsThisCloudIter.nextNotMaxPriAppName()
+
+	vm = asmodel.K8sNode{
+		Name: "vm",
+		ResidualResources: asmodel.GenericResources{
+			CpuCore: 0.1,
+			Memory:  10240,
+			Storage: 100,
+		},
+	}
+	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextNotMaxPriAppName, true))
+	t.Log("curAppName:", curAppName)
+
+	vm = asmodel.K8sNode{
+		Name: "vm",
+		ResidualResources: asmodel.GenericResources{
+			CpuCore: 0.05,
+			Memory:  10240,
+			Storage: 100,
+		},
+	}
+	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextNotMaxPriAppName, true))
+	t.Log("curAppName:", curAppName)
+
+	vm = asmodel.K8sNode{
+		Name: "vm",
+		ResidualResources: asmodel.GenericResources{
+			CpuCore: 0.3,
+			Memory:  10240,
+			Storage: 100,
+		},
+	}
+	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextNotMaxPriAppName, true))
+	t.Log("curAppName:", curAppName)
+
+	t.Log()
+	t.Log("case 3")
+	appsThisCloudIter = newAppOneCloudIter(appsThisCloud, appsOrder)
+	curAppName = appsThisCloudIter.nextNotMaxPriAppName()
+
+	vm = asmodel.K8sNode{
+		Name: "vm",
+		ResidualResources: asmodel.GenericResources{
+			CpuCore: 0.6,
+			Memory:  1100,
+			Storage: 100,
+		},
+	}
+	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextNotMaxPriAppName, true))
+	t.Log("curAppName:", curAppName)
+
+	vm = asmodel.K8sNode{
+		Name: "vm",
+		ResidualResources: asmodel.GenericResources{
+			CpuCore: 0.6,
+			Memory:  500,
+			Storage: 100,
+		},
+	}
+	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextNotMaxPriAppName, true))
+	t.Log("curAppName:", curAppName)
+
+	vm = asmodel.K8sNode{
+		Name: "vm",
+		ResidualResources: asmodel.GenericResources{
+			CpuCore: 0.6,
+			Memory:  1100,
+			Storage: 100,
+		},
+	}
+	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextNotMaxPriAppName, true))
+	t.Log("curAppName:", curAppName)
+
+	t.Log()
+	t.Log("case 4: copy")
+	appsThisCloudIter = newAppOneCloudIter(appsThisCloud, appsOrder)
+	curAppName = appsThisCloudIter.nextNotMaxPriAppName()
+	vm = asmodel.K8sNode{
+		Name: "vm",
+		ResidualResources: asmodel.GenericResources{
+			CpuCore: 0.6,
+			Memory:  1100,
+			Storage: 100,
+		},
+	}
+	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextNotMaxPriAppName, true))
+	t.Log("curAppName:", curAppName)
+
+	t.Log("copy 1, should be true")
+	iterCopy1 := appsThisCloudIter.Copy()
+	curAppNameCopy1 := curAppName
+	vm = asmodel.K8sNode{
+		Name: "vm",
+		ResidualResources: asmodel.GenericResources{
+			CpuCore: 0.6,
+			Memory:  1100,
+			Storage: 100,
+		},
+	}
+	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy1, iterCopy1.nextNotMaxPriAppName, true))
+	t.Log("curAppNameCopy1:", curAppNameCopy1)
+
+	t.Log("copy 2, should be false")
+	iterCopy2 := appsThisCloudIter.Copy()
+	curAppNameCopy2 := curAppName
+	vm = asmodel.K8sNode{
+		Name: "vm",
+		ResidualResources: asmodel.GenericResources{
+			CpuCore: 0.6,
+			Memory:  10,
+			Storage: 100,
+		},
+	}
+	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy2, iterCopy2.nextNotMaxPriAppName, true))
+	t.Log("curAppNameCopy2:", curAppNameCopy2)
+
+	t.Log("copy 3, should be true")
+	iterCopy3 := appsThisCloudIter.Copy()
+	curAppNameCopy3 := curAppName
+	vm = asmodel.K8sNode{
+		Name: "vm",
+		ResidualResources: asmodel.GenericResources{
+			CpuCore: 0.6,
+			Memory:  1200,
+			Storage: 100,
+		},
+	}
+	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy3, iterCopy3.nextNotMaxPriAppName, true))
+	t.Log("curAppNameCopy3:", curAppNameCopy3)
+
+	t.Log("copy 4, should be false")
+	iterCopy4 := appsThisCloudIter.Copy()
+	curAppNameCopy4 := curAppName
+	vm = asmodel.K8sNode{
+		Name: "vm",
+		ResidualResources: asmodel.GenericResources{
+			CpuCore: 0.6,
+			Memory:  10,
+			Storage: 100,
+		},
+	}
+	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy4, iterCopy4.nextNotMaxPriAppName, true))
+	t.Log("curAppNameCopy4:", curAppNameCopy4)
+
+	func() {
+		t.Log()
+		t.Log("case 5: copy without minCpu")
+		appsThisCloudIter = newAppOneCloudIter(appsThisCloud, appsOrder)
+		curAppName = appsThisCloudIter.nextNotMaxPriAppName()
+		vm = asmodel.K8sNode{
+			Name: "vm",
+			ResidualResources: asmodel.GenericResources{
+				CpuCore: 5.2,
+				Memory:  30000,
+				Storage: 1000,
+			},
+		}
+		assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextNotMaxPriAppName, false))
+		t.Log("curAppName:", curAppName)
+
+		t.Log("copy 1, should be true")
+		iterCopy1 := appsThisCloudIter.Copy()
+		curAppNameCopy1 := curAppName
+		vm = asmodel.K8sNode{
+			Name: "vm",
+			ResidualResources: asmodel.GenericResources{
+				CpuCore: 5.5,
+				Memory:  30000,
+				Storage: 1000,
+			},
+		}
+		assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy1, iterCopy1.nextNotMaxPriAppName, false))
+		t.Log("curAppNameCopy1:", curAppNameCopy1)
+
+		t.Log("copy 2, should be false")
+		iterCopy2 := appsThisCloudIter.Copy()
+		curAppNameCopy2 := curAppName
+		vm = asmodel.K8sNode{
+			Name: "vm",
+			ResidualResources: asmodel.GenericResources{
+				CpuCore: 2.3,
+				Memory:  30000,
+				Storage: 1000,
+			},
+		}
+		assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy2, iterCopy2.nextNotMaxPriAppName, false))
+		t.Log("curAppNameCopy2:", curAppNameCopy2)
+
+		t.Log("copy 3, should be true")
+		iterCopy3 := appsThisCloudIter.Copy()
+		curAppNameCopy3 := curAppName
+		vm = asmodel.K8sNode{
+			Name: "vm",
+			ResidualResources: asmodel.GenericResources{
+				CpuCore: 5.6,
+				Memory:  30000,
+				Storage: 1000,
+			},
+		}
+		assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy3, iterCopy3.nextNotMaxPriAppName, false))
+		t.Log("curAppNameCopy3:", curAppNameCopy3)
+
+		t.Log("copy 4, should be false")
+		iterCopy4 := appsThisCloudIter.Copy()
+		curAppNameCopy4 := curAppName
+		vm = asmodel.K8sNode{
+			Name: "vm",
+			ResidualResources: asmodel.GenericResources{
+				CpuCore: 2.1,
+				Memory:  30000,
+				Storage: 1000,
+			},
+		}
+		assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy4, iterCopy4.nextNotMaxPriAppName, false))
 		t.Log("curAppNameCopy4:", curAppNameCopy4)
 	}()
 

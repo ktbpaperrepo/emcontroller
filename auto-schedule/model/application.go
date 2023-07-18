@@ -10,6 +10,11 @@ import (
 	"emcontroller/models"
 )
 
+const (
+	MaxPriority int = 10
+	MinPriority int = 1
+)
+
 // For migration, we can put the Json of this structure into the Annotation with key variable "AutoScheduleInfoAnno" of the Kubernetes Deployment, so that multi-cloud manager can get the information needed for auto-scheduling from the Annotation with key variable "AutoScheduleInfoAnno".
 type Application struct {
 	Name         string              `json:"name"`
