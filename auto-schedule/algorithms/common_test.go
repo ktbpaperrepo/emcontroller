@@ -122,7 +122,7 @@ func cloudAppsSolnForIterTest() (asmodel.Cloud, map[string]asmodel.Application, 
 			Name: "app1",
 			Resources: asmodel.AppResources{
 				GenericResources: asmodel.GenericResources{
-					CpuCore: 5.0,
+					CpuCore: 2.4,
 					Memory:  1024,
 					Storage: 10,
 				},
@@ -132,7 +132,7 @@ func cloudAppsSolnForIterTest() (asmodel.Cloud, map[string]asmodel.Application, 
 			Name: "app2",
 			Resources: asmodel.AppResources{
 				GenericResources: asmodel.GenericResources{
-					CpuCore: 5.0,
+					CpuCore: 3.9,
 					Memory:  990,
 					Storage: 15,
 				},
@@ -142,7 +142,7 @@ func cloudAppsSolnForIterTest() (asmodel.Cloud, map[string]asmodel.Application, 
 			Name: "app3",
 			Resources: asmodel.AppResources{
 				GenericResources: asmodel.GenericResources{
-					CpuCore: 5.0,
+					CpuCore: 1.4,
 					Memory:  990,
 					Storage: 15,
 				},
@@ -172,7 +172,7 @@ func cloudAppsSolnForIterTest() (asmodel.Cloud, map[string]asmodel.Application, 
 			Name: "app6",
 			Resources: asmodel.AppResources{
 				GenericResources: asmodel.GenericResources{
-					CpuCore: 5.0,
+					CpuCore: 4.0,
 					Memory:  990,
 					Storage: 15,
 				},
@@ -182,7 +182,7 @@ func cloudAppsSolnForIterTest() (asmodel.Cloud, map[string]asmodel.Application, 
 			Name: "app7",
 			Resources: asmodel.AppResources{
 				GenericResources: asmodel.GenericResources{
-					CpuCore: 5.0,
+					CpuCore: 3.0,
 					Memory:  540,
 					Storage: 35,
 				},
@@ -192,7 +192,7 @@ func cloudAppsSolnForIterTest() (asmodel.Cloud, map[string]asmodel.Application, 
 			Name: "app8",
 			Resources: asmodel.AppResources{
 				GenericResources: asmodel.GenericResources{
-					CpuCore: 5.0,
+					CpuCore: 2.0,
 					Memory:  540,
 					Storage: 15,
 				},

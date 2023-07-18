@@ -47,7 +47,7 @@ func resAccOneCloud(cloud asmodel.Cloud, apps map[string]asmodel.Application, ap
 	// Step 1. use up the resources of existing VMs
 	for _, vm := range cloud.K8sNodes { // this vm is only the copy, so the change of it will not affect the original cloud
 		// For every VM, if the resources of this vm can meet all rest applications, it means that the resources of this cloud is enough for the applications scheduled to it.
-		if vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter) {
+		if vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter, true) {
 			return true
 		}
 	}
@@ -77,7 +77,7 @@ func resAccOneCloud(cloud asmodel.Cloud, apps map[string]asmodel.Application, ap
 		curAppNameCopy := curAppName
 
 		// If vmToCreate have enough resources for the applications, it means this cloud has enough resources.
-		if vmResMeetAllRestApps(vmToCreate, apps, &curAppNameCopy, iterCopy) {
+		if vmResMeetAllRestApps(vmToCreate, apps, &curAppNameCopy, iterCopy, true) {
 			return true
 		}
 	} else if cloudLeastResPct > smallerVmResPct { // try 2
@@ -87,7 +87,7 @@ func resAccOneCloud(cloud asmodel.Cloud, apps map[string]asmodel.Application, ap
 		iterCopy := appsThisCloudIter.Copy()
 		curAppNameCopy := curAppName
 
-		if vmResMeetAllRestApps(vmToCreate, apps, &curAppNameCopy, iterCopy) {
+		if vmResMeetAllRestApps(vmToCreate, apps, &curAppNameCopy, iterCopy, true) {
 			return true
 		}
 	}
@@ -96,7 +96,7 @@ func resAccOneCloud(cloud asmodel.Cloud, apps map[string]asmodel.Application, ap
 	// or if the vmToCreate in the above tried 1 or 2 cannot meet all rest applications scheduled to this cloud,
 	// we try 3.
 	vmToCreate := cloud.GetInfoVmToCreate(allRestVmResPct)
-	if vmResMeetAllRestApps(vmToCreate, apps, &curAppName, appsThisCloudIter) {
+	if vmResMeetAllRestApps(vmToCreate, apps, &curAppName, appsThisCloudIter, true) {
 		return true
 	}
 
@@ -105,26 +105,41 @@ func resAccOneCloud(cloud asmodel.Cloud, apps map[string]asmodel.Application, ap
 }
 
 // check whether the residual resources of a VM can support an application
-func isResEnough(vm asmodel.K8sNode, app asmodel.Application) bool {
-	// CPU is a soft resource, so we think that cpuCoreStep CPU is the minimum requirement for each application
-	return vm.ResidualResources.CpuCore >= cpuCoreStep &&
+func isResEnough(vm asmodel.K8sNode, app asmodel.Application, minCpu bool) bool {
+	// In some conditions, the occupied CPU can be considered as the original requirement of the application.
+	var cpuToOccupy float64 = app.Resources.CpuCore
+
+	// CPU is a soft resource, so we think that cpuCoreStep CPU is the minimum requirement for each application.
+	// In some conditions, the occupied CPU can be considered as the minimum requirement.
+	if minCpu {
+		cpuToOccupy = cpuCoreStep
+	}
+
+	return vm.ResidualResources.CpuCore >= cpuToOccupy &&
 		vm.ResidualResources.Memory >= app.Resources.Memory &&
 		vm.ResidualResources.Storage >= app.Resources.Storage
 }
 
 // subtract the resources required by an application from a VM
-func subRes(vm *asmodel.K8sNode, app asmodel.Application) {
-	// CPU is a soft resource, so we think that cpuCoreStep CPU is the minimum requirement for each application
-	vm.ResidualResources.CpuCore -= cpuCoreStep
+func subRes(vm *asmodel.K8sNode, app asmodel.Application, minCpu bool) {
+	// In some conditions, the occupied CPU can be considered as the original requirement of the application.
+	var cpuToOccupy float64 = app.Resources.CpuCore
+
+	// CPU is a soft resource, so we think that cpuCoreStep CPU is the minimum requirement for each application.
+	// In some conditions, the occupied CPU can be considered as the minimum requirement.
+	if minCpu {
+		cpuToOccupy = cpuCoreStep
+	}
+	vm.ResidualResources.CpuCore -= cpuToOccupy
 	vm.ResidualResources.Memory -= app.Resources.Memory
 	vm.ResidualResources.Storage -= app.Resources.Storage
 }
 
 // check whether the resources of the input VM can support all rest applications.
-func vmResMeetAllRestApps(vm asmodel.K8sNode, apps map[string]asmodel.Application, curAppName *string, appsThisCloudIter *appOneCloudIter) bool {
+func vmResMeetAllRestApps(vm asmodel.K8sNode, apps map[string]asmodel.Application, curAppName *string, appsThisCloudIter *appOneCloudIter, minCpu bool) bool {
 	// we loop until the resources of this VM is used up.
-	for isResEnough(vm, apps[*curAppName]) {
-		subRes(&vm, apps[*curAppName]) // simulate deploying this application on this VM.
+	for isResEnough(vm, apps[*curAppName], minCpu) {
+		subRes(&vm, apps[*curAppName], minCpu) // simulate deploying this application on this VM.
 		// After the current applications is deployed, we go to the next application.
 		*curAppName = appsThisCloudIter.nextAppName() // curAppName and appsThisCloudIter are pointers, so the value change will affect the variables outside this function.
 		if len(*curAppName) == 0 {
