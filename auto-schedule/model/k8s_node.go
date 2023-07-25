@@ -1,5 +1,10 @@
 package model
 
+import (
+	"emcontroller/models"
+	apiv1 "k8s.io/api/core/v1"
+)
+
 const (
 	ASVmNamePrefix string = "auto-sched-"
 )
@@ -15,4 +20,73 @@ type K8sNode struct {
 	3. We do not support to migrating old applications and deploying new applications in one scheduling.
 	*/
 
+}
+
+// generate a K8sNode variable from a VM and the pods deployed on it.
+func GenK8sNodeFromPods(vm models.IaasVm, podsOnNode []apiv1.Pod) K8sNode {
+	// Get available resources of this VM
+	residualCpuCore := models.CalcVmAvailVcpu(vm.VCpu)
+	residualRamMiB := models.CalcVmAvailRamMiB(vm.Ram)
+	residualStorGiB := models.CalcVmAvailStorGiB(vm.Storage)
+
+	// subtract the resources occupied by pods
+	for _, pod := range podsOnNode {
+		occupied := GetResOccupiedByPod(pod)
+		residualCpuCore -= occupied.CpuCore
+		residualRamMiB -= occupied.Memory
+		residualStorGiB -= occupied.Storage
+	}
+
+	// handle possible negative results
+	if residualCpuCore < 0 {
+		residualCpuCore = 0
+	}
+	if residualRamMiB < 0 {
+		residualRamMiB = 0
+	}
+	if residualStorGiB < 0 {
+		residualStorGiB = 0
+	}
+
+	// we put the information needed by auto-scheduling to the K8sNode structure
+	var thisNode K8sNode
+	thisNode.Name = vm.Name
+	thisNode.ResidualResources.CpuCore = residualCpuCore
+	thisNode.ResidualResources.Memory = residualRamMiB
+	thisNode.ResidualResources.Storage = residualStorGiB
+	return thisNode
+}
+
+// generate a K8sNode variable from a VM and the applications deployed on it.
+func GenK8sNodeFromApps(vm models.IaasVm, apps map[string]Application, appGroup []string) K8sNode {
+	// Get available resources of this VM
+	residualCpuCore := models.CalcVmAvailVcpu(vm.VCpu)
+	residualRamMiB := models.CalcVmAvailRamMiB(vm.Ram)
+	residualStorGiB := models.CalcVmAvailStorGiB(vm.Storage)
+
+	// subtract the resources occupied by applications
+	for _, appName := range appGroup {
+		residualCpuCore -= apps[appName].Resources.CpuCore
+		residualRamMiB -= apps[appName].Resources.Memory
+		residualStorGiB -= apps[appName].Resources.Storage
+	}
+
+	// handle possible negative results
+	if residualCpuCore < 0 {
+		residualCpuCore = 0
+	}
+	if residualRamMiB < 0 {
+		residualRamMiB = 0
+	}
+	if residualStorGiB < 0 {
+		residualStorGiB = 0
+	}
+
+	// we put the information needed by auto-scheduling to the K8sNode structure
+	var thisNode K8sNode
+	thisNode.Name = vm.Name
+	thisNode.ResidualResources.CpuCore = residualCpuCore
+	thisNode.ResidualResources.Memory = residualRamMiB
+	thisNode.ResidualResources.Storage = residualStorGiB
+	return thisNode
 }

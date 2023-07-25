@@ -16,12 +16,12 @@ func allocateCpus(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Appli
 	for _, cloud := range clouds {
 		solnWithCpuThisCloud, acceptable := allocateCpusOneCLoud(cloud, apps, appsOrder, solnWithVm)
 		if !acceptable { // if any cloud cannot accept the scheduled applications, this whole solution is not acceptable.
-			return nil, false
+			return asmodel.Solution{}, false
 		}
 
 		// add the solution of this cloud to the total solution
 		for appName, appSoln := range solnWithCpuThisCloud {
-			solnWithCpu[appName] = appSoln
+			solnWithCpu.AppsSolution[appName] = appSoln
 		}
 	}
 
@@ -33,5 +33,5 @@ func allocateCpusOneCLoud(cloud asmodel.Cloud, apps map[string]asmodel.Applicati
 	// For every cloud, at first, we find out the applications scheduled on it.
 	// appsThisCloud := findAppsOneCloud(cloud, apps, solnWithVm)
 	_ = findAppsOneCloud(cloud, apps, solnWithVm)
-	return solnWithVm, true
+	return solnWithVm.AppsSolution, true
 }

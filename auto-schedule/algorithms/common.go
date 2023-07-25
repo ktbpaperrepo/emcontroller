@@ -13,7 +13,6 @@ const (
 	// 3. a VM with all rest resources; if all rest is not enough, it means this solution is not acceptable.
 	biggerVmResPct  float64 = 0.5
 	smallerVmResPct float64 = 0.3
-	allRestVmResPct float64 = 1.0
 )
 
 // SchedulingAlgorithm is the interface that all algorithms should implement
@@ -24,12 +23,34 @@ type SchedulingAlgorithm interface {
 // With a solution, Find out the applications scheduled on this cloud
 func findAppsOneCloud(cloud asmodel.Cloud, apps map[string]asmodel.Application, soln asmodel.Solution) map[string]asmodel.Application {
 	appsThisCloud := make(map[string]asmodel.Application)
-	for appName, appSoln := range soln {
+	for appName, appSoln := range soln.AppsSolution {
 		if appSoln.Accepted && appSoln.TargetCloudName == cloud.Name {
 			appsThisCloud[appName] = apps[appName]
 		}
 	}
 	return appsThisCloud
+}
+
+// filter the max-priority applications
+func filterMaxPriApps(apps map[string]asmodel.Application) map[string]asmodel.Application {
+	var maxPriApps map[string]asmodel.Application = make(map[string]asmodel.Application)
+	for appName, app := range apps {
+		if app.Priority == asmodel.MaxPriority {
+			maxPriApps[appName] = app
+		}
+	}
+	return maxPriApps
+}
+
+// filter out the max-priority applications
+func filterOutMaxPriApps(apps map[string]asmodel.Application) map[string]asmodel.Application {
+	var maxPriApps map[string]asmodel.Application = make(map[string]asmodel.Application)
+	for appName, app := range apps {
+		if app.Priority != asmodel.MaxPriority {
+			maxPriApps[appName] = app
+		}
+	}
+	return maxPriApps
 }
 
 // In Golang, the iteration order of map is random, but in some steps of scheduling, we need a fixed order of applications, so we make this function to randomly generate a order of applications and use it as the fixed application order in scheduling.
@@ -39,72 +60,4 @@ func GenerateAppsOrder(apps map[string]asmodel.Application) []string {
 		appsOrder = append(appsOrder, appName)
 	}
 	return appsOrder
-}
-
-// Iterator to iterate the applications on one cloud in a fixed order
-type appOneCloudIter struct {
-	appsThisCloud map[string]asmodel.Application
-	appsOrder     []string // a slice of app names
-	nextAppIdx    int
-}
-
-func newAppOneCloudIter(appsThisCloud map[string]asmodel.Application, appsOrder []string) *appOneCloudIter {
-	return &appOneCloudIter{
-		appsThisCloud: appsThisCloud,
-		appsOrder:     appsOrder,
-		nextAppIdx:    0,
-	}
-}
-
-func (it *appOneCloudIter) nextAppName() string {
-	for it.nextAppIdx < len(it.appsOrder) {
-		curAppName := it.appsOrder[it.nextAppIdx]
-		if _, exist := it.appsThisCloud[curAppName]; exist {
-			it.nextAppIdx++
-			return curAppName
-		}
-		it.nextAppIdx++
-	}
-	return ""
-}
-
-// get the name of the next application with the priority asmodel.MaxPriority
-func (it *appOneCloudIter) nextMaxPriAppName() string {
-	for it.nextAppIdx < len(it.appsOrder) {
-		curAppName := it.appsOrder[it.nextAppIdx]
-		if app, exist := it.appsThisCloud[curAppName]; exist && app.Priority == asmodel.MaxPriority {
-			it.nextAppIdx++
-			return curAppName
-		}
-		it.nextAppIdx++
-	}
-	return ""
-}
-
-// get the name of the next application with the priority not asmodel.MaxPriority
-func (it *appOneCloudIter) nextNotMaxPriAppName() string {
-	for it.nextAppIdx < len(it.appsOrder) {
-		curAppName := it.appsOrder[it.nextAppIdx]
-		if app, exist := it.appsThisCloud[curAppName]; exist && app.Priority != asmodel.MaxPriority {
-			it.nextAppIdx++
-			return curAppName
-		}
-		it.nextAppIdx++
-	}
-	return ""
-}
-
-func (it *appOneCloudIter) Copy() *appOneCloudIter {
-	// copy the map (not completely deep, but enough for our scenarios)
-	appsThisCloudCopy := asmodel.AppMapCopy(it.appsThisCloud)
-
-	// deep copy the slice
-	appsOrderCopy := make([]string, len(it.appsOrder))
-	copy(appsOrderCopy, it.appsOrder)
-
-	return &appOneCloudIter{
-		appsThisCloud: appsThisCloudCopy,
-		appsOrder:     appsOrderCopy,
-		nextAppIdx:    it.nextAppIdx,
-	}
 }

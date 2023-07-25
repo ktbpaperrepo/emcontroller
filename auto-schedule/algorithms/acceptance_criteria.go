@@ -1,7 +1,18 @@
 package algorithms
 
 import (
+	"fmt"
+	apiv1 "k8s.io/api/core/v1"
+
 	asmodel "emcontroller/auto-schedule/model"
+)
+
+type AppType int
+
+const (
+	AllPriApps    AppType = iota // all applications.
+	MaxPriApps                   // only max-priority applications.
+	NotMaxPriApps                // only not-max-priority applications.
 )
 
 // Check whether a solution is acceptable (whether the resources are enough or not)
@@ -19,47 +30,75 @@ func Acceptable(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Applica
 
 // Check whether a solution is acceptable in terms of resources
 func resAcc(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string, soln asmodel.Solution) bool {
-	for _, cloud := range clouds { // check every cloud
-		if !resAccOneCloud(cloud, apps, appsOrder, soln) {
-			return false
-		}
-	}
+	//for _, cloud := range clouds { // check every cloud
+	//	if !resAccOneCloudSharedVm(cloud, apps, appsOrder, soln, AllPriApps) {
+	//		return false
+	//	}
+	//}
 
 	// all clouds passed
 	return true
 }
 
-// Check whether the resources of one cloud are enough for the applications scheduled to it.
-func resAccOneCloud(cloud asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string, soln asmodel.Solution) bool {
+// Check whether the resources of one cloud are enough for the applications scheduled to it when only creating a shared VM.
+// Also return the solution with the vm allocation scheme.
+func resAccOneCloudSharedVm(cloud asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string, solnWithoutVm asmodel.Solution, appTypeToHandle AppType) (asmodel.Solution, bool) {
 
 	// To check whether the resources are enough, we try to simulate deploying all applications scheduled to this cloud on this cloud.
-	appsThisCloud := findAppsOneCloud(cloud, apps, soln)
+	appsThisCloud := findAppsOneCloud(cloud, apps, solnWithoutVm)
 
-	// To ensure the definiteness/uniqueness of the result, to ensure that the check use the same order with the actual deploy, we use the appsOrder as the fixed order to deploy the applications.
-	appsThisCloudIter := newAppOneCloudIter(appsThisCloud, appsOrder)
-	curAppName := appsThisCloudIter.nextAppName()
-	if len(curAppName) == 0 {
-		return true // this means that no applications are scheduled to this cloud, so the resources are certainly enough.
+	// filter the type of applications that we will handle
+	var appsToHandle map[string]asmodel.Application
+	switch appTypeToHandle {
+	case AllPriApps:
+		appsToHandle = appsThisCloud
+	case MaxPriApps:
+		appsToHandle = filterMaxPriApps(appsThisCloud)
+	case NotMaxPriApps:
+		appsToHandle = filterOutMaxPriApps(appsThisCloud)
+	default:
+		panic(fmt.Sprintf("invalid appTypeToHandle: %v", appTypeToHandle))
 	}
 
-	// TODO: test cases are finished
+	// We put the result to return into this variable.
+	solnWithVm := asmodel.GenEmptySoln()
+	for appName, _ := range appsToHandle { // the result should only include the solutions for the applications to handle
+		solnWithVm.AppsSolution[appName] = solnWithoutVm.AppsSolution[appName]
+	}
+
+	// To ensure the definiteness/uniqueness of the result, to ensure that the check use the same order with the actual deploy, we use the appsOrder as the fixed order to deploy the applications.
+	appsIter := newAppOneCloudIter(appsToHandle, appsOrder)
+
+	curAppName := appsIter.nextAppName()
+	if len(curAppName) == 0 {
+		return solnWithVm, true // this means that no applications are scheduled to this cloud, so the resources are certainly enough.
+	}
 
 	// Step 1. use up the resources of existing VMs
 	for _, vm := range cloud.K8sNodes { // this vm is only the copy, so the change of it will not affect the original cloud
 		// For every VM, if the resources of this vm can meet all rest applications, it means that the resources of this cloud is enough for the applications scheduled to it.
-		if vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextAppName, true) {
-			return true
+		appNamesToThisVm, meetAllRest := vmResMeetAllRestApps(vm, apps, &curAppName, appsIter.nextAppName, true)
+
+		// put the vm allocation information into the solution.
+		for _, appName := range appNamesToThisVm {
+			thisAppSoln := solnWithVm.AppsSolution[appName]
+			thisAppSoln.K8sNodeName = vm.Name
+			solnWithVm.AppsSolution[appName] = thisAppSoln
+		}
+
+		if meetAllRest {
+			return solnWithVm, true
 		}
 	}
 
 	// Now, we have tried all existing VMs, and they are not enough for the applications. If this cloud does not support creating a new VM, we directly return false.
 	if !cloud.SupportCreateNewVM() {
-		return false
+		return solnWithVm, false
 	}
 
-	// Step 2. create a new VM
+	// Step 2. create a new shared VM
 	if !cloud.Resources.Limit.AllMoreThan(cloud.Resources.InUse) {
-		return false // The cloud does not have more resources to create new VMs.
+		return solnWithVm, false // The cloud does not have more resources to create new VMs.
 	}
 
 	/* On a cloud, when existing VMs do not have enough resources for the applications scheduled here, we have 3 possible choices to create a new VM:
@@ -70,38 +109,136 @@ func resAccOneCloud(cloud asmodel.Cloud, apps map[string]asmodel.Application, ap
 	cloudLeastResPct := cloud.Resources.LeastRemainPct()
 
 	if cloudLeastResPct > biggerVmResPct { // try 1
-		vmToCreate := cloud.GetInfoVmToCreate(biggerVmResPct)
+		vmToCreate := cloud.GetSharedVmToCreate(biggerVmResPct, false)
+		k8sNodeToCreate := asmodel.GenK8sNodeFromPods(vmToCreate, []apiv1.Pod{})
 
-		// if the 1 does not work, we should do 3, so we should use copy the iter and curAppName, avoiding changing the environment.
-		iterCopy := appsThisCloudIter.Copy()
+		// if the 1 does not work, we should do 3, so we should copy the iter and curAppName, avoiding changing the environment.
+		iterCopy := appsIter.Copy()
 		curAppNameCopy := curAppName
 
-		// If vmToCreate have enough resources for the applications, it means this cloud has enough resources.
-		if vmResMeetAllRestApps(vmToCreate, apps, &curAppNameCopy, iterCopy.nextAppName, true) {
-			return true
+		appNamesToThisVm, meetAllRest := vmResMeetAllRestApps(k8sNodeToCreate, apps, &curAppNameCopy, iterCopy.nextAppName, true)
+
+		// Only if this VM can meet all rest applications, we apply this vm scheme and put the vm allocation information into the solution.
+		if meetAllRest {
+			// modify single app solutions
+			for _, appName := range appNamesToThisVm {
+				thisAppSoln := solnWithVm.AppsSolution[appName]
+				thisAppSoln.K8sNodeName = vmToCreate.Name
+				solnWithVm.AppsSolution[appName] = thisAppSoln
+			}
+			// modify VmsToCreate
+			solnWithVm.VmsToCreate = append(solnWithVm.VmsToCreate, vmToCreate)
+
+			// If vmToCreate have enough resources for the applications, it means this cloud has enough resources.
+			return solnWithVm, true
 		}
+
 	} else if cloudLeastResPct > smallerVmResPct { // try 2
-		vmToCreate := cloud.GetInfoVmToCreate(smallerVmResPct)
+		vmToCreate := cloud.GetSharedVmToCreate(smallerVmResPct, false)
+		k8sNodeToCreate := asmodel.GenK8sNodeFromPods(vmToCreate, []apiv1.Pod{})
 
-		// if the 2 does not work, we should do 3, so we should use copy the iter and curAppName, avoiding changing the environment.
-		iterCopy := appsThisCloudIter.Copy()
+		// if the 2 does not work, we should do 3, so we should copy the iter and curAppName, avoiding changing the environment.
+		iterCopy := appsIter.Copy()
 		curAppNameCopy := curAppName
 
-		if vmResMeetAllRestApps(vmToCreate, apps, &curAppNameCopy, iterCopy.nextAppName, true) {
-			return true
+		appNamesToThisVm, meetAllRest := vmResMeetAllRestApps(k8sNodeToCreate, apps, &curAppNameCopy, iterCopy.nextAppName, true)
+
+		// Only if this VM can meet all rest applications, we apply this vm scheme and put the vm allocation information into the solution.
+		if meetAllRest {
+			// modify single app solutions
+			for _, appName := range appNamesToThisVm {
+				thisAppSoln := solnWithVm.AppsSolution[appName]
+				thisAppSoln.K8sNodeName = vmToCreate.Name
+				solnWithVm.AppsSolution[appName] = thisAppSoln
+			}
+			// modify VmsToCreate
+			solnWithVm.VmsToCreate = append(solnWithVm.VmsToCreate, vmToCreate)
+
+			// If vmToCreate have enough resources for the applications, it means this cloud has enough resources.
+			return solnWithVm, true
 		}
+
 	}
 
 	// If the rest percentage of this cloud's resources are less than 30%,
 	// or if the vmToCreate in the above tried 1 or 2 cannot meet all rest applications scheduled to this cloud,
 	// we try 3.
-	vmToCreate := cloud.GetInfoVmToCreate(allRestVmResPct)
-	if vmResMeetAllRestApps(vmToCreate, apps, &curAppName, appsThisCloudIter.nextAppName, true) {
-		return true
+	vmToCreate := cloud.GetSharedVmToCreate(0, true)
+	k8sNodeToCreate := asmodel.GenK8sNodeFromPods(vmToCreate, []apiv1.Pod{})
+
+	appNamesToThisVm, meetAllRest := vmResMeetAllRestApps(k8sNodeToCreate, apps, &curAppName, appsIter.nextAppName, true)
+
+	if meetAllRest {
+		// modify single app solutions
+		for _, appName := range appNamesToThisVm {
+			thisAppSoln := solnWithVm.AppsSolution[appName]
+			thisAppSoln.K8sNodeName = vmToCreate.Name
+			solnWithVm.AppsSolution[appName] = thisAppSoln
+		}
+		// modify VmsToCreate
+		solnWithVm.VmsToCreate = append(solnWithVm.VmsToCreate, vmToCreate)
+
+		// If vmToCreate have enough resources for the applications, it means this cloud has enough resources.
+		return solnWithVm, true
 	}
 
 	// the vmToCreate in the above tried 3 cannot meet all rest applications scheduled to this cloud, which means that this cloud does not have enough resources.
-	return false
+	return solnWithVm, false
+}
+
+// Check whether the resources of one cloud are enough for the applications scheduled to it when creating dedicated VMs.
+// Also return the solution with the vm allocation scheme.
+func resAccOneCloudDedicatedVms(cloud asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string, solnWithoutVm asmodel.Solution) (asmodel.Solution, bool) {
+	// To use dedicated VMs, creating new VMs is necessary.
+	if !cloud.SupportCreateNewVM() {
+		return asmodel.Solution{}, false
+	}
+
+	appsThisCloud := findAppsOneCloud(cloud, apps, solnWithoutVm)
+
+	// We put the result to return into this variable.
+	solnWithVm := asmodel.GenEmptySoln()
+	for appName, _ := range appsThisCloud { // the result should only include the solutions for the applications to handle
+		solnWithVm.AppsSolution[appName] = solnWithoutVm.AppsSolution[appName]
+	}
+
+	// 1. try to create dedicated VMs for Max-Priority applications
+
+	// find out the Max-Priority applications, because the dedicated VMs are for them.
+	// At here, we do not need to keep the order of the applications, so we do not need to use iterator
+	var maxPriApps map[string]asmodel.Application = filterMaxPriApps(appsThisCloud)
+
+	// group the max-priority applications according to their dependencies. The applications with dependencies should be in the same group, and we will create one dedicated VM for one group.
+	maxPriAppsGroups := groupByDep(maxPriApps)
+	simulatedCloud := asmodel.CloudCopy(cloud) // avoid changing the original cloud variable
+	dedicatedVmsToCreate := getDedicatedVmsToCreate(&simulatedCloud, apps, maxPriAppsGroups)
+
+	// put the app scheduling vm information into the solution
+	for i := 0; i < len(maxPriAppsGroups); i++ {
+		vmToCreateName := dedicatedVmsToCreate[i].Name // this group of apps are scheduled to this VM
+		for j := 0; j < len(maxPriAppsGroups[i]); j++ {
+			appName := maxPriAppsGroups[i][j]
+			thisAppSoln := solnWithVm.AppsSolution[appName]
+			thisAppSoln.K8sNodeName = vmToCreateName
+			solnWithVm.AppsSolution[appName] = thisAppSoln
+		}
+	}
+	// put the information of VMs to create into the solution
+	solnWithVm.VmsToCreate = append(solnWithVm.VmsToCreate, dedicatedVmsToCreate...)
+
+	// after creating dedicated vms, if any type of resources overflows, it means that this cloud does not have enough resources to create the dedicated VMs, so we return false.
+	if simulatedCloud.Resources.Overflow() {
+		return asmodel.Solution{}, false
+	}
+
+	// 2. try to deploy the rest of the applications on existing VMs and a shared VM.
+	solnNotMaxPri, sharedAcceptable := resAccOneCloudSharedVm(simulatedCloud, apps, appsOrder, solnWithoutVm, NotMaxPriApps)
+	if !sharedAcceptable {
+		return asmodel.Solution{}, false
+	}
+	solnWithVm.Absorb(solnNotMaxPri) // combing the solution about max-priority and non-max-priority applications.
+
+	return solnWithVm, true
 }
 
 // check whether the residual resources of a VM can support an application
@@ -135,20 +272,25 @@ func subRes(vm *asmodel.K8sNode, app asmodel.Application, minCpu bool) {
 	vm.ResidualResources.Storage -= app.Resources.Storage
 }
 
-// check whether the resources of the input VM can support all rest applications.
-func vmResMeetAllRestApps(vm asmodel.K8sNode, apps map[string]asmodel.Application, curAppName *string, nextAppNameFunc func() string, minCpu bool) bool {
+// check whether the resources of the input VM can support all rest applications. Also return the applications that are scheduled to this VM.
+func vmResMeetAllRestApps(vm asmodel.K8sNode, apps map[string]asmodel.Application, curAppName *string, nextAppNameFunc func() string, minCpu bool) ([]string, bool) {
+
+	var appNamesToThisVm []string // the application names that are scheduled to this VM
+
 	// we loop until the resources of this VM is used up.
 	for isResEnough(vm, apps[*curAppName], minCpu) {
 		// simulate deploying this application on this VM.
 		subRes(&vm, apps[*curAppName], minCpu)
+		appNamesToThisVm = append(appNamesToThisVm, *curAppName)
 
 		// After the current applications is deployed, we go to the next application.
 		// curAppName is a pointer, so the value change will affect the variables outside this function.
 		// nextAppNameFunc should be a method of *appOneCloudIter, which is also a pointer, so the value will also affect it outside this function.
 		*curAppName = nextAppNameFunc()
 		if len(*curAppName) == 0 {
-			return true // this means that all applications are already deployed, so the resources are enough.
+			return appNamesToThisVm, true // this means that all applications are already deployed, so the resources are enough.
 		}
 	}
-	return false // this means that the rest of the VM's resources can not meet the next application, so the resources are not enough
+
+	return appNamesToThisVm, false // this means that the rest of the VM's resources can not meet the next application, so the resources are not enough
 }

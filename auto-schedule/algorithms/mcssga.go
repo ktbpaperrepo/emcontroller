@@ -41,7 +41,7 @@ func (m *Mcssga) Schedule(clouds map[string]asmodel.Cloud, apps map[string]asmod
 	var initPopulation []asmodel.Solution = m.initialize(clouds, apps, appsOrder)
 	beego.Info(initPopulation)
 
-	return nil, nil
+	return asmodel.Solution{}, nil
 }
 
 // randomly generate some solutions as the init population

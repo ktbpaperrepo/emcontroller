@@ -23,10 +23,17 @@ type Application struct {
 	Dependencies []models.Dependency `json:"dependencies"` // The information of all applications that this application depends on.
 }
 
+func AppCopy(src Application) Application {
+	var dst Application = src
+	dst.Dependencies = make([]models.Dependency, len(src.Dependencies))
+	copy(dst.Dependencies, src.Dependencies)
+	return dst
+}
+
 func AppMapCopy(src map[string]Application) map[string]Application {
 	var dst map[string]Application = make(map[string]Application)
 	for name, app := range src {
-		dst[name] = app
+		dst[name] = AppCopy(app)
 	}
 	return dst
 }

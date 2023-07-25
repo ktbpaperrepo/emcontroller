@@ -285,3 +285,194 @@ func TestLeastRemainPct(t *testing.T) {
 		assert.Equal(t, testCase.expectedResult, actualResult, fmt.Sprintf("%s: result is not expected", testCase.name))
 	}
 }
+
+func TestOverflow(t *testing.T) {
+	testCases := []struct {
+		name           string
+		resStatus      ResourceStatus
+		expectedResult bool
+	}{
+		{
+			name: "no overflow",
+			resStatus: ResourceStatus{
+				Limit: ResSet{
+					VCpu:    7,
+					Ram:     4096,
+					Storage: 4096,
+					Vm:      -1,
+					Volume:  -1,
+					Port:    -1,
+				},
+				InUse: ResSet{
+					VCpu:    6,
+					Ram:     2048,
+					Storage: 2048,
+					Vm:      -1,
+					Volume:  -1,
+					Port:    -1,
+				},
+			},
+			expectedResult: false,
+		},
+		{
+			name: "cpu overflows",
+			resStatus: ResourceStatus{
+				Limit: ResSet{
+					VCpu:    7,
+					Ram:     4096,
+					Storage: 4096,
+					Vm:      -1,
+					Volume:  -1,
+					Port:    -1,
+				},
+				InUse: ResSet{
+					VCpu:    8,
+					Ram:     2048,
+					Storage: 2048,
+					Vm:      -1,
+					Volume:  -1,
+					Port:    -1,
+				},
+			},
+			expectedResult: true,
+		},
+		{
+			name: "cpu equal",
+			resStatus: ResourceStatus{
+				Limit: ResSet{
+					VCpu:    8,
+					Ram:     4096,
+					Storage: 4096,
+					Vm:      -1,
+					Volume:  -1,
+					Port:    -1,
+				},
+				InUse: ResSet{
+					VCpu:    8,
+					Ram:     2048,
+					Storage: 1024,
+					Vm:      -1,
+					Volume:  -1,
+					Port:    -1,
+				},
+			},
+			expectedResult: false,
+		},
+		{
+			name: "ram overflow",
+			resStatus: ResourceStatus{
+				Limit: ResSet{
+					VCpu:    7,
+					Ram:     4096,
+					Storage: 4096,
+					Vm:      -1,
+					Volume:  -1,
+					Port:    -1,
+				},
+				InUse: ResSet{
+					VCpu:    3,
+					Ram:     5000,
+					Storage: 2048,
+					Vm:      -1,
+					Volume:  -1,
+					Port:    -1,
+				},
+			},
+			expectedResult: true,
+		},
+		{
+			name: "storage overflow",
+			resStatus: ResourceStatus{
+				Limit: ResSet{
+					VCpu:    7,
+					Ram:     4096,
+					Storage: 4096,
+					Vm:      5,
+					Volume:  -1,
+					Port:    -1,
+				},
+				InUse: ResSet{
+					VCpu:    2,
+					Ram:     2048,
+					Storage: 6000,
+					Vm:      5,
+					Volume:  -1,
+					Port:    -1,
+				},
+			},
+			expectedResult: true,
+		},
+		{
+			name: "memory and storage overflow",
+			resStatus: ResourceStatus{
+				Limit: ResSet{
+					VCpu:    7,
+					Ram:     4096,
+					Storage: 4096,
+					Vm:      5,
+					Volume:  -1,
+					Port:    -1,
+				},
+				InUse: ResSet{
+					VCpu:    2,
+					Ram:     5001,
+					Storage: 6000,
+					Vm:      5,
+					Volume:  -1,
+					Port:    -1,
+				},
+			},
+			expectedResult: true,
+		},
+		{
+			name: "all overflow",
+			resStatus: ResourceStatus{
+				Limit: ResSet{
+					VCpu:    7,
+					Ram:     4096,
+					Storage: 4096,
+					Vm:      5,
+					Volume:  -1,
+					Port:    -1,
+				},
+				InUse: ResSet{
+					VCpu:    10,
+					Ram:     5001,
+					Storage: 6000,
+					Vm:      5,
+					Volume:  -1,
+					Port:    -1,
+				},
+			},
+			expectedResult: true,
+		},
+		{
+			name: "all equal",
+			resStatus: ResourceStatus{
+				Limit: ResSet{
+					VCpu:    7,
+					Ram:     4096,
+					Storage: 4096,
+					Vm:      5,
+					Volume:  -1,
+					Port:    -1,
+				},
+				InUse: ResSet{
+					VCpu:    7,
+					Ram:     4096,
+					Storage: 4096,
+					Vm:      5,
+					Volume:  -1,
+					Port:    -1,
+				},
+			},
+			expectedResult: false,
+		},
+	}
+
+	for i, testCase := range testCases {
+		t.Logf("test: %d, %s", i, testCase.name)
+		actualResult := testCase.resStatus.Overflow()
+		assert.Equal(t, testCase.expectedResult, actualResult, fmt.Sprintf("%s: result is not expected", testCase.name))
+	}
+}

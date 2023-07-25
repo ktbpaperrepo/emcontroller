@@ -43,6 +43,13 @@ func (rs ResourceStatus) LeastRemainPct() float64 {
 	return leastPct
 }
 
+// Check whether any resource overflows
+func (rs ResourceStatus) Overflow() bool {
+	return rs.InUse.VCpu > rs.Limit.VCpu ||
+		rs.InUse.Ram > rs.Limit.Ram ||
+		rs.InUse.Storage > rs.Limit.Storage
+}
+
 // The backend APIs (Create VMs and Add K8s Nodes) request uses this struct, so we need to define the json of it.
 type IaasVm struct {
 	ID   string `json:"id"` // the id provided by the cloud

@@ -361,9 +361,9 @@ func TestInnerVmResMeetAllRestAppsAll(t *testing.T) {
 }
 
 func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
-	cloud, apps, soln := cloudAppsSolnForIterTest()
+	cloud, apps, soln := cloudAppsSolnForTest()
 	appsThisCloud := findAppsOneCloud(cloud, apps, soln) // need 0.4 CPU, 3214 Memory, 66 Storage in total.
-	appsOrder := GenerateAppsOrder(apps)
+	appsOrder := []string{"app1", "app2", "app3", "app4", "app5", "app6", "app7", "app8"}
 
 	t.Log()
 	t.Log("list the apps scheduled to this cloud in order")
@@ -373,6 +373,9 @@ func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 		t.Logf("curApp: %+v\n", appsThisCloud[curAppName])
 		curAppName = appsThisCloudIter.nextAppName()
 	}
+
+	var appNamesToThisVm []string
+	var meetAllRest bool
 
 	t.Log()
 	t.Log("case 1")
@@ -386,7 +389,9 @@ func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextAppName, true)
+	assert.True(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{"app1", "app2", "app4", "app7"})
 
 	t.Log()
 	t.Log("case 2")
@@ -401,7 +406,9 @@ func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextAppName, true)
+	assert.False(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{"app1", "app2"})
 	t.Log("curAppName:", curAppName)
 
 	vm = asmodel.K8sNode{
@@ -412,7 +419,9 @@ func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextAppName, true)
+	assert.False(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{"app4"})
 	t.Log("curAppName:", curAppName)
 
 	vm = asmodel.K8sNode{
@@ -423,7 +432,9 @@ func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextAppName, true)
+	assert.True(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{"app7"})
 	t.Log("curAppName:", curAppName)
 
 	t.Log()
@@ -439,7 +450,9 @@ func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextAppName, true)
+	assert.False(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{"app1"})
 	t.Log("curAppName:", curAppName)
 
 	vm = asmodel.K8sNode{
@@ -450,7 +463,9 @@ func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextAppName, true)
+	assert.False(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{"app2"})
 	t.Log("curAppName:", curAppName)
 
 	vm = asmodel.K8sNode{
@@ -461,7 +476,9 @@ func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextAppName, true)
+	assert.True(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{"app4", "app7"})
 	t.Log("curAppName:", curAppName)
 
 	t.Log()
@@ -476,7 +493,9 @@ func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextAppName, true)
+	assert.False(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{"app1", "app2", "app4"})
 	t.Log("curAppName:", curAppName)
 
 	t.Log("copy 1, should be true")
@@ -490,7 +509,9 @@ func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy1, iterCopy1.nextAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppNameCopy1, iterCopy1.nextAppName, true)
+	assert.True(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{"app7"})
 	t.Log("curAppNameCopy1:", curAppNameCopy1)
 
 	t.Log("copy 2, should be false")
@@ -504,7 +525,9 @@ func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy2, iterCopy2.nextAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppNameCopy2, iterCopy2.nextAppName, true)
+	assert.False(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{})
 	t.Log("curAppNameCopy2:", curAppNameCopy2)
 
 	t.Log("copy 3, should be true")
@@ -518,7 +541,9 @@ func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy3, iterCopy3.nextAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppNameCopy3, iterCopy3.nextAppName, true)
+	assert.True(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{"app7"})
 	t.Log("curAppNameCopy3:", curAppNameCopy3)
 
 	t.Log("copy 4, should be false")
@@ -532,7 +557,9 @@ func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy4, iterCopy4.nextAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppNameCopy4, iterCopy4.nextAppName, true)
+	assert.False(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{})
 	t.Log("curAppNameCopy4:", curAppNameCopy4)
 
 	func() {
@@ -548,7 +575,9 @@ func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 				Storage: 1000,
 			},
 		}
-		assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextAppName, false))
+		appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextAppName, false)
+		assert.False(t, meetAllRest)
+		assert.ElementsMatch(t, appNamesToThisVm, []string{"app1", "app2"})
 		t.Log("curAppName:", curAppName)
 
 		t.Log("copy 1, should be true")
@@ -562,7 +591,9 @@ func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 				Storage: 1000,
 			},
 		}
-		assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy1, iterCopy1.nextAppName, false))
+		appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppNameCopy1, iterCopy1.nextAppName, false)
+		assert.True(t, meetAllRest)
+		assert.ElementsMatch(t, appNamesToThisVm, []string{"app4", "app7"})
 		t.Log("curAppNameCopy1:", curAppNameCopy1)
 
 		t.Log("copy 2, should be false")
@@ -576,7 +607,9 @@ func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 				Storage: 1000,
 			},
 		}
-		assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy2, iterCopy2.nextAppName, false))
+		appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppNameCopy2, iterCopy2.nextAppName, false)
+		assert.False(t, meetAllRest)
+		assert.ElementsMatch(t, appNamesToThisVm, []string{})
 		t.Log("curAppNameCopy2:", curAppNameCopy2)
 
 		t.Log("copy 3, should be true")
@@ -590,7 +623,9 @@ func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 				Storage: 1000,
 			},
 		}
-		assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy3, iterCopy3.nextAppName, false))
+		appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppNameCopy3, iterCopy3.nextAppName, false)
+		assert.True(t, meetAllRest)
+		assert.ElementsMatch(t, appNamesToThisVm, []string{"app4", "app7"})
 		t.Log("curAppNameCopy3:", curAppNameCopy3)
 
 		t.Log("copy 4, should be false")
@@ -604,16 +639,18 @@ func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 				Storage: 1000,
 			},
 		}
-		assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy4, iterCopy4.nextAppName, false))
+		appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppNameCopy4, iterCopy4.nextAppName, false)
+		assert.False(t, meetAllRest)
+		assert.ElementsMatch(t, appNamesToThisVm, []string{})
 		t.Log("curAppNameCopy4:", curAppNameCopy4)
 	}()
 
 }
 
 func TestInnerVmResMeetAllRestAppsMaxPri(t *testing.T) {
-	cloud, apps, soln := cloudAppsSolnForIterTest()
+	cloud, apps, soln := cloudAppsSolnForTest()
 	appsThisCloud := findAppsOneCloud(cloud, apps, soln) // need 0.4 CPU, 3214 Memory, 66 Storage in total.
-	appsOrder := GenerateAppsOrder(apps)
+	appsOrder := []string{"app1", "app2", "app3", "app4", "app5", "app6", "app7", "app8"}
 
 	t.Log()
 	t.Log("list the MaxPri apps scheduled to this cloud in order")
@@ -623,6 +660,9 @@ func TestInnerVmResMeetAllRestAppsMaxPri(t *testing.T) {
 		t.Logf("curApp: %+v\n", appsThisCloud[curAppName])
 		curAppName = appsThisCloudIter.nextMaxPriAppName()
 	}
+
+	var appNamesToThisVm []string
+	var meetAllRest bool
 
 	t.Log()
 	t.Log("case 1")
@@ -636,7 +676,9 @@ func TestInnerVmResMeetAllRestAppsMaxPri(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextMaxPriAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextMaxPriAppName, true)
+	assert.True(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{"app2", "app7"})
 
 	t.Log()
 	t.Log("case 2")
@@ -651,7 +693,9 @@ func TestInnerVmResMeetAllRestAppsMaxPri(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextMaxPriAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextMaxPriAppName, true)
+	assert.False(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{"app2"})
 	t.Log("curAppName:", curAppName)
 
 	vm = asmodel.K8sNode{
@@ -662,7 +706,9 @@ func TestInnerVmResMeetAllRestAppsMaxPri(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextMaxPriAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextMaxPriAppName, true)
+	assert.False(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{})
 	t.Log("curAppName:", curAppName)
 
 	vm = asmodel.K8sNode{
@@ -673,7 +719,9 @@ func TestInnerVmResMeetAllRestAppsMaxPri(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextMaxPriAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextMaxPriAppName, true)
+	assert.True(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{"app7"})
 	t.Log("curAppName:", curAppName)
 
 	t.Log()
@@ -689,7 +737,9 @@ func TestInnerVmResMeetAllRestAppsMaxPri(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextMaxPriAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextMaxPriAppName, true)
+	assert.False(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{"app2"})
 	t.Log("curAppName:", curAppName)
 
 	vm = asmodel.K8sNode{
@@ -700,7 +750,9 @@ func TestInnerVmResMeetAllRestAppsMaxPri(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextMaxPriAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextMaxPriAppName, true)
+	assert.True(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{"app7"})
 	t.Log("curAppName:", curAppName)
 
 	t.Log()
@@ -715,7 +767,9 @@ func TestInnerVmResMeetAllRestAppsMaxPri(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextMaxPriAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextMaxPriAppName, true)
+	assert.False(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{"app2"})
 	t.Log("curAppName:", curAppName)
 
 	t.Log("copy 1, should be true")
@@ -729,7 +783,9 @@ func TestInnerVmResMeetAllRestAppsMaxPri(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy1, iterCopy1.nextMaxPriAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppNameCopy1, iterCopy1.nextMaxPriAppName, true)
+	assert.True(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{"app7"})
 	t.Log("curAppNameCopy1:", curAppNameCopy1)
 
 	t.Log("copy 2, should be false")
@@ -743,7 +799,9 @@ func TestInnerVmResMeetAllRestAppsMaxPri(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy2, iterCopy2.nextMaxPriAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppNameCopy2, iterCopy2.nextMaxPriAppName, true)
+	assert.False(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{})
 	t.Log("curAppNameCopy2:", curAppNameCopy2)
 
 	t.Log("copy 3, should be true")
@@ -757,7 +815,9 @@ func TestInnerVmResMeetAllRestAppsMaxPri(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy3, iterCopy3.nextMaxPriAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppNameCopy3, iterCopy3.nextMaxPriAppName, true)
+	assert.True(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{"app7"})
 	t.Log("curAppNameCopy3:", curAppNameCopy3)
 
 	t.Log("copy 4, should be false")
@@ -771,7 +831,9 @@ func TestInnerVmResMeetAllRestAppsMaxPri(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy4, iterCopy4.nextMaxPriAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppNameCopy4, iterCopy4.nextMaxPriAppName, true)
+	assert.False(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{})
 	t.Log("curAppNameCopy4:", curAppNameCopy4)
 
 	func() {
@@ -787,7 +849,9 @@ func TestInnerVmResMeetAllRestAppsMaxPri(t *testing.T) {
 				Storage: 1000,
 			},
 		}
-		assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextMaxPriAppName, false))
+		appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextMaxPriAppName, false)
+		assert.False(t, meetAllRest)
+		assert.ElementsMatch(t, appNamesToThisVm, []string{"app2"})
 		t.Log("curAppName:", curAppName)
 
 		t.Log("copy 1, should be true")
@@ -801,7 +865,9 @@ func TestInnerVmResMeetAllRestAppsMaxPri(t *testing.T) {
 				Storage: 1000,
 			},
 		}
-		assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy1, iterCopy1.nextMaxPriAppName, false))
+		appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppNameCopy1, iterCopy1.nextMaxPriAppName, false)
+		assert.True(t, meetAllRest)
+		assert.ElementsMatch(t, appNamesToThisVm, []string{"app7"})
 		t.Log("curAppNameCopy1:", curAppNameCopy1)
 
 		t.Log("copy 2, should be false")
@@ -815,7 +881,9 @@ func TestInnerVmResMeetAllRestAppsMaxPri(t *testing.T) {
 				Storage: 1000,
 			},
 		}
-		assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy2, iterCopy2.nextMaxPriAppName, false))
+		appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppNameCopy2, iterCopy2.nextMaxPriAppName, false)
+		assert.False(t, meetAllRest)
+		assert.ElementsMatch(t, appNamesToThisVm, []string{})
 		t.Log("curAppNameCopy2:", curAppNameCopy2)
 
 		t.Log("copy 3, should be true")
@@ -829,7 +897,9 @@ func TestInnerVmResMeetAllRestAppsMaxPri(t *testing.T) {
 				Storage: 1000,
 			},
 		}
-		assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy3, iterCopy3.nextMaxPriAppName, false))
+		appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppNameCopy3, iterCopy3.nextMaxPriAppName, false)
+		assert.True(t, meetAllRest)
+		assert.ElementsMatch(t, appNamesToThisVm, []string{"app7"})
 		t.Log("curAppNameCopy3:", curAppNameCopy3)
 
 		t.Log("copy 4, should be false")
@@ -843,16 +913,18 @@ func TestInnerVmResMeetAllRestAppsMaxPri(t *testing.T) {
 				Storage: 1000,
 			},
 		}
-		assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy4, iterCopy4.nextMaxPriAppName, false))
+		appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppNameCopy4, iterCopy4.nextMaxPriAppName, false)
+		assert.False(t, meetAllRest)
+		assert.ElementsMatch(t, appNamesToThisVm, []string{})
 		t.Log("curAppNameCopy4:", curAppNameCopy4)
 	}()
 
 }
 
 func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
-	cloud, apps, soln := cloudAppsSolnForIterTest()
+	cloud, apps, soln := cloudAppsSolnForTest()
 	appsThisCloud := findAppsOneCloud(cloud, apps, soln) // need 0.4 CPU, 3214 Memory, 66 Storage in total.
-	appsOrder := GenerateAppsOrder(apps)
+	appsOrder := []string{"app1", "app2", "app3", "app4", "app5", "app6", "app7", "app8"}
 
 	t.Log()
 	t.Log("list the NotMaxPri apps scheduled to this cloud in order")
@@ -862,6 +934,9 @@ func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
 		t.Logf("curApp: %+v\n", appsThisCloud[curAppName])
 		curAppName = appsThisCloudIter.nextNotMaxPriAppName()
 	}
+
+	var appNamesToThisVm []string
+	var meetAllRest bool
 
 	t.Log()
 	t.Log("case 1")
@@ -875,7 +950,9 @@ func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextNotMaxPriAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextNotMaxPriAppName, true)
+	assert.True(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{"app1", "app4"})
 
 	t.Log()
 	t.Log("case 2")
@@ -890,7 +967,9 @@ func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextNotMaxPriAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextNotMaxPriAppName, true)
+	assert.False(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{"app1"})
 	t.Log("curAppName:", curAppName)
 
 	vm = asmodel.K8sNode{
@@ -901,7 +980,9 @@ func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextNotMaxPriAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextNotMaxPriAppName, true)
+	assert.False(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{})
 	t.Log("curAppName:", curAppName)
 
 	vm = asmodel.K8sNode{
@@ -912,7 +993,9 @@ func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextNotMaxPriAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextNotMaxPriAppName, true)
+	assert.True(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{"app4"})
 	t.Log("curAppName:", curAppName)
 
 	t.Log()
@@ -928,7 +1011,9 @@ func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextNotMaxPriAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextNotMaxPriAppName, true)
+	assert.False(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{"app1"})
 	t.Log("curAppName:", curAppName)
 
 	vm = asmodel.K8sNode{
@@ -939,7 +1024,9 @@ func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextNotMaxPriAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextNotMaxPriAppName, true)
+	assert.False(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{})
 	t.Log("curAppName:", curAppName)
 
 	vm = asmodel.K8sNode{
@@ -950,7 +1037,9 @@ func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextNotMaxPriAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextNotMaxPriAppName, true)
+	assert.True(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{"app4"})
 	t.Log("curAppName:", curAppName)
 
 	t.Log()
@@ -965,7 +1054,9 @@ func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextNotMaxPriAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextNotMaxPriAppName, true)
+	assert.False(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{"app1"})
 	t.Log("curAppName:", curAppName)
 
 	t.Log("copy 1, should be true")
@@ -979,7 +1070,9 @@ func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy1, iterCopy1.nextNotMaxPriAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppNameCopy1, iterCopy1.nextNotMaxPriAppName, true)
+	assert.True(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{"app4"})
 	t.Log("curAppNameCopy1:", curAppNameCopy1)
 
 	t.Log("copy 2, should be false")
@@ -993,7 +1086,9 @@ func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy2, iterCopy2.nextNotMaxPriAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppNameCopy2, iterCopy2.nextNotMaxPriAppName, true)
+	assert.False(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{})
 	t.Log("curAppNameCopy2:", curAppNameCopy2)
 
 	t.Log("copy 3, should be true")
@@ -1007,7 +1102,9 @@ func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy3, iterCopy3.nextNotMaxPriAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppNameCopy3, iterCopy3.nextNotMaxPriAppName, true)
+	assert.True(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{"app4"})
 	t.Log("curAppNameCopy3:", curAppNameCopy3)
 
 	t.Log("copy 4, should be false")
@@ -1021,7 +1118,9 @@ func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
 			Storage: 100,
 		},
 	}
-	assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy4, iterCopy4.nextNotMaxPriAppName, true))
+	appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppNameCopy4, iterCopy4.nextNotMaxPriAppName, true)
+	assert.False(t, meetAllRest)
+	assert.ElementsMatch(t, appNamesToThisVm, []string{})
 	t.Log("curAppNameCopy4:", curAppNameCopy4)
 
 	func() {
@@ -1037,7 +1136,9 @@ func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
 				Storage: 1000,
 			},
 		}
-		assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextNotMaxPriAppName, false))
+		appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppName, appsThisCloudIter.nextNotMaxPriAppName, false)
+		assert.False(t, meetAllRest)
+		assert.ElementsMatch(t, appNamesToThisVm, []string{"app1"})
 		t.Log("curAppName:", curAppName)
 
 		t.Log("copy 1, should be true")
@@ -1051,7 +1152,9 @@ func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
 				Storage: 1000,
 			},
 		}
-		assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy1, iterCopy1.nextNotMaxPriAppName, false))
+		appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppNameCopy1, iterCopy1.nextNotMaxPriAppName, false)
+		assert.True(t, meetAllRest)
+		assert.ElementsMatch(t, appNamesToThisVm, []string{"app4"})
 		t.Log("curAppNameCopy1:", curAppNameCopy1)
 
 		t.Log("copy 2, should be false")
@@ -1065,7 +1168,9 @@ func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
 				Storage: 1000,
 			},
 		}
-		assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy2, iterCopy2.nextNotMaxPriAppName, false))
+		appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppNameCopy2, iterCopy2.nextNotMaxPriAppName, false)
+		assert.False(t, meetAllRest)
+		assert.ElementsMatch(t, appNamesToThisVm, []string{})
 		t.Log("curAppNameCopy2:", curAppNameCopy2)
 
 		t.Log("copy 3, should be true")
@@ -1079,7 +1184,9 @@ func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
 				Storage: 1000,
 			},
 		}
-		assert.True(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy3, iterCopy3.nextNotMaxPriAppName, false))
+		appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppNameCopy3, iterCopy3.nextNotMaxPriAppName, false)
+		assert.True(t, meetAllRest)
+		assert.ElementsMatch(t, appNamesToThisVm, []string{"app4"})
 		t.Log("curAppNameCopy3:", curAppNameCopy3)
 
 		t.Log("copy 4, should be false")
@@ -1093,7 +1200,9 @@ func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
 				Storage: 1000,
 			},
 		}
-		assert.False(t, vmResMeetAllRestApps(vm, apps, &curAppNameCopy4, iterCopy4.nextNotMaxPriAppName, false))
+		appNamesToThisVm, meetAllRest = vmResMeetAllRestApps(vm, apps, &curAppNameCopy4, iterCopy4.nextNotMaxPriAppName, false)
+		assert.False(t, meetAllRest)
+		assert.ElementsMatch(t, appNamesToThisVm, []string{})
 		t.Log("curAppNameCopy4:", curAppNameCopy4)
 	}()
 

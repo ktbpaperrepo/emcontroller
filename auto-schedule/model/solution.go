@@ -1,5 +1,7 @@
 package model
 
+import "emcontroller/models"
+
 /*
 For an application, the information for its scheduling solution only needs to include the name of the cloud and does not need to show how to schedule the application to a VM, because in my algorithm when an application is scheduled to a cloud, the scheduling to a VM will already be determined, following these rules:
 1. If the resources are enough, we create dedicated/exclusive VMs for all applications with the priority 10 (highest). If multiple 10-priority applications have dependency relationships between them, they should be scheduled to the same dedicated/exclusive VMs (If App1 depends on App2, App2.Priority should >= App1.Priority). If the resources are not enough, no need for this;
@@ -24,7 +26,19 @@ In our algorithm, we use some methods (random, mutation, crossover, etc.) to cho
 */
 
 // Solution for scheduling applications to clouds. The keys of the map is the name of applications.
-type Solution map[string]SingleAppSolution
+type Solution struct {
+	AppsSolution map[string]SingleAppSolution `json:"appsSolution"` // key: application name
+	VmsToCreate  []models.IaasVm              `json:"vmsToCreate"`
+}
+
+func (absorber *Solution) Absorb(absorbate Solution) {
+	// add the solutions of the absorbate into the absorber
+	for appName, appSoln := range absorbate.AppsSolution {
+		absorber.AppsSolution[appName] = appSoln
+	}
+	// add the vms to create of the absorbate into the absorber
+	absorber.VmsToCreate = append(absorber.VmsToCreate, absorbate.VmsToCreate...)
+}
 
 // The scheduling scheme for a single application
 type SingleAppSolution struct {
@@ -45,6 +59,12 @@ type SingleAppSolution struct {
 	AllocatedCpuCore float64 `json:"allocatedCpuCore"`
 }
 
+// single app solution copy
+func SasCopy(src SingleAppSolution) SingleAppSolution {
+	var dst SingleAppSolution = src
+	return dst
+}
+
 var (
 	// the solution to reject an application
 	RejSoln SingleAppSolution = SingleAppSolution{
@@ -52,10 +72,21 @@ var (
 	}
 )
 
-func SolutionCopy(src Solution) Solution {
-	var dst Solution = make(Solution)
-	for name, singleSoln := range src {
-		dst[name] = singleSoln
+// generate an empty solution
+func GenEmptySoln() Solution {
+	return Solution{
+		AppsSolution: make(map[string]SingleAppSolution),
 	}
+}
+
+func SolutionCopy(src Solution) Solution {
+	var dst Solution = Solution{
+		AppsSolution: make(map[string]SingleAppSolution),
+		VmsToCreate:  make([]models.IaasVm, len(src.VmsToCreate)),
+	}
+	for name, singleSoln := range src.AppsSolution {
+		dst.AppsSolution[name] = SasCopy(singleSoln)
+	}
+	copy(dst.VmsToCreate, src.VmsToCreate)
 	return dst
 }

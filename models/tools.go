@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"math"
 	"strings"
 	"time"
 
@@ -82,9 +83,11 @@ func CronTaskTimer(f func(), period time.Duration) {
 	}
 }
 
+// --------------
+
 // Calculate the available Vcpu of a VM
 func CalcVmAvailVcpu(totalVcpu float64) float64 {
-	provisionalResult := totalVcpu - ReservedCPULogicCore
+	provisionalResult := math.Floor(totalVcpu - ReservedCPULogicCore)
 	if provisionalResult < 0 {
 		provisionalResult = 0
 	}
@@ -93,7 +96,7 @@ func CalcVmAvailVcpu(totalVcpu float64) float64 {
 
 // Calculate the available Memory (MiB) of a VM
 func CalcVmAvailRamMiB(totalRamMiB float64) float64 {
-	provisionalResult := totalRamMiB - ReservedRamMiB
+	provisionalResult := math.Floor(totalRamMiB - ReservedRamMiB)
 	if provisionalResult < 0 {
 		provisionalResult = 0
 	}
@@ -102,9 +105,30 @@ func CalcVmAvailRamMiB(totalRamMiB float64) float64 {
 
 // Calculate the available Storage (GiB) of a VM
 func CalcVmAvailStorGiB(totalStorGiB float64) float64 {
-	provisionalResult := totalStorGiB - (totalStorGiB*ReservedStoragePercentage + ReservedStorageGiB)
+	provisionalResult := math.Floor(totalStorGiB - (totalStorGiB*ReservedStoragePercentage + ReservedStorageGiB))
 	if provisionalResult < 0 {
 		provisionalResult = 0
 	}
 	return provisionalResult
 }
+
+/*
+In this part, the following functions are the inverse functions of the above ones. The only difference is that the above ones use math.Floor, but the following ones use math.Ceil, which makes the inverse functions not strict, but we can see them as the inverse functions.
+*/
+
+// Calculate the needed total Vcpu of a VM from its needed available Vcpu
+func CalcVmTotalVcpu(availVcpu float64) float64 {
+	return math.Ceil(availVcpu + ReservedCPULogicCore)
+}
+
+// Calculate the needed total Memory (MiB) of a VM from its needed available Memory (MiB)
+func CalcVmTotalRamMiB(availRamMiB float64) float64 {
+	return math.Ceil(availRamMiB + ReservedRamMiB)
+}
+
+// Calculate the needed total Storage (GiB) of a VM from its needed available Storage (GiB)
+func CalcVmTotalStorGiB(availStorGiB float64) float64 {
+	return math.Ceil((availStorGiB + ReservedStorageGiB) / (1.0 - ReservedStoragePercentage))
+}
+
+// --------------

@@ -34,20 +34,25 @@ func (c Cloud) SupportCreateNewVM() bool {
 	return false
 }
 
-// According to the inpur resource percentage, this function can generate the information of the VM to create.
-func (c Cloud) GetInfoVmToCreate(resPct float64) K8sNode {
-	return K8sNode{
-		Name: c.getNameVmToCreate(),
-		ResidualResources: GenericResources{
-			CpuCore: math.Floor(resPct * c.Resources.Limit.VCpu),
-			Memory:  math.Floor(resPct * c.Resources.Limit.Ram),
-			Storage: math.Floor(resPct * c.Resources.Limit.Storage),
-		},
+// According to the input resource percentage, this function can generate the information of the shared VM to create.
+func (c Cloud) GetSharedVmToCreate(resPct float64, allRest bool) models.IaasVm {
+	var totalResources GenericResources
+	if !allRest {
+		totalResources = c.GetResVmToCreate(resPct)
+	} else { // when allRest is true, resPct will not be used
+		totalResources = c.GetAllRestRes()
+	}
+	return models.IaasVm{
+		Name:    c.GetNameVmToCreate(),
+		Cloud:   c.Name,
+		VCpu:    totalResources.CpuCore,
+		Ram:     totalResources.Memory,
+		Storage: totalResources.Storage,
 	}
 }
 
 // auto-schedule vms should have special prefixes
-func (c Cloud) getNameVmToCreate() string {
+func (c Cloud) GetNameVmToCreate() string {
 	var vmName string
 OUTLOOP:
 	for i := 0; i < math.MaxInt; i++ {
@@ -62,10 +67,50 @@ OUTLOOP:
 	panic(fmt.Sprintf("Cloud [%s], all available auto-schedule vm names are used up. There are [%d] existing auto-schedule vms on this cloud.", c.Name, len(c.K8sNodes)))
 }
 
+// According to the input resource percentage, this function can generate the total resources of the shared VM to create.
+func (c Cloud) GetResVmToCreate(resPct float64) GenericResources {
+	return GenericResources{
+		CpuCore: math.Floor(resPct * c.Resources.Limit.VCpu),
+		Memory:  math.Floor(resPct * c.Resources.Limit.Ram),
+		Storage: math.Floor(resPct * c.Resources.Limit.Storage),
+	}
+}
+
+// get all rest resources of this cloud
+func (c Cloud) GetAllRestRes() GenericResources {
+	restCpu := math.Floor(c.Resources.Limit.VCpu - c.Resources.InUse.VCpu)
+	if restCpu < 0 {
+		restCpu = 0
+	}
+
+	restRam := math.Floor(c.Resources.Limit.Ram - c.Resources.InUse.Ram)
+	if restRam < 0 {
+		restRam = 0
+	}
+
+	restStorage := math.Floor(c.Resources.Limit.Storage - c.Resources.InUse.Storage)
+	if restStorage < 0 {
+		restStorage = 0
+	}
+
+	return GenericResources{
+		CpuCore: restCpu,
+		Memory:  restRam,
+		Storage: restStorage,
+	}
+}
+
+func CloudCopy(src Cloud) Cloud {
+	var dst Cloud = src
+	dst.K8sNodes = make([]K8sNode, len(src.K8sNodes))
+	copy(dst.K8sNodes, src.K8sNodes)
+	return dst
+}
+
 func CloudMapCopy(src map[string]Cloud) map[string]Cloud {
 	var dst map[string]Cloud = make(map[string]Cloud)
 	for name, cloud := range src {
-		dst[name] = cloud
+		dst[name] = CloudCopy(cloud)
 	}
 	return dst
 }
@@ -162,44 +207,18 @@ func getK8sNodesOnCloud(cloud models.Iaas, allK8sNodes []apiv1.Node) ([]K8sNode,
 				continue
 			}
 
-			// If the IPs match, we find one Kubernetes node on this cloud
-			if vm.IPs[0] == models.GetNodeInternalIp(node) {
-				// Get available resources of this VM
-				residualCpuCore := models.CalcVmAvailVcpu(vm.VCpu)
-				residualRamMiB := models.CalcVmAvailRamMiB(vm.Ram)
-				residualStorGiB := models.CalcVmAvailStorGiB(vm.Storage)
-
-				// subtract the resources occupied by pods
+			// If the IPs and names match, we find a Kubernetes node on this cloud
+			// We use a VM for auto-scheduling only if both its name and IP are the same as those of its Kubernetes node.
+			if vm.IPs[0] == models.GetNodeInternalIp(node) && vm.Name == node.Name {
+				// get all pods on this VM.
 				podsOnNode, err := models.ListPodsOnNode(models.KubernetesNamespace, node.Name)
 				if err != nil {
 					outErr := fmt.Errorf("List pods on Kubernetes node [%s], error: %w", node.Name, err)
 					beego.Error(outErr)
 					return []K8sNode{}, outErr
 				}
-				for _, pod := range podsOnNode {
-					occupied := GetResOccupiedByPod(pod)
-					residualCpuCore -= occupied.CpuCore
-					residualRamMiB -= occupied.Memory
-					residualStorGiB -= occupied.Storage
-				}
 
-				// handle possible negative results
-				if residualCpuCore < 0 {
-					residualCpuCore = 0
-				}
-				if residualRamMiB < 0 {
-					residualRamMiB = 0
-				}
-				if residualStorGiB < 0 {
-					residualStorGiB = 0
-				}
-
-				// we put the information needed by auto-scheduling to the K8sNode structure
-				var thisNode K8sNode
-				thisNode.Name = node.Name
-				thisNode.ResidualResources.CpuCore = residualCpuCore
-				thisNode.ResidualResources.Memory = residualRamMiB
-				thisNode.ResidualResources.Storage = residualStorGiB
+				thisNode := GenK8sNodeFromPods(vm, podsOnNode)
 				k8sNodes = append(k8sNodes, thisNode)
 
 				break // When we find a match, we can break to search for the next VM.

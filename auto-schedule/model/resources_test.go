@@ -20,6 +20,9 @@ func tryReqValue(pod apiv1.Pod) {
 }
 
 func TestInnerTryReqValue(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
 	models.InitKubernetesClient()
 	pods, err := models.ListPodsOnNode("", "n4test")
 	if err != nil {
@@ -31,6 +34,9 @@ func TestInnerTryReqValue(t *testing.T) {
 }
 
 func TestGetOccupiedResByPod(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
 	models.InitKubernetesClient()
 	pods, err := models.ListPodsOnNode("", "n8test")
 	if err != nil {

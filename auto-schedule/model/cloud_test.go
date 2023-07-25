@@ -4,11 +4,54 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/KeepTheBeats/routing-algorithms/random"
 	"github.com/stretchr/testify/assert"
 
 	"emcontroller/models"
 )
+
+func TestCloudCopy(t *testing.T) {
+	testCases := []struct {
+		name string
+		src  Cloud
+	}{
+		{
+			name: "case 1",
+			src: Cloud{
+				Name: "cloud1",
+				K8sNodes: []K8sNode{
+					K8sNode{
+						Name: "node1",
+					},
+					K8sNode{
+						Name: "node2",
+					},
+				},
+			},
+		},
+		{
+			name: "case 2",
+			src: Cloud{
+				Name: "cloud2",
+				K8sNodes: []K8sNode{
+					K8sNode{
+						Name: "node3",
+					},
+					K8sNode{
+						Name: "node4",
+					},
+				},
+			},
+		},
+	}
+
+	for i, testCase := range testCases {
+		t.Logf("test: %d, %s", i, testCase.name)
+		dst := CloudCopy(testCase.src)
+		dst.K8sNodes[0].Name = "node100"
+		assert.NotEqual(t, testCase.src.K8sNodes[0], dst.K8sNodes[0], fmt.Sprintf("%s: result is not expected", testCase.name))
+	}
+
+}
 
 func TestCloudMapCopy(t *testing.T) {
 	testCases := []struct {
@@ -118,93 +161,167 @@ func TestCloudMapCopy(t *testing.T) {
 
 }
 
-func TestGetInfoVmToCreate(t *testing.T) {
-	// test 1
-	func() {
-		cloud := Cloud{
-			Name: "NOKIA4",
-			Resources: models.ResourceStatus{
-				Limit: models.ResSet{
-					VCpu:    56,
-					Ram:     128796.75390625,
-					Storage: 1396.5185890197754,
-					Vm:      -1,
-					Port:    -1,
-					Volume:  -1,
+func TestGetSharedVmToCreate(t *testing.T) {
+	testCases := []struct {
+		name           string
+		cloud          Cloud
+		resPct         float64
+		allRest        bool
+		expectedResult models.IaasVm
+	}{
+		{
+			name: "case 33%",
+			cloud: Cloud{
+				Name: "NOKIA4",
+				Resources: models.ResourceStatus{
+					Limit: models.ResSet{
+						VCpu:    56,
+						Ram:     128796.75390625,
+						Storage: 1396.5185890197754,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+					InUse: models.ResSet{
+						VCpu:    26,
+						Ram:     59392,
+						Storage: 629,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
 				},
-				InUse: models.ResSet{
-					VCpu:    56,
-					Ram:     128796.75390625,
-					Storage: 1396.5185890197754,
-					Vm:      -1,
-					Port:    -1,
-					Volume:  -1,
+				K8sNodes: []K8sNode{},
+			},
+			resPct:  0.33,
+			allRest: false,
+			expectedResult: models.IaasVm{
+				Name:    "auto-sched-nokia4-0",
+				Cloud:   "NOKIA4",
+				VCpu:    18,
+				Ram:     42502,
+				Storage: 460,
+			},
+		},
+		{
+			name: "case 50%",
+			cloud: Cloud{
+				Name: "NOKIA4",
+				Resources: models.ResourceStatus{
+					Limit: models.ResSet{
+						VCpu:    56,
+						Ram:     128796.75390625,
+						Storage: 1396.5185890197754,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+					InUse: models.ResSet{
+						VCpu:    26,
+						Ram:     59392,
+						Storage: 629,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+				},
+				K8sNodes: []K8sNode{{Name: "auto-sched-nokia4-0"}},
+			},
+			resPct:  0.5,
+			allRest: false,
+			expectedResult: models.IaasVm{
+				Name:    "auto-sched-nokia4-1",
+				Cloud:   "NOKIA4",
+				VCpu:    28,
+				Ram:     64398,
+				Storage: 698,
+			},
+		},
+		{
+			name: "all rest",
+			cloud: Cloud{
+				Name: "NOKIA4",
+				Resources: models.ResourceStatus{
+					Limit: models.ResSet{
+						VCpu:    56,
+						Ram:     128796.75390625,
+						Storage: 1396.5185890197754,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+					InUse: models.ResSet{
+						VCpu:    26,
+						Ram:     59392,
+						Storage: 629,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+				},
+				K8sNodes: []K8sNode{
+					K8sNode{Name: "auto-sched-nokia4-0"},
+					K8sNode{Name: "auto-sched-nokia4-1"},
+					K8sNode{Name: "auto-sched-nokia4-2"},
+					K8sNode{Name: "auto-sched-nokia4-4"},
 				},
 			},
-			K8sNodes: []K8sNode{},
-		}
-
-		for i := 0; i < 5; i++ {
-			resPct := random.RandomFloat64(0, 1)
-			t.Logf("resource percent: %f\n", resPct)
-			newNode := cloud.GetInfoVmToCreate(resPct)
-			t.Logf("%+v\n", newNode)
-			cloud.K8sNodes = append(cloud.K8sNodes, newNode)
-		}
-
-		resPct := 1.0
-		t.Logf("resource percent: %f\n", resPct)
-		newNode := cloud.GetInfoVmToCreate(resPct)
-		t.Logf("%+v\n", newNode)
-
-		fmt.Println()
-		t.Logf("%+v\n", cloud)
-	}()
-
-	// test 2
-	func() {
-		cloud := Cloud{
-			Name: "NOKIA4",
-			Resources: models.ResourceStatus{
-				Limit: models.ResSet{
-					VCpu:    56,
-					Ram:     128796.75390625,
-					Storage: 1396.5185890197754,
-					Vm:      -1,
-					Port:    -1,
-					Volume:  -1,
+			resPct:  0,
+			allRest: true,
+			expectedResult: models.IaasVm{
+				Name:    "auto-sched-nokia4-3",
+				Cloud:   "NOKIA4",
+				VCpu:    30,
+				Ram:     69404,
+				Storage: 767,
+			},
+		},
+		{
+			name: "all rest 2",
+			cloud: Cloud{
+				Name: "NOKIA4",
+				Resources: models.ResourceStatus{
+					Limit: models.ResSet{
+						VCpu:    56,
+						Ram:     128796.75390625,
+						Storage: 1396.5185890197754,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+					InUse: models.ResSet{
+						VCpu:    26,
+						Ram:     59392,
+						Storage: 629,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
 				},
-				InUse: models.ResSet{
-					VCpu:    56,
-					Ram:     128796.75390625,
-					Storage: 1396.5185890197754,
-					Vm:      -1,
-					Port:    -1,
-					Volume:  -1,
+				K8sNodes: []K8sNode{
+					K8sNode{Name: "auto-sched-nokia4-0"},
+					K8sNode{Name: "auto-sched-nokia4-1"},
+					K8sNode{Name: "auto-sched-nokia4-2"},
+					K8sNode{Name: "auto-sched-nokia4-4"},
 				},
 			},
-			K8sNodes: []K8sNode{
-				K8sNode{Name: "auto-sched-nokia4-2"},
-				K8sNode{Name: "auto-sched-nokia4-4"},
+			resPct:  0.34,
+			allRest: true,
+			expectedResult: models.IaasVm{
+				Name:    "auto-sched-nokia4-3",
+				Cloud:   "NOKIA4",
+				VCpu:    30,
+				Ram:     69404,
+				Storage: 767,
 			},
-		}
+		},
+	}
 
-		for i := 0; i < 5; i++ {
-			resPct := random.RandomFloat64(0, 1)
-			t.Logf("resource percent: %f\n", resPct)
-			newNode := cloud.GetInfoVmToCreate(resPct)
-			t.Logf("%+v\n", newNode)
-			cloud.K8sNodes = append(cloud.K8sNodes, newNode)
-		}
-
-		resPct := 1.0
-		t.Logf("resource percent: %f\n", resPct)
-		newNode := cloud.GetInfoVmToCreate(resPct)
-		t.Logf("%+v\n", newNode)
-
-		fmt.Println()
-		t.Logf("%+v\n", cloud)
-	}()
+	for i, testCase := range testCases {
+		t.Logf("test: %d, %s", i, testCase.name)
+		actualResult := testCase.cloud.GetSharedVmToCreate(testCase.resPct, testCase.allRest)
+		assert.Equal(t, testCase.expectedResult, actualResult, fmt.Sprintf("%s: result is not expected", testCase.name))
+	}
 }
 
 func TestSupportCreateNewVM(t *testing.T) {
@@ -242,6 +359,198 @@ func TestSupportCreateNewVM(t *testing.T) {
 	for i, testCase := range testCases {
 		t.Logf("test: %d, %s", i, testCase.name)
 		actualResult := testCase.cloud.SupportCreateNewVM()
+		assert.Equal(t, testCase.expectedResult, actualResult, fmt.Sprintf("%s: result is not expected", testCase.name))
+	}
+}
+
+func TestGetNameVmToCreate(t *testing.T) {
+	testCases := []struct {
+		name           string
+		cloud          Cloud
+		expectedResult string
+	}{
+		{
+			name: "case1",
+			cloud: Cloud{
+				Name: "NOKIA4",
+				Resources: models.ResourceStatus{
+					Limit: models.ResSet{
+						VCpu:    56,
+						Ram:     128796.75390625,
+						Storage: 1396.5185890197754,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+					InUse: models.ResSet{
+						VCpu:    26,
+						Ram:     59392,
+						Storage: 629,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+				},
+				K8sNodes: []K8sNode{},
+			},
+			expectedResult: "auto-sched-nokia4-0",
+		},
+		{
+			name: "case2",
+			cloud: Cloud{
+				Name: "NOKIA4",
+				Resources: models.ResourceStatus{
+					Limit: models.ResSet{
+						VCpu:    56,
+						Ram:     128796.75390625,
+						Storage: 1396.5185890197754,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+					InUse: models.ResSet{
+						VCpu:    26,
+						Ram:     59392,
+						Storage: 629,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+				},
+				K8sNodes: []K8sNode{{Name: "auto-sched-nokia4-0"}},
+			},
+			expectedResult: "auto-sched-nokia4-1",
+		},
+		{
+			name: "case3",
+			cloud: Cloud{
+				Name: "NOKIA4",
+				Resources: models.ResourceStatus{
+					Limit: models.ResSet{
+						VCpu:    56,
+						Ram:     128796.75390625,
+						Storage: 1396.5185890197754,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+					InUse: models.ResSet{
+						VCpu:    26,
+						Ram:     59392,
+						Storage: 629,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+				},
+				K8sNodes: []K8sNode{
+					K8sNode{Name: "auto-sched-nokia4-0"},
+					K8sNode{Name: "auto-sched-nokia4-2"},
+					K8sNode{Name: "auto-sched-nokia4-4"},
+				},
+			},
+			expectedResult: "auto-sched-nokia4-1",
+		},
+		{
+			name: "case4",
+			cloud: Cloud{
+				Name: "NOKIA4",
+				Resources: models.ResourceStatus{
+					Limit: models.ResSet{
+						VCpu:    56,
+						Ram:     128796.75390625,
+						Storage: 1396.5185890197754,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+					InUse: models.ResSet{
+						VCpu:    26,
+						Ram:     59392,
+						Storage: 629,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+				},
+				K8sNodes: []K8sNode{
+					K8sNode{Name: "auto-sched-nokia4-0"},
+					K8sNode{Name: "auto-sched-nokia4-1"},
+					K8sNode{Name: "auto-sched-nokia4-2"},
+					K8sNode{Name: "auto-sched-nokia4-4"},
+				},
+			},
+			expectedResult: "auto-sched-nokia4-3",
+		},
+		{
+			name: "case5",
+			cloud: Cloud{
+				Name: "NOKIA4",
+				Resources: models.ResourceStatus{
+					Limit: models.ResSet{
+						VCpu:    56,
+						Ram:     128796.75390625,
+						Storage: 1396.5185890197754,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+					InUse: models.ResSet{
+						VCpu:    26,
+						Ram:     59392,
+						Storage: 629,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+				},
+				K8sNodes: []K8sNode{
+					K8sNode{Name: "auto-sched-nokia4-0"},
+					K8sNode{Name: "auto-sched-nokia4-1"},
+					K8sNode{Name: "auto-sched-nokia4-2"},
+					K8sNode{Name: "auto-sched-nokia4-3"},
+					K8sNode{Name: "auto-sched-nokia4-4"},
+				},
+			},
+			expectedResult: "auto-sched-nokia4-5",
+		},
+		{
+			name: "case6",
+			cloud: Cloud{
+				Name: "NOKIA4",
+				Resources: models.ResourceStatus{
+					Limit: models.ResSet{
+						VCpu:    56,
+						Ram:     128796.75390625,
+						Storage: 1396.5185890197754,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+					InUse: models.ResSet{
+						VCpu:    26,
+						Ram:     59392,
+						Storage: 629,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+				},
+				K8sNodes: []K8sNode{
+					K8sNode{Name: "asdfa"},
+					K8sNode{Name: "dfgdf"},
+					K8sNode{Name: "werwe"},
+					K8sNode{Name: "asfdasf"},
+					K8sNode{Name: "asdfaf"},
+				},
+			},
+			expectedResult: "auto-sched-nokia4-0",
+		},
+	}
+
+	for i, testCase := range testCases {
+		t.Logf("test: %d, %s", i, testCase.name)
+		actualResult := testCase.cloud.GetNameVmToCreate()
 		assert.Equal(t, testCase.expectedResult, actualResult, fmt.Sprintf("%s: result is not expected", testCase.name))
 	}
 }

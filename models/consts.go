@@ -55,6 +55,13 @@ const (
 	ReservedRamMiB            float64 = 1024
 	ReservedStorageGiB        float64 = 10
 	ReservedStoragePercentage float64 = 0.15 // for the storage we should reserve "totalStorage * ReservedStoragePercentage + ReservedStorageGiB"
+	/*
+		NOTE: To be safe,
+		when calculating "VM available resources" from "VM total resources", we should use math.Floor;
+		when calculating "VM total resources" from "VM available resources", we should use math.Ceil.
+		This is because "VM total resources" can represent the actual resources of this VM, and "VM available resources" can represent the resources that we consider only during scheduling. "math.Floor" and "math.Ceil" can lead to a fact that we allocate more resources when creating VMs, but consider less resources when scheduling, which means that we may accept fewer applications, but will not accept applications but do not have resources for them.
+	*/
+
 )
 
 var (

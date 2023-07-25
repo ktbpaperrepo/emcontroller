@@ -1,0 +1,388 @@
+package model
+
+import (
+	"fmt"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	apiv1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+
+	"emcontroller/models"
+)
+
+func TestGenK8sNodeFromPods(t *testing.T) {
+	testCases := []struct {
+		name           string
+		vm             models.IaasVm
+		podsOnNode     []apiv1.Pod
+		expectedResult K8sNode
+	}{
+		{
+			name: "case 2 pods 1 has resources",
+			vm: models.IaasVm{
+				Name:    "n8test",
+				Cloud:   "NOKIA8",
+				VCpu:    4,
+				Ram:     8192,
+				Storage: 200,
+			},
+			podsOnNode: []apiv1.Pod{
+				apiv1.Pod{
+					Spec: apiv1.PodSpec{
+						Containers: []apiv1.Container{
+							{
+								Resources: apiv1.ResourceRequirements{},
+							},
+						},
+					},
+				},
+				apiv1.Pod{
+					Spec: apiv1.PodSpec{
+						Containers: []apiv1.Container{
+							{
+								Resources: apiv1.ResourceRequirements{
+									Limits: map[apiv1.ResourceName]resource.Quantity{
+										apiv1.ResourceCPU:              resource.MustParse("100m"),
+										apiv1.ResourceMemory:           resource.MustParse("500Mi"),
+										apiv1.ResourceEphemeralStorage: resource.MustParse("10Gi"),
+									},
+									Requests: map[apiv1.ResourceName]resource.Quantity{
+										apiv1.ResourceCPU:              resource.MustParse("100m"),
+										apiv1.ResourceMemory:           resource.MustParse("500Mi"),
+										apiv1.ResourceEphemeralStorage: resource.MustParse("10Gi"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedResult: K8sNode{
+				Name: "n8test",
+				ResidualResources: GenericResources{
+					CpuCore: 2.9,
+					Memory:  6668,
+					Storage: 150,
+				},
+			},
+		},
+		{
+			name: "case 3 pods 2 have resources",
+			vm: models.IaasVm{
+				Name:    "n8test",
+				Cloud:   "NOKIA8",
+				VCpu:    4,
+				Ram:     8192,
+				Storage: 200,
+			},
+			podsOnNode: []apiv1.Pod{
+				apiv1.Pod{
+					Spec: apiv1.PodSpec{
+						Containers: []apiv1.Container{
+							{
+								Resources: apiv1.ResourceRequirements{},
+							},
+						},
+					},
+				},
+				apiv1.Pod{
+					Spec: apiv1.PodSpec{
+						Containers: []apiv1.Container{
+							{
+								Resources: apiv1.ResourceRequirements{
+									Limits: map[apiv1.ResourceName]resource.Quantity{
+										apiv1.ResourceCPU:              resource.MustParse("100m"),
+										apiv1.ResourceMemory:           resource.MustParse("500Mi"),
+										apiv1.ResourceEphemeralStorage: resource.MustParse("10Gi"),
+									},
+									Requests: map[apiv1.ResourceName]resource.Quantity{
+										apiv1.ResourceCPU:              resource.MustParse("100m"),
+										apiv1.ResourceMemory:           resource.MustParse("500Mi"),
+										apiv1.ResourceEphemeralStorage: resource.MustParse("10Gi"),
+									},
+								},
+							},
+						},
+					},
+				},
+				apiv1.Pod{
+					Spec: apiv1.PodSpec{
+						Containers: []apiv1.Container{
+							{
+								Resources: apiv1.ResourceRequirements{
+									Limits: map[apiv1.ResourceName]resource.Quantity{
+										apiv1.ResourceCPU:              resource.MustParse("1.2"),
+										apiv1.ResourceMemory:           resource.MustParse("666Mi"),
+										apiv1.ResourceEphemeralStorage: resource.MustParse("7Gi"),
+									},
+									Requests: map[apiv1.ResourceName]resource.Quantity{
+										apiv1.ResourceCPU:              resource.MustParse("1.2"),
+										apiv1.ResourceMemory:           resource.MustParse("666Mi"),
+										apiv1.ResourceEphemeralStorage: resource.MustParse("7Gi"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedResult: K8sNode{
+				Name: "n8test",
+				ResidualResources: GenericResources{
+					CpuCore: 1.7,
+					Memory:  6002,
+					Storage: 143,
+				},
+			},
+		},
+	}
+
+	for i, testCase := range testCases {
+		t.Logf("test: %d, %s", i, testCase.name)
+		actualResult := GenK8sNodeFromPods(testCase.vm, testCase.podsOnNode)
+		assert.Equal(t, testCase.expectedResult, actualResult, fmt.Sprintf("%s: result is not expected", testCase.name))
+	}
+
+}
+
+func TestGenK8sNodeFromApps(t *testing.T) {
+	testCases := []struct {
+		name           string
+		vm             models.IaasVm
+		apps           map[string]Application
+		appGroup       []string
+		expectedResult K8sNode
+	}{
+		{
+			name: "case 2 apps",
+			vm: models.IaasVm{
+				Name:    "n8test",
+				Cloud:   "NOKIA8",
+				VCpu:    20,
+				Ram:     8192,
+				Storage: 230,
+			},
+			apps: map[string]Application{
+				"app1": Application{
+					Name:     "app1",
+					Priority: 5,
+					Resources: AppResources{
+						GenericResources: GenericResources{
+							CpuCore: 2.4,
+							Memory:  1024,
+							Storage: 10,
+						},
+					},
+				},
+				"app2": Application{
+					Name:     "app2",
+					Priority: 10,
+					Resources: AppResources{
+						GenericResources: GenericResources{
+							CpuCore: 3.9,
+							Memory:  990,
+							Storage: 15,
+						},
+					},
+				},
+				"app3": Application{
+					Name:     "app3",
+					Priority: 1,
+					Resources: AppResources{
+						GenericResources: GenericResources{
+							CpuCore: 1.4,
+							Memory:  990,
+							Storage: 15,
+						},
+					},
+				},
+				"app4": Application{
+					Name:     "app4",
+					Priority: 3,
+					Resources: AppResources{
+						GenericResources: GenericResources{
+							CpuCore: 5.0,
+							Memory:  660,
+							Storage: 6,
+						},
+					},
+				},
+				"app5": Application{
+					Name:     "app5",
+					Priority: 2,
+					Resources: AppResources{
+						GenericResources: GenericResources{
+							CpuCore: 5.0,
+							Memory:  990,
+							Storage: 15,
+						},
+					},
+				},
+				"app6": Application{
+					Name:     "app6",
+					Priority: 7,
+					Resources: AppResources{
+						GenericResources: GenericResources{
+							CpuCore: 4.0,
+							Memory:  990,
+							Storage: 15,
+						},
+					},
+				},
+				"app7": Application{
+					Name:     "app7",
+					Priority: 10,
+					Resources: AppResources{
+						GenericResources: GenericResources{
+							CpuCore: 3.0,
+							Memory:  540,
+							Storage: 35,
+						},
+					},
+				},
+				"app8": Application{
+					Name:     "app8",
+					Priority: 8,
+					Resources: AppResources{
+						GenericResources: GenericResources{
+							CpuCore: 2.0,
+							Memory:  540,
+							Storage: 15,
+						},
+					},
+				},
+			},
+			appGroup: []string{"app1", "app2"},
+			expectedResult: K8sNode{
+				Name: "n8test",
+				ResidualResources: GenericResources{
+					CpuCore: 12.7,
+					Memory:  5154,
+					Storage: 160,
+				},
+			},
+		},
+		{
+			name: "case 3 apps",
+			vm: models.IaasVm{
+				Name:    "n8test",
+				Cloud:   "NOKIA8",
+				VCpu:    20,
+				Ram:     8192,
+				Storage: 230,
+			},
+			apps: map[string]Application{
+				"app1": Application{
+					Name:     "app1",
+					Priority: 5,
+					Resources: AppResources{
+						GenericResources: GenericResources{
+							CpuCore: 2.4,
+							Memory:  1024,
+							Storage: 10,
+						},
+					},
+				},
+				"app2": Application{
+					Name:     "app2",
+					Priority: 10,
+					Resources: AppResources{
+						GenericResources: GenericResources{
+							CpuCore: 3.9,
+							Memory:  990,
+							Storage: 15,
+						},
+					},
+				},
+				"app3": Application{
+					Name:     "app3",
+					Priority: 1,
+					Resources: AppResources{
+						GenericResources: GenericResources{
+							CpuCore: 1.4,
+							Memory:  990,
+							Storage: 15,
+						},
+					},
+				},
+				"app4": Application{
+					Name:     "app4",
+					Priority: 3,
+					Resources: AppResources{
+						GenericResources: GenericResources{
+							CpuCore: 5.0,
+							Memory:  660,
+							Storage: 6,
+						},
+					},
+				},
+				"app5": Application{
+					Name:     "app5",
+					Priority: 2,
+					Resources: AppResources{
+						GenericResources: GenericResources{
+							CpuCore: 5.0,
+							Memory:  990,
+							Storage: 15,
+						},
+					},
+				},
+				"app6": Application{
+					Name:     "app6",
+					Priority: 7,
+					Resources: AppResources{
+						GenericResources: GenericResources{
+							CpuCore: 4.0,
+							Memory:  990,
+							Storage: 15,
+						},
+					},
+				},
+				"app7": Application{
+					Name:     "app7",
+					Priority: 10,
+					Resources: AppResources{
+						GenericResources: GenericResources{
+							CpuCore: 3.0,
+							Memory:  540,
+							Storage: 35,
+						},
+					},
+				},
+				"app8": Application{
+					Name:     "app8",
+					Priority: 8,
+					Resources: AppResources{
+						GenericResources: GenericResources{
+							CpuCore: 2.0,
+							Memory:  540,
+							Storage: 15,
+						},
+					},
+				},
+			},
+			appGroup: []string{"app1", "app2", "app8"},
+			expectedResult: K8sNode{
+				Name: "n8test",
+				ResidualResources: GenericResources{
+					CpuCore: 10.7,
+					Memory:  4614,
+					Storage: 145,
+				},
+			},
+		},
+	}
+
+	testDelta := 0.0001
+
+	for i, testCase := range testCases {
+		t.Logf("test: %d, %s", i, testCase.name)
+		actualResult := GenK8sNodeFromApps(testCase.vm, testCase.apps, testCase.appGroup)
+		assert.Equal(t, testCase.expectedResult.Name, actualResult.Name, fmt.Sprintf("%s: result is not expected", testCase.name))
+		assert.InDelta(t, testCase.expectedResult.ResidualResources.CpuCore, actualResult.ResidualResources.CpuCore, testDelta, fmt.Sprintf("%s: result is not expected", testCase.name))
+		assert.InDelta(t, testCase.expectedResult.ResidualResources.Memory, actualResult.ResidualResources.Memory, testDelta, fmt.Sprintf("%s: result is not expected", testCase.name))
+		assert.InDelta(t, testCase.expectedResult.ResidualResources.Storage, actualResult.ResidualResources.Storage, testDelta, fmt.Sprintf("%s: result is not expected", testCase.name))
+	}
+
+}

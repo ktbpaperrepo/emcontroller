@@ -1,17 +1,18 @@
 package algorithms
 
 import (
-	asmodel "emcontroller/auto-schedule/model"
 	"github.com/KeepTheBeats/routing-algorithms/random"
+
+	asmodel "emcontroller/auto-schedule/model"
 )
 
 // Generate a solution randomly, doing the best to accept more applications.
 func RandomAcceptMostSolution(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string) asmodel.Solution {
 
 	// initialize an all-reject solution with all applications rejected.
-	var solution asmodel.Solution = make(asmodel.Solution)
+	var solution asmodel.Solution = asmodel.GenEmptySoln()
 	for _, app := range apps {
-		solution[app.Name] = asmodel.RejSoln
+		solution.AppsSolution[app.Name] = asmodel.RejSoln
 	}
 
 	// Then, we try to accept applications based on the all-reject solution.
@@ -29,7 +30,7 @@ func RandomAcceptMostSolution(clouds map[string]asmodel.Cloud, apps map[string]a
 		for len(untriedClouds) > 0 {
 			// randomly choose a cloud, trying to deploy the application to it.
 			pickedCloudName, _ := randomCloudMapPick(untriedClouds)
-			solution[pickedAppName] = asmodel.SingleAppSolution{
+			solution.AppsSolution[pickedAppName] = asmodel.SingleAppSolution{
 				Accepted:        true,
 				TargetCloudName: pickedCloudName,
 			}
@@ -39,14 +40,14 @@ func RandomAcceptMostSolution(clouds map[string]asmodel.Cloud, apps map[string]a
 			// 1. give the solution node names
 			solution, acceptable = allocateVms(clouds, apps, appsOrder, solution)
 			if !acceptable { // if this solution is not acceptable, we try another
-				solution[pickedAppName] = asmodel.RejSoln
+				solution.AppsSolution[pickedAppName] = asmodel.RejSoln
 				delete(untriedClouds, pickedCloudName)
 				continue
 			}
 			// 2. Allocate CPU cores
 			solution, acceptable = allocateCpus(clouds, apps, appsOrder, solution)
 			if !acceptable { // if this solution is not acceptable, we try another
-				solution[pickedAppName] = asmodel.RejSoln
+				solution.AppsSolution[pickedAppName] = asmodel.RejSoln
 				delete(untriedClouds, pickedCloudName)
 				continue
 			}
@@ -58,7 +59,7 @@ func RandomAcceptMostSolution(clouds map[string]asmodel.Cloud, apps map[string]a
 			}
 			// Otherwise,
 			// we restore this application as rejected, remove this cloud from the untriedClouds, and try another cloud in the next loop.
-			solution[pickedAppName] = asmodel.RejSoln
+			solution.AppsSolution[pickedAppName] = asmodel.RejSoln
 			delete(untriedClouds, pickedCloudName)
 
 		}
