@@ -201,6 +201,8 @@ func getK8sNodesOnCloud(cloud models.Iaas, allK8sNodes []apiv1.Node) ([]K8sNode,
 			continue
 		}
 
+		// NOTE: Maybe I should add a Kubernetes annotation to every VM created by auto-scheduling and only get the VMs with that annotation here, to avoid using other VMs for auto-scheduling, but maybe I should not do it, because if users hope their VMs not to be used by others, they should add Kubernetes taints to them, or otherwise when other uses create Kubernetes applications, Kubernetes may also schedule them to their VMs automatically.
+
 		for _, node := range allK8sNodes {
 			if len(node.Spec.Taints) > 0 {
 				// If len(node.Spec.Taints) > 0, do not auto schedule applications to this node. This can ensure the auto-schedule will not put applications on network state test VMs, and also provide a way to users to avoid auto-schedule from putting applications on their VMs.

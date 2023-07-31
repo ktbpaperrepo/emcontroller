@@ -36,6 +36,12 @@ func genBiDir(apps map[string]asmodel.Application) map[string]biDirDepApp {
 		for _, dep := range app.Dependencies {
 			depAppName := dep.AppName
 
+			// This means the dependent application is not in the input app group, so we do not need to consider it when grouping applications.
+			// For example, in our algorithm, if a 10-pri App A depends on a 10-pre App B, but A and B are scheduled to 2 different clouds, the code will go into this if.
+			if _, exist := biApps[depAppName]; !exist {
+				continue
+			}
+
 			// The value of the member variable of a struct in a map is not allowed to be changed, so we use tmp variables (thisBiApp and depBiApp) to change it.
 
 			// App1's father: the applications that App1 depends on

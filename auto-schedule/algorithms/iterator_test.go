@@ -12,17 +12,17 @@ func TestInnerAppOneCloudIter(t *testing.T) {
 	cloud, apps, soln := cloudAppsSolnForTest()
 
 	appsThisCloud := findAppsOneCloud(cloud, apps, soln)
-	t.Logf("appsThisCloud:\n%+v\n", appsThisCloud)
+	t.Logf("appsToIterate:\n%+v\n", appsThisCloud)
 
 	appsOrder := GenerateAppsOrder(apps)
 	t.Logf("appsOrder:\n%+v\n", appsOrder)
 
-	var appsThisCloudIter *appOneCloudIter
+	var appsThisCloudIter *iterForApps
 	var curAppName string
 
 	t.Log()
 	t.Log("The following 3 orders of curAppName should be the same.")
-	appsThisCloudIter = newAppOneCloudIter(appsThisCloud, appsOrder)
+	appsThisCloudIter = newIterForApps(appsThisCloud, appsOrder)
 	for {
 		curAppName = appsThisCloudIter.nextAppName()
 		t.Logf("curAppName: %s\n", curAppName)
@@ -31,7 +31,7 @@ func TestInnerAppOneCloudIter(t *testing.T) {
 		}
 	}
 
-	appsThisCloudIter = newAppOneCloudIter(appsThisCloud, appsOrder)
+	appsThisCloudIter = newIterForApps(appsThisCloud, appsOrder)
 	for {
 		curAppName = appsThisCloudIter.nextAppName()
 		t.Logf("curAppName: %s\n", curAppName)
@@ -40,7 +40,7 @@ func TestInnerAppOneCloudIter(t *testing.T) {
 		}
 	}
 
-	appsThisCloudIter = newAppOneCloudIter(appsThisCloud, appsOrder)
+	appsThisCloudIter = newIterForApps(appsThisCloud, appsOrder)
 	for {
 		curAppName = appsThisCloudIter.nextAppName()
 		t.Logf("curAppName: %s\n", curAppName)
@@ -51,7 +51,7 @@ func TestInnerAppOneCloudIter(t *testing.T) {
 
 	t.Log()
 	t.Log("Then, we test copying an iterator.")
-	appsThisCloudIter = newAppOneCloudIter(appsThisCloud, appsOrder)
+	appsThisCloudIter = newIterForApps(appsThisCloud, appsOrder)
 	curAppName = appsThisCloudIter.nextAppName()
 	t.Logf("curAppName: %s\n", curAppName)
 	curAppName = appsThisCloudIter.nextAppName()
@@ -116,14 +116,14 @@ func TestInnerAppOneCloudIter(t *testing.T) {
 		},
 	}
 	appsThisCloudNon := findAppsOneCloud(cloud, apps, solnNon)
-	appsThisCloudIter = newAppOneCloudIter(appsThisCloudNon, appsOrder)
+	appsThisCloudIter = newIterForApps(appsThisCloudNon, appsOrder)
 	curAppName = appsThisCloudIter.nextAppName()
 	assert.Equal(t, 0, len(curAppName))
 
 	func() {
 		t.Log()
 		t.Log("Then, we test copying and max priority.")
-		appsThisCloudIter = newAppOneCloudIter(appsThisCloud, appsOrder)
+		appsThisCloudIter = newIterForApps(appsThisCloud, appsOrder)
 		curAppName = appsThisCloudIter.nextMaxPriAppName()
 		t.Logf("curAppName: %s\n", curAppName)
 
@@ -153,7 +153,7 @@ func TestInnerAppOneCloudIter(t *testing.T) {
 	func() {
 		t.Log()
 		t.Log("Then, we test copying and not max priority.")
-		appsThisCloudIter = newAppOneCloudIter(appsThisCloud, appsOrder)
+		appsThisCloudIter = newIterForApps(appsThisCloud, appsOrder)
 		curAppName = appsThisCloudIter.nextNotMaxPriAppName()
 		t.Logf("curAppName: %s\n", curAppName)
 

@@ -1,6 +1,8 @@
 package model
 
-import "emcontroller/models"
+import (
+	"emcontroller/models"
+)
 
 /*
 For an application, the information for its scheduling solution only needs to include the name of the cloud and does not need to show how to schedule the application to a VM, because in my algorithm when an application is scheduled to a cloud, the scheduling to a VM will already be determined, following these rules:
@@ -44,6 +46,7 @@ func (absorber *Solution) Absorb(absorbate Solution) {
 type SingleAppSolution struct {
 	// This member variable means whether this application is accepted or rejected.
 	// other member variables are meaningful only when this Accepted is true.
+	// When Accepted is set to true, TargetCloudName must be set together.
 	// In the mutation operator, when we generate a new gene, each application should (can?) have 50% possibility to be accepted and 50% to be rejected.
 	Accepted bool `json:"accepted"`
 
@@ -80,13 +83,19 @@ func GenEmptySoln() Solution {
 }
 
 func SolutionCopy(src Solution) Solution {
+	// copy AppsSolution
 	var dst Solution = Solution{
 		AppsSolution: make(map[string]SingleAppSolution),
-		VmsToCreate:  make([]models.IaasVm, len(src.VmsToCreate)),
 	}
 	for name, singleSoln := range src.AppsSolution {
 		dst.AppsSolution[name] = SasCopy(singleSoln)
 	}
-	copy(dst.VmsToCreate, src.VmsToCreate)
+
+	// copy VmsToCreate
+	if src.VmsToCreate != nil {
+		dst.VmsToCreate = make([]models.IaasVm, len(src.VmsToCreate))
+		copy(dst.VmsToCreate, src.VmsToCreate)
+	}
+
 	return dst
 }

@@ -22,6 +22,12 @@ type K8sNode struct {
 
 }
 
+// copy a K8sNode to generate a new and same one
+func K8sNodeCopy(src K8sNode) K8sNode {
+	var dst K8sNode = src
+	return dst
+}
+
 // generate a K8sNode variable from a VM and the pods deployed on it.
 func GenK8sNodeFromPods(vm models.IaasVm, podsOnNode []apiv1.Pod) K8sNode {
 	// Get available resources of this VM

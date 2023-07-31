@@ -1,5 +1,8 @@
 #!/bin/env bash
 
+# Set the errexit option to exit on error
+set -e
+
 CURRENT_DIR=$(cd $(dirname $0); pwd)
 
 # We use "-short" to skip some test functions.

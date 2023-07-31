@@ -1,8 +1,6 @@
 package algorithms
 
 import (
-	"fmt"
-
 	"github.com/astaxie/beego"
 
 	asmodel "emcontroller/auto-schedule/model"
@@ -30,16 +28,19 @@ func NewMcssga(chromosomesCount int, iterationCount int, crossoverProbability fl
 func (m *Mcssga) Schedule(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string) (asmodel.Solution, error) {
 	beego.Info("Clouds:")
 	for _, cloud := range clouds {
-		beego.Info(fmt.Sprintf("%+v\n", cloud))
+		beego.Info(asmodel.JsonString(cloud))
 	}
 	beego.Info("Applications:")
 	for _, app := range apps {
-		beego.Info(fmt.Sprintf("%+v\n", app))
+		beego.Info(asmodel.JsonString(app))
 	}
 
 	// randomly generate the init population
 	var initPopulation []asmodel.Solution = m.initialize(clouds, apps, appsOrder)
-	beego.Info(initPopulation)
+	beego.Info("initPopulation:")
+	for _, soln := range initPopulation {
+		beego.Info(asmodel.JsonString(soln))
+	}
 
 	return asmodel.Solution{}, nil
 }

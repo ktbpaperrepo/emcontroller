@@ -13,6 +13,8 @@ const (
 	// 3. a VM with all rest resources; if all rest is not enough, it means this solution is not acceptable.
 	biggerVmResPct  float64 = 0.5
 	smallerVmResPct float64 = 0.3
+
+	floatDelta float64 = 0.00001 // binary-floating-point data is not accurate, so we need to allow a delta when checking whether 2 float values are equal
 )
 
 // SchedulingAlgorithm is the interface that all algorithms should implement
@@ -20,44 +22,25 @@ type SchedulingAlgorithm interface {
 	Schedule(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string) (asmodel.Solution, error)
 }
 
-// With a solution, Find out the applications scheduled on this cloud
-func findAppsOneCloud(cloud asmodel.Cloud, apps map[string]asmodel.Application, soln asmodel.Solution) map[string]asmodel.Application {
-	appsThisCloud := make(map[string]asmodel.Application)
-	for appName, appSoln := range soln.AppsSolution {
-		if appSoln.Accepted && appSoln.TargetCloudName == cloud.Name {
-			appsThisCloud[appName] = apps[appName]
-		}
+// After scheduling applications to clouds, we get a coarse solution. Then, we use this function to refine the solution, do 3 things:
+// 1. schedule applications to VMs inside clouds;
+// 2. allocate CPUs to applications inside VMs;
+// 3. Check whether this solution is acceptable.
+// If this solution passes the above 3 things, we return the refined solution.
+func RefineSoln(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string, soln asmodel.Solution) (asmodel.Solution, bool) {
+	// 1. give the solution node names
+	solnWithVm, vmAcceptable := allocateVms(clouds, apps, appsOrder, soln)
+	if !vmAcceptable {
+		return asmodel.Solution{}, false
 	}
-	return appsThisCloud
-}
-
-// filter the max-priority applications
-func filterMaxPriApps(apps map[string]asmodel.Application) map[string]asmodel.Application {
-	var maxPriApps map[string]asmodel.Application = make(map[string]asmodel.Application)
-	for appName, app := range apps {
-		if app.Priority == asmodel.MaxPriority {
-			maxPriApps[appName] = app
-		}
+	// 2. Allocate CPU cores
+	solnWithCpu, cpuAcceptable := allocateCpus(clouds, apps, appsOrder, solnWithVm)
+	if !cpuAcceptable {
+		return asmodel.Solution{}, false
 	}
-	return maxPriApps
-}
-
-// filter out the max-priority applications
-func filterOutMaxPriApps(apps map[string]asmodel.Application) map[string]asmodel.Application {
-	var maxPriApps map[string]asmodel.Application = make(map[string]asmodel.Application)
-	for appName, app := range apps {
-		if app.Priority != asmodel.MaxPriority {
-			maxPriApps[appName] = app
-		}
+	// 3. Check whether this solution is acceptable.
+	if !Acceptable(clouds, apps, appsOrder, solnWithCpu) {
+		return asmodel.Solution{}, false
 	}
-	return maxPriApps
-}
-
-// In Golang, the iteration order of map is random, but in some steps of scheduling, we need a fixed order of applications, so we make this function to randomly generate a order of applications and use it as the fixed application order in scheduling.
-func GenerateAppsOrder(apps map[string]asmodel.Application) []string {
-	var appsOrder []string
-	for appName, _ := range apps {
-		appsOrder = append(appsOrder, appName)
-	}
-	return appsOrder
+	return solnWithCpu, true
 }

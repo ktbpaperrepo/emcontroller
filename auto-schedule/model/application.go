@@ -25,8 +25,12 @@ type Application struct {
 
 func AppCopy(src Application) Application {
 	var dst Application = src
-	dst.Dependencies = make([]models.Dependency, len(src.Dependencies))
-	copy(dst.Dependencies, src.Dependencies)
+	if src.Dependencies == nil {
+		dst.Dependencies = nil
+	} else {
+		dst.Dependencies = make([]models.Dependency, len(src.Dependencies))
+		copy(dst.Dependencies, src.Dependencies)
+	}
 	return dst
 }
 

@@ -5,7 +5,7 @@ go 1.20
 require github.com/astaxie/beego v1.12.3
 
 require (
-	github.com/KeepTheBeats/routing-algorithms v0.0.0-20230711130822-c7f70dac810d
+	github.com/KeepTheBeats/routing-algorithms v0.0.0-20230729123132-83c8b862b487
 	github.com/docker/docker v20.10.17+incompatible
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/gophercloud/gophercloud v1.1.1
@@ -67,6 +67,7 @@ require (
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/shiena/ansicolor v0.0.0-20200904210342-c7312218db18 // indirect
+	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/smartystreets/assertions v0.0.0-20180927180507-b2de0cb4f26d // indirect
 	github.com/spf13/afero v1.9.2 // indirect

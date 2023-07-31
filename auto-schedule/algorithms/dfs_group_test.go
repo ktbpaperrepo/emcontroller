@@ -232,6 +232,189 @@ func TestDfsGroup(t *testing.T) {
 				[]string{"app11"},
 			},
 		},
+		{
+			name: "case not all in group 1",
+			apps: map[string]asmodel.Application{
+				"app1": asmodel.Application{
+					Name: "app1",
+					Dependencies: []models.Dependency{
+						models.Dependency{
+							AppName: "app2",
+						},
+						models.Dependency{
+							AppName: "app12",
+						},
+					},
+				},
+				"app2": asmodel.Application{
+					Name: "app2",
+					Dependencies: []models.Dependency{
+						models.Dependency{
+							AppName: "app3",
+						},
+						models.Dependency{
+							AppName: "app4",
+						},
+					},
+				},
+				"app3": asmodel.Application{
+					Name:         "app3",
+					Dependencies: []models.Dependency{},
+				},
+				"app4": asmodel.Application{
+					Name: "app4",
+					Dependencies: []models.Dependency{
+						models.Dependency{
+							AppName: "app14",
+						},
+					},
+				},
+				"app5": asmodel.Application{
+					Name: "app5",
+					Dependencies: []models.Dependency{
+						models.Dependency{
+							AppName: "app16",
+						},
+						models.Dependency{
+							AppName: "app12",
+						},
+					},
+				},
+				"app6": asmodel.Application{
+					Name:         "app6",
+					Dependencies: []models.Dependency{},
+				},
+				"app7": asmodel.Application{
+					Name: "app7",
+					Dependencies: []models.Dependency{
+						models.Dependency{
+							AppName: "app5",
+						},
+						models.Dependency{
+							AppName: "app6",
+						},
+					},
+				},
+				"app8": asmodel.Application{
+					Name:         "app8",
+					Dependencies: []models.Dependency{},
+				},
+				"app9": asmodel.Application{
+					Name: "app9",
+					Dependencies: []models.Dependency{
+						models.Dependency{
+							AppName: "app8",
+						},
+					},
+				},
+				"app10": asmodel.Application{
+					Name:         "app10",
+					Dependencies: []models.Dependency{},
+				},
+				"app11": asmodel.Application{
+					Name:         "app11",
+					Dependencies: []models.Dependency{},
+				},
+			},
+			expectedResult: [][]string{
+				[]string{"app1", "app2", "app3", "app4"},
+				[]string{"app5", "app6", "app7"},
+				[]string{"app9", "app8"},
+				[]string{"app10"},
+				[]string{"app11"},
+			},
+		},
+		{
+			name: "case not all in group 2",
+			apps: map[string]asmodel.Application{
+				"app1": asmodel.Application{
+					Name: "app1",
+					Dependencies: []models.Dependency{
+						models.Dependency{
+							AppName: "app22",
+						},
+						models.Dependency{
+							AppName: "app12",
+						},
+					},
+				},
+				"app2": asmodel.Application{
+					Name: "app2",
+					Dependencies: []models.Dependency{
+						models.Dependency{
+							AppName: "app3",
+						},
+						models.Dependency{
+							AppName: "app4",
+						},
+					},
+				},
+				"app3": asmodel.Application{
+					Name:         "app3",
+					Dependencies: []models.Dependency{},
+				},
+				"app4": asmodel.Application{
+					Name: "app4",
+					Dependencies: []models.Dependency{
+						models.Dependency{
+							AppName: "app14",
+						},
+					},
+				},
+				"app5": asmodel.Application{
+					Name: "app5",
+					Dependencies: []models.Dependency{
+						models.Dependency{
+							AppName: "app16",
+						},
+						models.Dependency{
+							AppName: "app12",
+						},
+					},
+				},
+				"app6": asmodel.Application{
+					Name:         "app6",
+					Dependencies: []models.Dependency{},
+				},
+				"app7": asmodel.Application{
+					Name: "app7",
+					Dependencies: []models.Dependency{
+						models.Dependency{
+							AppName: "app6",
+						},
+					},
+				},
+				"app8": asmodel.Application{
+					Name:         "app8",
+					Dependencies: []models.Dependency{},
+				},
+				"app9": asmodel.Application{
+					Name: "app9",
+					Dependencies: []models.Dependency{
+						models.Dependency{
+							AppName: "app8",
+						},
+					},
+				},
+				"app10": asmodel.Application{
+					Name:         "app10",
+					Dependencies: []models.Dependency{},
+				},
+				"app11": asmodel.Application{
+					Name:         "app11",
+					Dependencies: []models.Dependency{},
+				},
+			},
+			expectedResult: [][]string{
+				[]string{"app1"},
+				[]string{"app2", "app3", "app4"},
+				[]string{"app5"},
+				[]string{"app6", "app7"},
+				[]string{"app9", "app8"},
+				[]string{"app10"},
+				[]string{"app11"},
+			},
+		},
 	}
 
 	for i, testCase := range testCases {

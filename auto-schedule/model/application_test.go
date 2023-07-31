@@ -106,6 +106,53 @@ func TestAppMapCopy(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "case empty dependency not nil and nil",
+			src: map[string]Application{
+				"app1": {
+					Name:     "app1",
+					Priority: 2,
+					Resources: AppResources{
+						GenericResources: GenericResources{
+							CpuCore: 3.0,
+							Memory:  2048,
+							Storage: 10,
+						},
+					},
+					Dependencies: []models.Dependency{
+						{
+							AppName: "app2",
+						},
+						{
+							AppName: "app3",
+						},
+					},
+				},
+				"app2": {
+					Name:     "app2",
+					Priority: 3,
+					Resources: AppResources{
+						GenericResources: GenericResources{
+							CpuCore: 4.0,
+							Memory:  4096,
+							Storage: 20,
+						},
+					},
+					Dependencies: []models.Dependency{},
+				},
+				"app3": {
+					Name:     "app3",
+					Priority: 4,
+					Resources: AppResources{
+						GenericResources: GenericResources{
+							CpuCore: 5.0,
+							Memory:  4096,
+							Storage: 30,
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for i, testCase := range testCases {
@@ -115,6 +162,8 @@ func TestAppMapCopy(t *testing.T) {
 
 		// test extra key
 		dst = AppMapCopy(testCase.src)
+		assert.Equal(t, testCase.src, dst)
+
 		extraKey := "app100"
 		dst[extraKey] = Application{
 			Name:     extraKey,
@@ -135,6 +184,8 @@ func TestAppMapCopy(t *testing.T) {
 
 		// test change
 		dst = AppMapCopy(testCase.src)
+		assert.Equal(t, testCase.src, dst)
+
 		changeKey := "app1"
 		dst[changeKey] = Application{
 			Name:     "app1",

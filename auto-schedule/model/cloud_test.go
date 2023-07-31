@@ -47,6 +47,7 @@ func TestCloudCopy(t *testing.T) {
 	for i, testCase := range testCases {
 		t.Logf("test: %d, %s", i, testCase.name)
 		dst := CloudCopy(testCase.src)
+		assert.Equal(t, testCase.src, dst)
 		dst.K8sNodes[0].Name = "node100"
 		assert.NotEqual(t, testCase.src.K8sNodes[0], dst.K8sNodes[0], fmt.Sprintf("%s: result is not expected", testCase.name))
 	}
@@ -121,6 +122,8 @@ func TestCloudMapCopy(t *testing.T) {
 
 		// test extra key
 		dst = CloudMapCopy(testCase.src)
+		assert.Equal(t, testCase.src, dst)
+
 		extraKey := "cloud100"
 		dst[extraKey] = Cloud{
 			Name: extraKey,
@@ -141,6 +144,8 @@ func TestCloudMapCopy(t *testing.T) {
 
 		// test change
 		dst = CloudMapCopy(testCase.src)
+		assert.Equal(t, testCase.src, dst)
+
 		changeKey := "cloud1"
 		dst[changeKey] = Cloud{
 			Name: "cloud1",

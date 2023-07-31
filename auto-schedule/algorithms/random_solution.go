@@ -12,7 +12,7 @@ func RandomAcceptMostSolution(clouds map[string]asmodel.Cloud, apps map[string]a
 	// initialize an all-reject solution with all applications rejected.
 	var solution asmodel.Solution = asmodel.GenEmptySoln()
 	for _, app := range apps {
-		solution.AppsSolution[app.Name] = asmodel.RejSoln
+		solution.AppsSolution[app.Name] = asmodel.SasCopy(asmodel.RejSoln)
 	}
 
 	// Then, we try to accept applications based on the all-reject solution.
@@ -35,31 +35,18 @@ func RandomAcceptMostSolution(clouds map[string]asmodel.Cloud, apps map[string]a
 				TargetCloudName: pickedCloudName,
 			}
 
-			// TODO
-			var acceptable bool
-			// 1. give the solution node names
-			solution, acceptable = allocateVms(clouds, apps, appsOrder, solution)
-			if !acceptable { // if this solution is not acceptable, we try another
-				solution.AppsSolution[pickedAppName] = asmodel.RejSoln
-				delete(untriedClouds, pickedCloudName)
-				continue
-			}
-			// 2. Allocate CPU cores
-			solution, acceptable = allocateCpus(clouds, apps, appsOrder, solution)
-			if !acceptable { // if this solution is not acceptable, we try another
-				solution.AppsSolution[pickedAppName] = asmodel.RejSoln
-				delete(untriedClouds, pickedCloudName)
-				continue
-			}
-
 			// If the randomly chosen cloud and the app constitute an acceptable solution,
 			// we map them in the solution, and "break" to look for a cloud for another application.
-			if Acceptable(clouds, apps, appsOrder, solution) {
+			refinedSoln, acceptable := RefineSoln(clouds, apps, appsOrder, solution)
+			if acceptable {
+				// if this solution passes the 3 checks (VM, CPU, acceptable), we set it back to the original solution.
+				solution = asmodel.SolutionCopy(refinedSoln)
 				break
 			}
+
 			// Otherwise,
 			// we restore this application as rejected, remove this cloud from the untriedClouds, and try another cloud in the next loop.
-			solution.AppsSolution[pickedAppName] = asmodel.RejSoln
+			solution.AppsSolution[pickedAppName] = asmodel.SasCopy(asmodel.RejSoln)
 			delete(untriedClouds, pickedCloudName)
 
 		}

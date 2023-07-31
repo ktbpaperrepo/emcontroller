@@ -386,3 +386,39 @@ func TestGenK8sNodeFromApps(t *testing.T) {
 	}
 
 }
+
+func TestK8sNodeCopy(t *testing.T) {
+	testCases := []struct {
+		name string
+		src  K8sNode
+	}{
+		{
+			name: "case 1",
+			src: K8sNode{
+				Name: "node1",
+				ResidualResources: GenericResources{
+					CpuCore: 16,
+					Memory:  10240,
+					Storage: 100,
+				},
+			},
+		},
+		{
+			name: "case 2",
+			src: K8sNode{
+				Name: "node2",
+				ResidualResources: GenericResources{
+					CpuCore: 4,
+					Memory:  4096,
+					Storage: 50,
+				},
+			},
+		},
+	}
+
+	for i, testCase := range testCases {
+		t.Logf("test: %d, %s", i, testCase.name)
+		dst := K8sNodeCopy(testCase.src)
+		assert.Equal(t, testCase.src, dst)
+	}
+}
