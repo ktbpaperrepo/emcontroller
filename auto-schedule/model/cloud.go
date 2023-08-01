@@ -202,7 +202,7 @@ func getK8sNodesOnCloud(cloud models.Iaas, allK8sNodes []apiv1.Node) ([]K8sNode,
 		}
 
 		// NOTE: Maybe I should add a Kubernetes annotation to every VM created by auto-scheduling and only get the VMs with that annotation here, to avoid using other VMs for auto-scheduling, but maybe I should not do it, because if users hope their VMs not to be used by others, they should add Kubernetes taints to them, or otherwise when other uses create Kubernetes applications, Kubernetes may also schedule them to their VMs automatically.
-		// NOTE 2: I find that I should add the annotation to the VMs, because I need to make a mechanism to delete unused VMs periodically, which should only delete the VMs with auto-scheduling annotation to avoid deleting other users' VMs.
+		// NOTE 2: Although I need to make a mechanism to delete unused VMs periodically, which should only delete the VMs created by auto-scheduling, I still do not need to add the annotation, because I can use the name prefix ASVmNamePrefix to filter the auto-scheduling VMs.
 
 		for _, node := range allK8sNodes {
 			if len(node.Spec.Taints) > 0 {
