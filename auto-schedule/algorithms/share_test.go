@@ -246,6 +246,449 @@ func cloudsForTest() map[string]asmodel.Cloud {
 	return clouds
 }
 
+func cloudsWithNetForTest() []map[string]asmodel.Cloud {
+	return []map[string]asmodel.Cloud{
+		map[string]asmodel.Cloud{ // index 0
+			"NOKIA4": asmodel.Cloud{
+				Name: "NOKIA4",
+				Resources: models.ResourceStatus{
+					Limit: models.ResSet{
+						VCpu:    56,
+						Ram:     128796.75390625,
+						Storage: 1396.5185890197754,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+					InUse: models.ResSet{
+						VCpu:    26,
+						Ram:     59392,
+						Storage: 629,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+				},
+				K8sNodes: []asmodel.K8sNode{},
+				NetState: map[string]models.NetworkState{
+					"NOKIA4": models.NetworkState{
+						Rtt: 0.753,
+					},
+					"NOKIA5": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+					"NOKIA6": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+					"NOKIA7": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+				},
+			},
+			"NOKIA5": asmodel.Cloud{
+				Name: "NOKIA5",
+				Resources: models.ResourceStatus{
+					Limit: models.ResSet{
+						VCpu:    56,
+						Ram:     128796.75390625,
+						Storage: 1396.5185890197754,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+					InUse: models.ResSet{
+						VCpu:    26,
+						Ram:     59392,
+						Storage: 629,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+				},
+				K8sNodes: []asmodel.K8sNode{},
+				NetState: map[string]models.NetworkState{
+					"NOKIA4": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+					"NOKIA5": models.NetworkState{
+						Rtt: 0.753,
+					},
+					"NOKIA6": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+					"NOKIA7": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+				},
+			},
+			"NOKIA6": asmodel.Cloud{
+				Name: "NOKIA6",
+				Resources: models.ResourceStatus{
+					Limit: models.ResSet{
+						VCpu:    56,
+						Ram:     128796.75390625,
+						Storage: 1396.5185890197754,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+					InUse: models.ResSet{
+						VCpu:    26,
+						Ram:     59392,
+						Storage: 629,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+				},
+				K8sNodes: []asmodel.K8sNode{},
+				NetState: map[string]models.NetworkState{
+					"NOKIA4": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+					"NOKIA5": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+					"NOKIA6": models.NetworkState{
+						Rtt: 0.753,
+					},
+					"NOKIA7": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+				},
+			},
+			"NOKIA7": asmodel.Cloud{
+				Name: "NOKIA7",
+				Resources: models.ResourceStatus{
+					Limit: models.ResSet{
+						VCpu:    56,
+						Ram:     128796.75390625,
+						Storage: 1396.5185890197754,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+					InUse: models.ResSet{
+						VCpu:    26,
+						Ram:     59392,
+						Storage: 629,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+				},
+				K8sNodes: []asmodel.K8sNode{},
+				NetState: map[string]models.NetworkState{
+					"NOKIA4": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+					"NOKIA5": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+					"NOKIA6": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+					"NOKIA7": models.NetworkState{
+						Rtt: 0.753,
+					},
+				},
+			},
+		},
+		map[string]asmodel.Cloud{ // index 1
+			"NOKIA4": asmodel.Cloud{
+				Name: "NOKIA4",
+				Resources: models.ResourceStatus{
+					Limit: models.ResSet{
+						VCpu:    56,
+						Ram:     128796.75390625,
+						Storage: 1396.5185890197754,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+					InUse: models.ResSet{
+						VCpu:    26,
+						Ram:     59392,
+						Storage: 629,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+				},
+				K8sNodes: []asmodel.K8sNode{},
+				NetState: map[string]models.NetworkState{
+					"NOKIA4": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+					"NOKIA5": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+					"NOKIA6": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+					"NOKIA7": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+				},
+			},
+			"NOKIA5": asmodel.Cloud{
+				Name: "NOKIA5",
+				Resources: models.ResourceStatus{
+					Limit: models.ResSet{
+						VCpu:    56,
+						Ram:     128796.75390625,
+						Storage: 1396.5185890197754,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+					InUse: models.ResSet{
+						VCpu:    26,
+						Ram:     59392,
+						Storage: 629,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+				},
+				K8sNodes: []asmodel.K8sNode{},
+				NetState: map[string]models.NetworkState{
+					"NOKIA4": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+					"NOKIA5": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+					"NOKIA6": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+					"NOKIA7": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+				},
+			},
+			"NOKIA6": asmodel.Cloud{
+				Name: "NOKIA6",
+				Resources: models.ResourceStatus{
+					Limit: models.ResSet{
+						VCpu:    56,
+						Ram:     128796.75390625,
+						Storage: 1396.5185890197754,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+					InUse: models.ResSet{
+						VCpu:    26,
+						Ram:     59392,
+						Storage: 629,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+				},
+				K8sNodes: []asmodel.K8sNode{},
+				NetState: map[string]models.NetworkState{
+					"NOKIA4": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+					"NOKIA5": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+					"NOKIA6": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+					"NOKIA7": models.NetworkState{
+						Rtt: 0.753,
+					},
+				},
+			},
+			"NOKIA7": asmodel.Cloud{
+				Name: "NOKIA7",
+				Resources: models.ResourceStatus{
+					Limit: models.ResSet{
+						VCpu:    56,
+						Ram:     128796.75390625,
+						Storage: 1396.5185890197754,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+					InUse: models.ResSet{
+						VCpu:    26,
+						Ram:     59392,
+						Storage: 629,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+				},
+				K8sNodes: []asmodel.K8sNode{},
+				NetState: map[string]models.NetworkState{
+					"NOKIA4": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+					"NOKIA5": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+					"NOKIA6": models.NetworkState{
+						Rtt: 0.5,
+					},
+					"NOKIA7": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+				},
+			},
+		},
+		map[string]asmodel.Cloud{ // index 2
+			"NOKIA4": asmodel.Cloud{
+				Name: "NOKIA4",
+				Resources: models.ResourceStatus{
+					Limit: models.ResSet{
+						VCpu:    56,
+						Ram:     128796.75390625,
+						Storage: 1396.5185890197754,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+					InUse: models.ResSet{
+						VCpu:    26,
+						Ram:     59392,
+						Storage: 629,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+				},
+				K8sNodes: []asmodel.K8sNode{},
+				NetState: map[string]models.NetworkState{
+					"NOKIA4": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+					"NOKIA5": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+					"NOKIA6": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+					"NOKIA7": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+				},
+			},
+			"NOKIA5": asmodel.Cloud{
+				Name: "NOKIA5",
+				Resources: models.ResourceStatus{
+					Limit: models.ResSet{
+						VCpu:    56,
+						Ram:     128796.75390625,
+						Storage: 1396.5185890197754,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+					InUse: models.ResSet{
+						VCpu:    26,
+						Ram:     59392,
+						Storage: 629,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+				},
+				K8sNodes: []asmodel.K8sNode{},
+				NetState: map[string]models.NetworkState{
+					"NOKIA4": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+					"NOKIA5": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+					"NOKIA6": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+					"NOKIA7": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+				},
+			},
+			"NOKIA6": asmodel.Cloud{
+				Name: "NOKIA6",
+				Resources: models.ResourceStatus{
+					Limit: models.ResSet{
+						VCpu:    56,
+						Ram:     128796.75390625,
+						Storage: 1396.5185890197754,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+					InUse: models.ResSet{
+						VCpu:    26,
+						Ram:     59392,
+						Storage: 629,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+				},
+				K8sNodes: []asmodel.K8sNode{},
+				NetState: map[string]models.NetworkState{
+					"NOKIA4": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+					"NOKIA5": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+					"NOKIA6": models.NetworkState{
+						Rtt: 0.753,
+					},
+					"NOKIA7": models.NetworkState{
+						Rtt: 0.753,
+					},
+				},
+			},
+			"NOKIA7": asmodel.Cloud{
+				Name: "NOKIA7",
+				Resources: models.ResourceStatus{
+					Limit: models.ResSet{
+						VCpu:    56,
+						Ram:     128796.75390625,
+						Storage: 1396.5185890197754,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+					InUse: models.ResSet{
+						VCpu:    26,
+						Ram:     59392,
+						Storage: 629,
+						Vm:      -1,
+						Port:    -1,
+						Volume:  -1,
+					},
+				},
+				K8sNodes: []asmodel.K8sNode{},
+				NetState: map[string]models.NetworkState{
+					"NOKIA4": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+					"NOKIA5": models.NetworkState{
+						Rtt: models.UnreachableRttMs,
+					},
+					"NOKIA6": models.NetworkState{
+						Rtt: 0.5,
+					},
+					"NOKIA7": models.NetworkState{
+						Rtt: 0.753,
+					},
+				},
+			},
+		},
+	}
+}
+
 func appOrdersForTest() [][]string {
 	return [][]string{
 		[]string{"app1", "app2", "app3", "app4", "app5", "app6", "app7", "app8"}, // index 0
@@ -841,6 +1284,125 @@ func appsForTest() []map[string]asmodel.Application {
 						CpuCore: 0.4,
 						Memory:  540,
 						Storage: 35,
+					},
+				},
+			},
+			"app8": asmodel.Application{
+				Name:     "app8",
+				Priority: 1,
+				Resources: asmodel.AppResources{
+					GenericResources: asmodel.GenericResources{
+						CpuCore: 0.1,
+						Memory:  540,
+						Storage: 15,
+					},
+				},
+			},
+		},
+		map[string]asmodel.Application{ // index 9
+			"app1": asmodel.Application{
+				Name:     "app1",
+				Priority: 10,
+				Resources: asmodel.AppResources{
+					GenericResources: asmodel.GenericResources{
+						CpuCore: 0.3,
+						Memory:  1024,
+						Storage: 10,
+					},
+				},
+				Dependencies: []models.Dependency{
+					models.Dependency{
+						AppName: "app2",
+					},
+					models.Dependency{
+						AppName: "app3",
+					},
+				},
+			},
+			"app2": asmodel.Application{
+				Name:     "app2",
+				Priority: 10,
+				Resources: asmodel.AppResources{
+					GenericResources: asmodel.GenericResources{
+						CpuCore: 0.2,
+						Memory:  990,
+						Storage: 15,
+					},
+				},
+				Dependencies: []models.Dependency{
+					models.Dependency{
+						AppName: "app4",
+					},
+					models.Dependency{
+						AppName: "app3",
+					},
+				},
+			},
+			"app3": asmodel.Application{
+				Name:     "app3",
+				Priority: 1,
+				Resources: asmodel.AppResources{
+					GenericResources: asmodel.GenericResources{
+						CpuCore: 0.2,
+						Memory:  990,
+						Storage: 15,
+					},
+				},
+			},
+			"app4": asmodel.Application{
+				Name:     "app4",
+				Priority: 10,
+				Resources: asmodel.AppResources{
+					GenericResources: asmodel.GenericResources{
+						CpuCore: 0.1,
+						Memory:  660,
+						Storage: 6,
+					},
+				},
+			},
+			"app5": asmodel.Application{
+				Name:     "app5",
+				Priority: 2,
+				Resources: asmodel.AppResources{
+					GenericResources: asmodel.GenericResources{
+						CpuCore: 6.3,
+						Memory:  990,
+						Storage: 15,
+					},
+				},
+				Dependencies: []models.Dependency{
+					models.Dependency{
+						AppName: "app6",
+					},
+					models.Dependency{
+						AppName: "app7",
+					},
+				},
+			},
+			"app6": asmodel.Application{
+				Name:     "app6",
+				Priority: 5,
+				Resources: asmodel.AppResources{
+					GenericResources: asmodel.GenericResources{
+						CpuCore: 2,
+						Memory:  990,
+						Storage: 15,
+					},
+				},
+			},
+			"app7": asmodel.Application{
+				Name:     "app7",
+				Priority: 2,
+				Resources: asmodel.AppResources{
+					GenericResources: asmodel.GenericResources{
+						CpuCore: 0.4,
+						Memory:  540,
+						Storage: 35,
+					},
+				},
+				Dependencies: []models.Dependency{
+					models.Dependency{
+						AppName: "app8",
 					},
 				},
 			},

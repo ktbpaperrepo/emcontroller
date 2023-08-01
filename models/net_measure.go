@@ -40,7 +40,7 @@ const (
 	DbFieldCloudName string = "target_cloud_name" // field in the tables of network performance database
 	DbFieldRtt       string = "rtt_ms"            // field in the tables of network performance database
 
-	UnreachableRttMs float64 = 250000 // when a cloud is unreachable from another, in the database, we set this value as the RTT between them. This value should be consistent with that in "net-perf-container-image/client.sh"
+	UnreachableRttMs float64 = 250000 // unit: millisecond (ms). when a cloud is unreachable from another, in the database, we set this value as the RTT between them. This value should be consistent with that in "net-perf-container-image/client.sh"
 )
 
 var (

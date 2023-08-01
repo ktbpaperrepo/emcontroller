@@ -48,6 +48,8 @@ func CreateAutoScheduleApps(apps []models.K8sApp) ([]models.AppInfo, error, int)
 	}
 	fmt.Println(solution)
 
+	// create the VMs
+
 	// call models.CreateApplication to deploy
 
 	// wait for application running

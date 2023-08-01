@@ -15,6 +15,8 @@ const (
 	smallerVmResPct float64 = 0.3
 
 	floatDelta float64 = 0.00001 // binary-floating-point data is not accurate, so we need to allow a delta when checking whether 2 float values are equal
+
+	minAccRttMs float64 = 20000 // unit: millisecond (ms). Minimum acceptable Round-Trip Time (RTT) between to applications with a dependency. The value should be smaller than models.UnreachableRttMs.
 )
 
 // SchedulingAlgorithm is the interface that all algorithms should implement
