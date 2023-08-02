@@ -696,3 +696,76 @@ func WaitForAppRunning(timeout int, checkInterval int, appName string) error {
 		return false, nil
 	})
 }
+
+// Create a group of applications and wait for them running.
+func CreateAppsWait(appsToCreate []K8sApp) ([]AppInfo, error) {
+
+	// create all applications in parallel
+	// use one goroutine to create one application
+	var wg sync.WaitGroup
+
+	var errs []error
+	var createdAppsInfo []AppInfo
+	var errsMu sync.Mutex // the slice (errs) in golang is not safe for concurrent read/write
+	var appInfoMu sync.Mutex
+
+	for _, app := range appsToCreate {
+		wg.Add(1)
+		go func(ka K8sApp) {
+			defer wg.Done()
+			outAppInfo, err := CreateAppAndWait(ka)
+			if err != nil {
+				outErr := fmt.Errorf("Create app [%s], error %w.", ka.Name, err)
+				beego.Error(outErr)
+				errsMu.Lock()
+				errs = append(errs, outErr)
+				errsMu.Unlock()
+			} else {
+				appInfoMu.Lock()
+				createdAppsInfo = append(createdAppsInfo, outAppInfo)
+				appInfoMu.Unlock()
+			}
+		}(app)
+	}
+	wg.Wait()
+
+	if len(errs) != 0 {
+		sumErr := HandleErrSlice(errs)
+		outErr := fmt.Errorf("Create a group of applications, Error: %w", sumErr)
+		beego.Error(outErr)
+		return createdAppsInfo, outErr
+	}
+
+	return createdAppsInfo, nil
+}
+
+// This function does 3 things:
+// 1. create an application;
+// 2. wait for this application running;
+// 3. return the information of the created application.
+func CreateAppAndWait(appToCreate K8sApp) (AppInfo, error) {
+	beego.Info(fmt.Sprintf("Submit the request to create application [%s]", appToCreate.Name))
+	if err := CreateApplication(appToCreate); err != nil {
+		outErr := fmt.Errorf("Create application %+v, error: %w", appToCreate, err)
+		beego.Error(outErr)
+		return AppInfo{}, outErr
+	}
+
+	beego.Info(fmt.Sprintf("Start to wait for the application [%s] running", appToCreate.Name))
+	if err := WaitForAppRunning(WaitForTimeOut, 10, appToCreate.Name); err != nil {
+		outErr := fmt.Errorf("Wait for application [%s] running, error: %w", appToCreate.Name, err)
+		beego.Error(outErr)
+		return AppInfo{}, outErr
+	}
+	beego.Info(fmt.Sprintf("The application [%s] is already running", appToCreate.Name))
+
+	outAppInfo, err, _ := GetApplication(appToCreate.Name)
+	if err != nil {
+		outErr := fmt.Errorf("After waiting, get application [%s], error: %w", appToCreate.Name, err)
+		beego.Error(outErr)
+		return AppInfo{}, outErr
+	}
+
+	beego.Info(fmt.Sprintf("Successful! Create application [%s].", appToCreate.Name))
+	return outAppInfo, nil
+}

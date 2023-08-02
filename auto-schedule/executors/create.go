@@ -55,11 +55,37 @@ func CreateAutoScheduleApps(apps []models.K8sApp) ([]models.AppInfo, error, int)
 		return []models.AppInfo{}, outErr, http.StatusInternalServerError
 	}
 
-	// call models.CreateApplication to deploy
+	// add the auto-scheduling information into the applications to deploy.
+	appsToDeploy := addScheInfoToApps(apps, solution)
 
-	// wait for application running
+	// deploy applications, and wait for them running.
+	createdAppsInfo, err := models.CreateAppsWait(appsToDeploy)
+	if err != nil {
+		outErr := fmt.Errorf("Create auto-scheduling applications [%s], Error: [%w]", models.JsonString(appsToDeploy), err)
+		beego.Error(outErr)
+		return []models.AppInfo{}, outErr, http.StatusInternalServerError
+	}
 
-	// get applications and return then AppInfo
+	return createdAppsInfo, nil, http.StatusCreated
+}
 
-	return []models.AppInfo{}, nil, http.StatusCreated
+// After scheduling applications, we should use this functions to add the scheduling information to applications.
+func addScheInfoToApps(apps []models.K8sApp, scheSoln asmodel.Solution) []models.K8sApp {
+	var appsWithScheInfo []models.K8sApp
+
+	for _, app := range apps {
+		// Remove the rejected applications from the array.
+		if !scheSoln.AppsSolution[app.Name].Accepted {
+			continue
+		}
+
+		// add node name
+		app.NodeName = scheSoln.AppsSolution[app.Name].K8sNodeName
+		// configure allocated CPU
+		app.Containers[0].Resources.Requests.CPU = fmt.Sprintf("%.1f", scheSoln.AppsSolution[app.Name].AllocatedCpuCore)
+
+		appsWithScheInfo = append(appsWithScheInfo, app)
+	}
+
+	return appsWithScheInfo
 }

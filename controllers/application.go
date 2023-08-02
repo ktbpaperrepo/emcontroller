@@ -318,32 +318,15 @@ func (c *ApplicationController) DoNewAppJson() {
 	beego.Info(fmt.Sprintf("From json input, we successfully parsed application [%+v]", app))
 
 	// Use the parsed app to create an application
-	if err := models.CreateApplication(app); err != nil {
+	// Here, we wait until the app status becomes running.
+	// We only do this behavior for json input, because for the form input, users can check the status on the web
+	// And we need to put the application information (including the service port, pod IP, or nodePort IP) in the response body of Json request, to let the user know the information.
+	outApp, err := models.CreateAppAndWait(app)
+	if err != nil {
 		outErr := fmt.Errorf("Create application %+v, error: %w", app, err)
 		beego.Error(outErr)
 		c.Ctx.ResponseWriter.WriteHeader(http.StatusInternalServerError)
 		c.Ctx.WriteString(outErr.Error())
-		return
-	}
-
-	// Here, we wait until the app status becomes running.
-	// We only do this behavior for json input, because for the form input, users can check the status on the web
-	// And we need to put the application information (including the service port, pod IP, or nodePort IP) in the response body, to let the user know the information.
-	beego.Info(fmt.Sprintf("Start to wait for the application [%s] running", app.Name))
-	if err := models.WaitForAppRunning(models.WaitForTimeOut, 10, app.Name); err != nil {
-		outErr := fmt.Errorf("Wait for application [%s] running, error: %w", app.Name, err)
-		beego.Error(outErr)
-		c.Ctx.ResponseWriter.WriteHeader(http.StatusInternalServerError)
-		c.Ctx.WriteString(outErr.Error())
-		return
-	}
-	beego.Info(fmt.Sprintf("The application [%s] is already running", app.Name))
-
-	outApp, err, statusCode := models.GetApplication(app.Name)
-	if err != nil {
-		beego.Error(err)
-		c.Ctx.ResponseWriter.WriteHeader(statusCode)
-		c.Ctx.WriteString(err.Error())
 		return
 	}
 

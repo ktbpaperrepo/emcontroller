@@ -524,9 +524,8 @@ func WaitForNodeJoin(timeout int, checkInterval int, nodeName string) error {
 // add some new nodes into Kubernetes cluster
 func AddNodes(vms []IaasVm) []error {
 	if len(vms) == 0 {
-		outErr := fmt.Errorf("no vms in the input")
-		beego.Error(outErr)
-		return []error{outErr}
+		beego.Info("no vms in the input")
+		return nil
 	}
 
 	// use one joinCmd to add all nodes
