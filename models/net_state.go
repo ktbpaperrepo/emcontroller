@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	
+
 	"github.com/astaxie/beego"
 )
 
@@ -14,6 +14,13 @@ type NetworkState struct {
 
 // Check network state from MySQL and return the result as a matrix.
 func GetNetState() (map[string]map[string]NetworkState, error) {
+	// TODO: After finishing developing almost all functions, add this if.
+	//if !NetTestFuncOn {
+	//	outErr := fmt.Errorf("%s", NetTestFuncOffMsg)
+	//	beego.Error(outErr)
+	//	return nil, outErr
+	//}
+
 	var allNetSt map[string]map[string]NetworkState = make(map[string]map[string]NetworkState)
 
 	beego.Info("Start to check network state.")
