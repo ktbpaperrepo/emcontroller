@@ -123,7 +123,9 @@ func resAccOneCloudSharedVm(cloud asmodel.Cloud, apps map[string]asmodel.Applica
 		return solnWithVm, false // The cloud does not have more resources to create new VMs.
 	}
 
-	/* On a cloud, when existing VMs do not have enough resources for the applications scheduled here, we have 3 possible choices to create a new VM:
+	/**
+	NOTE:
+	On a cloud, when existing VMs do not have enough resources for the applications scheduled here, we have 3 possible choices to create a new VM:
 	1. a VM with 50% resources; if 50% is not enough, try 3.
 	2. a VM with 30% resources; if 30% is not enough, try 3.
 	3. a VM with all rest resources; if all rest is not enough, it means this solution is not acceptable.

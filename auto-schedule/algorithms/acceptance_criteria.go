@@ -48,7 +48,7 @@ func depAcc(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application
 					dstCloudName := soln.AppsSolution[depAppName].TargetCloudName
 
 					// If the RTT is too large, this solution is not acceptable.
-					if clouds[srcCloudName].NetState[dstCloudName].Rtt > minAccRttMs {
+					if clouds[srcCloudName].NetState[dstCloudName].Rtt > maxAccRttMs {
 						return false
 					}
 

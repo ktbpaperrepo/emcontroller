@@ -1,4 +1,6 @@
 /*
+NOTE:
+
 I presume that:
 The requests that need "auto schedule" will go the API functionality in the package "controller", then go to "this package", and then "this package" will call the package functionality in "models" to get the needed information and execute the scheduling schemes decided by "this package".
 

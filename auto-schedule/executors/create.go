@@ -48,6 +48,9 @@ func CreateAutoScheduleApps(apps []models.K8sApp) ([]models.AppInfo, error, int)
 	}
 	beego.Info(fmt.Sprintf("The algorithm works out the solution: %s", models.JsonString(solution)))
 
+	// for debug
+	return []models.AppInfo{}, nil, http.StatusCreated
+
 	// create the VMs and add them to Kubernetes
 	if _, err := models.AddNewVms(solution.VmsToCreate); err != nil {
 		outErr := fmt.Errorf("Add new auto-scheduling VMs, Error: [%w]", err)
