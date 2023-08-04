@@ -87,8 +87,7 @@ func (m *Mcssga) Schedule(clouds map[string]asmodel.Cloud, apps map[string]asmod
 
 	// No. 1 iteration to No. m.IterationCount iteration
 	for iteration := 1; iteration <= m.IterationCount; iteration++ {
-
-		// TODO: Write a test function to randomly generate applications groups for test, with adjustable parameters (container images, CPU range, Memory range, Storage range, dependencies). Return the generated applications and print the JsonString of them, so I can use the JsonString to make the curl commands.
+		
 		// TODO: crossover and mutation
 
 		currentPopulation = m.selectionOperator(clouds, apps, currentPopulation)
@@ -216,9 +215,16 @@ func (m *Mcssga) fitnessOneApp(clouds map[string]asmodel.Cloud, apps map[string]
 			// calculate the network part of the fitness value of this dependency
 			thisCloudName := chromosome.AppsSolution[thisAppName].TargetCloudName
 			depCloudName := chromosome.AppsSolution[depAppName].TargetCloudName
+			thisNodeName := chromosome.AppsSolution[thisAppName].K8sNodeName
+			depNodeName := chromosome.AppsSolution[depAppName].K8sNodeName
 
-			thisRtt := clouds[thisCloudName].NetState[depCloudName].Rtt
+			var thisRtt float64 // RTT from this application to the dependent application
 
+			if thisNodeName == depNodeName { // We consider the RTT inside a same VM as 0.
+				thisRtt = 0
+			} else {
+				thisRtt = clouds[thisCloudName].NetState[depCloudName].Rtt
+			}
 			netPart := m.MaxReachableRtt - thisRtt
 
 			// calculate this application's computation part of the fitness value of this dependency
