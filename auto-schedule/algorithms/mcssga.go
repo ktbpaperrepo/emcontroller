@@ -87,8 +87,10 @@ func (m *Mcssga) Schedule(clouds map[string]asmodel.Cloud, apps map[string]asmod
 
 	// No. 1 iteration to No. m.IterationCount iteration
 	for iteration := 1; iteration <= m.IterationCount; iteration++ {
-		
-		// TODO: crossover and mutation
+
+		// TODO: crossover
+
+		currentPopulation = m.mutationOperator(clouds, apps, appsOrder, currentPopulation)
 
 		currentPopulation = m.selectionOperator(clouds, apps, currentPopulation)
 
@@ -110,6 +112,59 @@ func (m *Mcssga) initialize(clouds map[string]asmodel.Cloud, apps map[string]asm
 		initPopulation = append(initPopulation, oneSolution)
 	}
 	return initPopulation
+}
+
+// the mutation operator of Genetic Algorithm
+func (m *Mcssga) mutationOperator(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string, population []asmodel.Solution) []asmodel.Solution {
+	var mutatedPopulation []asmodel.Solution = make([]asmodel.Solution, len(population))
+
+	for i := 0; i < len(population); i++ { // a chromosome
+
+		for { // We repeat mutating a chromosome until the mutated new one is acceptable.
+			mutatedChromosome := asmodel.GenEmptySoln()
+
+			// gene-based mutation
+			for appName, oriGene := range population[i].AppsSolution {
+				// every gene has the probability "m.MutationProbability" to mutate
+				if random.RandomFloat64(0, 1) < m.MutationProbability {
+					mutatedChromosome.AppsSolution[appName] = m.geneMutate(clouds, oriGene) // mutate
+				} else {
+					mutatedChromosome.AppsSolution[appName] = asmodel.SasCopy(oriGene) // do not mutate
+				}
+			}
+
+			// refine the mutated chromosome and check whether it is acceptable
+			mutatedChromosome, acceptable := RefineSoln(clouds, apps, appsOrder, mutatedChromosome)
+			if acceptable {
+				mutatedPopulation[i] = mutatedChromosome
+				break
+			}
+		}
+
+		/**
+		In the above loop, we do not need to save the unacceptable solutions/chromosomes, because the mutated solutions/chromosomes are generated randomly and it is almost impossible to exclude the tried solutions from the following random attempts, so even if we save the unacceptable solutions/chromosomes, it can only save some time to run the function RefineSoln, but cannot reduce the number of random attempts, which I think is not worthy enough.
+		*/
+
+	}
+
+	return mutatedPopulation
+}
+
+// The function to mutate a gene. After the mutation, a gene should become a different one, unless it is not accepted originally.
+func (m *Mcssga) geneMutate(clouds map[string]asmodel.Cloud, ori asmodel.SingleAppSolution) asmodel.SingleAppSolution {
+	var mutated asmodel.SingleAppSolution = asmodel.SasCopy(asmodel.RejSoln)
+
+	cloudsToPick := asmodel.CloudMapCopy(clouds)
+	if ori.Accepted {
+		delete(cloudsToPick, ori.TargetCloudName) // after mutation, the target cloud should be different
+	}
+
+	mutated.Accepted = random.RandomInt(0, 1) == 0 // 50% accept 50% not
+	if mutated.Accepted {                          // Only when accepted, this gene needs a target cloud.
+		mutated.TargetCloudName, _ = randomCloudMapPick(cloudsToPick)
+	}
+
+	return mutated
 }
 
 // the selection operator of Genetic Algorithm
