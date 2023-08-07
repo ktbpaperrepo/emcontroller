@@ -2,9 +2,8 @@ package executors
 
 import (
 	"fmt"
-	"net/http"
-
 	"github.com/astaxie/beego"
+	"net/http"
 
 	"emcontroller/auto-schedule/algorithms"
 	asmodel "emcontroller/auto-schedule/model"
@@ -38,6 +37,9 @@ func CreateAutoScheduleApps(apps []models.K8sApp) ([]models.AppInfo, error, int)
 	// In some steps of scheduling, we need a fixed order of applications.
 	appsOrder := algorithms.GenerateAppsOrder(appsForScheduling)
 
+	//// for debug, sometimes, we need the fixed apps order to do some comparison.
+	//sort.Strings(appsOrder)
+
 	// call the Schedule method in mcasga.go
 	mcssgaInstance := algorithms.NewMcssga(100, 5000, 0.7, 0.2, 200)
 	solution, err := mcssgaInstance.Schedule(cloudsForScheduling, appsForScheduling, appsOrder)
@@ -46,7 +48,7 @@ func CreateAutoScheduleApps(apps []models.K8sApp) ([]models.AppInfo, error, int)
 		beego.Error(outErr)
 		return []models.AppInfo{}, outErr, http.StatusInternalServerError
 	}
-	beego.Info(fmt.Sprintf("The algorithm works out the solution: %s", models.JsonString(solution)))
+	beego.Info(fmt.Sprintf("The algorithm works out the solution: %s\nIts fitness value is %g.", models.JsonString(solution), mcssgaInstance.Fitness(cloudsForScheduling, appsForScheduling, solution)))
 
 	// for debug
 	return []models.AppInfo{}, nil, http.StatusCreated

@@ -1,11 +1,13 @@
 package algorithms
 
 import (
-	asmodel "emcontroller/auto-schedule/model"
-	"emcontroller/models"
 	"fmt"
+
 	"github.com/KeepTheBeats/routing-algorithms/random"
 	"github.com/astaxie/beego"
+
+	asmodel "emcontroller/auto-schedule/model"
+	"emcontroller/models"
 )
 
 /**
@@ -88,7 +90,7 @@ func (m *Mcssga) Schedule(clouds map[string]asmodel.Cloud, apps map[string]asmod
 	// No. 1 iteration to No. m.IterationCount iteration
 	for iteration := 1; iteration <= m.IterationCount; iteration++ {
 
-		// TODO: crossover
+		currentPopulation = m.crossoverOperator(clouds, apps, appsOrder, currentPopulation)
 
 		currentPopulation = m.mutationOperator(clouds, apps, appsOrder, currentPopulation)
 
@@ -101,6 +103,7 @@ func (m *Mcssga) Schedule(clouds map[string]asmodel.Cloud, apps map[string]asmod
 	}
 
 	beego.Info("Final BestFitnessRecords:", m.BestFitnessRecords)
+	beego.Info("Total iteration number (the following 2 should be equal): ", len(m.BestFitnessRecords), len(m.BestSolnRecords))
 	return m.BestSolnRecords[len(m.BestSolnRecords)-1], nil
 }
 
@@ -112,6 +115,174 @@ func (m *Mcssga) initialize(clouds map[string]asmodel.Cloud, apps map[string]asm
 		initPopulation = append(initPopulation, oneSolution)
 	}
 	return initPopulation
+}
+
+// the crossover operator of Genetic Algorithm.
+func (m *Mcssga) crossoverOperator(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string, population []asmodel.Solution) []asmodel.Solution {
+	// If a chromosome has less than 2 genes, we cannot do crossover.
+	if len(apps) <= 1 {
+		return population
+	}
+
+	// randomly choose the chromosomes that need crossover. We save their indexes.
+	var idxNeedCrossover []int
+	for i := 0; i < len(population); i++ {
+		if random.RandomFloat64(0, 1) < m.CrossoverProbability {
+			idxNeedCrossover = append(idxNeedCrossover, i)
+		}
+	}
+
+	//beego.Info("idxNeedCrossover:", idxNeedCrossover) // for debug
+
+	var crossoveredPopulation []asmodel.Solution
+
+	// randomly choose chromosome pairs to do crossover
+	var whetherCrossover []bool = make([]bool, len(population))
+	for len(idxNeedCrossover) > 1 { // we can only do crossover when we have at list 2 chromosomes
+
+		/**
+		Before doing crossover, we do 3 things:
+		1. choose two indexes of chromosomes for crossover;
+		2. mark them in whetherCrossover
+		3. delete them from idxNeedCrossover;
+		*/
+
+		// choose first index
+		first := random.RandomInt(0, len(idxNeedCrossover)-1)
+		firstIndex := idxNeedCrossover[first]
+		// mark
+		whetherCrossover[firstIndex] = true
+		// delete
+		idxNeedCrossover = append(idxNeedCrossover[:first], idxNeedCrossover[first+1:]...)
+
+		// choose second index
+		second := random.RandomInt(0, len(idxNeedCrossover)-1)
+		secondIndex := idxNeedCrossover[second]
+		// mark
+		whetherCrossover[secondIndex] = true
+		// delete
+		idxNeedCrossover = append(idxNeedCrossover[:second], idxNeedCrossover[second+1:]...)
+
+		/**
+		Then, we do crossover.
+		*/
+
+		// get the 2 chromosomes for crossover. We use copy to avoid changing the original population
+		firstChromosome := asmodel.SolutionCopy(population[firstIndex])
+		secondChromosome := asmodel.SolutionCopy(population[secondIndex])
+
+		newFirstChromosome, newSecondChromosome := AllPossTwoPointCrossover(firstChromosome, secondChromosome, clouds, apps, appsOrder)
+
+		// append the two new chromosomes in crossoveredPopulation
+		crossoveredPopulation = append(crossoveredPopulation, newFirstChromosome, newSecondChromosome)
+	}
+
+	//beego.Info("whetherCrossover:", whetherCrossover) // for debug
+
+	// directly put the chromosomes without doing crossover to the new population
+	for i := 0; i < len(population); i++ {
+		if !whetherCrossover[i] {
+			crossoveredPopulation = append(crossoveredPopulation, asmodel.SolutionCopy(population[i]))
+		}
+	}
+
+	return crossoveredPopulation
+}
+
+// Randomly explore all possibilities of 2-point crossover, to try to get an acceptable solution. If this function cannot find an acceptable solution after trying all possibilities, it will return the original 2 chromosomes without doing crossover.
+func AllPossTwoPointCrossover(firstChromosome asmodel.Solution, secondChromosome asmodel.Solution, clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string) (asmodel.Solution, asmodel.Solution) {
+	// in our unit tests, we will set both the input cloud and apps as nil
+	var testMode bool = clouds == nil && apps == nil
+
+	if len(firstChromosome.AppsSolution) != len(secondChromosome.AppsSolution) || len(firstChromosome.AppsSolution) != len(appsOrder) {
+		panic(fmt.Sprintf("len(firstChromosome.AppsSolution) is %d; len(secondChromosome.AppsSolution) is %d; len(appsOrder) is %d. They should be equal.", len(firstChromosome.AppsSolution), len(secondChromosome.AppsSolution), len(appsOrder)))
+	}
+
+	// the number of genes in a chromosome, also the number of applications to schedule.
+	geneNumber := len(firstChromosome.AppsSolution)
+
+	/**
+	We exchange the genes of the 2 chromosomes in the closed interval [point1, point2]. The width of this closed interval ranges from 1 to geneNumber-1.
+	The following loop randomly traverse all possibility of different width and point1 which determine point2.
+	*/
+
+	// build an array to help select point widths randomly
+	var possiblePointWidths []int
+	for pointWidth := 1; pointWidth <= geneNumber-1; pointWidth++ {
+		possiblePointWidths = append(possiblePointWidths, pointWidth)
+	}
+	for len(possiblePointWidths) > 0 {
+		// randomly select a possible point width, and then remove it from the array, in order not to select it again.
+		widthIdx := random.RandomInt(0, len(possiblePointWidths)-1)
+		pointWidth := possiblePointWidths[widthIdx]
+		possiblePointWidths = append(possiblePointWidths[:widthIdx], possiblePointWidths[widthIdx+1:]...)
+		if testMode {
+			beego.Info("pointWidth is:", pointWidth) // for debug
+		}
+
+		// build an array to help select point1 randomly
+		var possiblePoint1 []int
+		for point1 := 0; calcPoint2(point1, pointWidth) < geneNumber; point1++ {
+			possiblePoint1 = append(possiblePoint1, point1)
+		}
+		for len(possiblePoint1) > 0 {
+			// randomly select a possible point1, and then remove it from the array, in order not to select it again.
+			pointIdx := random.RandomInt(0, len(possiblePoint1)-1)
+			point1 := possiblePoint1[pointIdx]
+			possiblePoint1 = append(possiblePoint1[:pointIdx], possiblePoint1[pointIdx+1:]...)
+
+			// calculate point 2 by point 1
+			point2 := calcPoint2(point1, pointWidth)
+
+			if testMode {
+				beego.Info("point1, point2:", point1, point2) // for debug
+			} else {
+
+				/**
+				Then we do crossover with the randomly selected point1 and point2.
+				We set the tryFunc here, because with this the unit tests will be easier to make.
+				*/
+
+				// if in this possibility the 2 crossovered chromosomes are acceptable, return them.
+				crossoveredChromosome1, crossoveredChromosome2 := twoPointCrossover(firstChromosome, secondChromosome, appsOrder, point1, point2)
+
+				// refine the 2 crossovered chromosomes and check whether they are acceptable. If both of them are acceptable, we return them as the result.
+				if crossoveredChromosome1, acceptable1 := RefineSoln(clouds, apps, appsOrder, crossoveredChromosome1); acceptable1 {
+					if crossoveredChromosome2, acceptable2 := RefineSoln(clouds, apps, appsOrder, crossoveredChromosome2); acceptable2 {
+						return crossoveredChromosome1, crossoveredChromosome2
+					}
+				}
+			}
+
+		}
+		if testMode {
+			fmt.Println() // for debug
+		}
+	}
+
+	return firstChromosome, secondChromosome
+}
+
+// try to do crossover on 2 chromosomes with the determined point1 and point2
+func twoPointCrossover(firstChromosome asmodel.Solution, secondChromosome asmodel.Solution, appsOrder []string, point1, point2 int) (asmodel.Solution, asmodel.Solution) {
+	var crossoveredFirstCh, crossoveredSecondCh asmodel.Solution = asmodel.GenEmptySoln(), asmodel.GenEmptySoln()
+
+	for orderIdx, appName := range appsOrder {
+		if orderIdx >= point1 && orderIdx <= point2 { // in the closed interval [point1, point2], exchange
+			crossoveredFirstCh.AppsSolution[appName] = asmodel.SasCopy(secondChromosome.AppsSolution[appName])
+			crossoveredSecondCh.AppsSolution[appName] = asmodel.SasCopy(firstChromosome.AppsSolution[appName])
+		} else { // not in the closed interval [point1, point2], do not exchange
+			crossoveredFirstCh.AppsSolution[appName] = asmodel.SasCopy(firstChromosome.AppsSolution[appName])
+			crossoveredSecondCh.AppsSolution[appName] = asmodel.SasCopy(secondChromosome.AppsSolution[appName])
+		}
+	}
+
+	return crossoveredFirstCh, crossoveredSecondCh
+}
+
+// This function is to calculate point 2. We will exchange the genes of the 2 chromosomes in the closed interval [point1, point2].
+func calcPoint2(point1 int, pointWidth int) int {
+	return point1 + pointWidth - 1
 }
 
 // the mutation operator of Genetic Algorithm
@@ -218,7 +389,7 @@ func (m *Mcssga) selectionOperator(clouds map[string]asmodel.Cloud, apps map[str
 		panic(fmt.Sprintf("len(m.BestFitnessRecords) [%d] is not equal to len(m.BestSolnRecords) [%d]", len(m.BestFitnessRecords), len(m.BestSolnRecords)))
 	}
 
-	// We only record the best solutions until every iteration.
+	// We only record the best solutions until the current iteration.
 	if len(m.BestFitnessRecords) == 0 { // In the 1st iteration, m.BestFitnessRecords and m.BestSolnRecords are nil.
 		bestFitAllIter = bestFitThisIter
 		bestSolnAllIter = population[bestFitThisIterIdx]

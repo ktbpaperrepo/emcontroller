@@ -1918,5 +1918,119 @@ func solnsForTest() []asmodel.Solution {
 				},
 			},
 		},
+		asmodel.Solution{ // index 6
+			AppsSolution: map[string]asmodel.SingleAppSolution{
+				"app1": asmodel.SingleAppSolution{
+					Accepted:        true,
+					TargetCloudName: "NOKIA1",
+				},
+				"app2": asmodel.SingleAppSolution{
+					Accepted:        true,
+					TargetCloudName: "NOKIA2",
+				},
+				"app3": asmodel.SingleAppSolution{
+					Accepted: false,
+				},
+				"app4": asmodel.SingleAppSolution{
+					Accepted:        true,
+					TargetCloudName: "NOKIA6",
+				},
+				"app5": asmodel.SingleAppSolution{
+					Accepted: false,
+				},
+				"app6": asmodel.SingleAppSolution{
+					Accepted:        true,
+					TargetCloudName: "NOKIA7",
+				},
+				"app7": asmodel.SingleAppSolution{
+					Accepted:        true,
+					TargetCloudName: "NOKIA10",
+				},
+				"app8": asmodel.SingleAppSolution{
+					Accepted:        true,
+					TargetCloudName: "HPE1",
+				},
+			},
+			VmsToCreate: []models.IaasVm{
+				models.IaasVm{
+					Name:    "auto-sched-nokia4-4",
+					Cloud:   "NOKIA4",
+					VCpu:    8,
+					Ram:     3122,
+					Storage: 44,
+				},
+				models.IaasVm{
+					Name:    "auto-sched-nokia6-3",
+					Cloud:   "NOKIA6",
+					VCpu:    10,
+					Ram:     2567,
+					Storage: 80,
+				},
+				models.IaasVm{
+					Name:    "auto-sched-nokia8-0",
+					Cloud:   "NOKIA8",
+					VCpu:    7,
+					Ram:     4000,
+					Storage: 100,
+				},
+			},
+		},
+		asmodel.Solution{ // index 7
+			AppsSolution: map[string]asmodel.SingleAppSolution{
+				"app1": asmodel.SingleAppSolution{
+					Accepted:        false,
+					TargetCloudName: "NOKIA2",
+				},
+				"app2": asmodel.SingleAppSolution{
+					Accepted:        true,
+					TargetCloudName: "NOKIA4",
+				},
+				"app3": asmodel.SingleAppSolution{
+					Accepted:        true,
+					TargetCloudName: "NOKIA6",
+				},
+				"app4": asmodel.SingleAppSolution{
+					Accepted: false,
+				},
+				"app5": asmodel.SingleAppSolution{
+					Accepted:        true,
+					TargetCloudName: "HPE2",
+				},
+				"app6": asmodel.SingleAppSolution{
+					Accepted: false,
+				},
+				"app7": asmodel.SingleAppSolution{
+					Accepted:        true,
+					TargetCloudName: "NOKIA12",
+				},
+				"app8": asmodel.SingleAppSolution{
+					Accepted:        true,
+					TargetCloudName: "NOKIA2",
+				},
+			},
+			VmsToCreate: []models.IaasVm{
+				models.IaasVm{
+					Name:    "auto-sched-nokia4-4",
+					Cloud:   "NOKIA4",
+					VCpu:    8,
+					Ram:     3122,
+					Storage: 44,
+				},
+				models.IaasVm{
+					Name:    "auto-sched-nokia6-3",
+					Cloud:   "NOKIA6",
+					VCpu:    10,
+					Ram:     2567,
+					Storage: 80,
+				},
+				models.IaasVm{
+					Name:    "auto-sched-nokia8-0",
+					Cloud:   "NOKIA8",
+					VCpu:    7,
+					Ram:     4000,
+					Storage: 100,
+				},
+			},
+		},
 	}
 }
