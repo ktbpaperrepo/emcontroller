@@ -1020,31 +1020,35 @@ func (p *Proxmox) CreateVM(name string, vcpu, ram, storage int) (*IaasVm, error)
 	beego.Info(fmt.Sprintf("Successful! Cloud name [%s], type [%s], CreateVM [%s], config ram [%d]MB, cpu [%d].", p.Name, p.Type, name, ram, vcpu))
 
 	// 5. configure storage
-	// We should get the disk name firstly
-	diskName, err := p.getDiskName(vmidStr)
-	time.Sleep(ProxmoxAPIInterval)
-	if err != nil {
-		outErr := fmt.Errorf("Cloud name [%s], type [%s], CreateVM [%s], getDiskName, error: %w", p.Name, p.Type, name, err)
-		beego.Error(outErr)
-		return nil, outErr
-	}
-	beego.Info(fmt.Sprintf("diskName is %s", diskName))
+	if float64(storage) <= ReservedStorageGiB {
+		beego.Info(fmt.Sprintf("The configured disk size is %d GiB. Promox does not support shrinking disks and will have error for this. Therefore, we do not resize disk smaller than %g GiB, which is close to the disk size of our Proxmox VM template.", storage, ReservedStorageGiB))
+	} else {
+		// We should get the disk name firstly
+		diskName, err := p.getDiskName(vmidStr)
+		time.Sleep(ProxmoxAPIInterval)
+		if err != nil {
+			outErr := fmt.Errorf("Cloud name [%s], type [%s], CreateVM [%s], getDiskName, error: %w", p.Name, p.Type, name, err)
+			beego.Error(outErr)
+			return nil, outErr
+		}
+		beego.Info(fmt.Sprintf("diskName is %s", diskName))
 
-	// call API to resize disk
-	// There is a bug of proxmox described in https://forum.proxmox.com/threads/bug-a-bug-about-the-api-to-resize-disk-in-version-7-3-3.123400/.
-	// After a VM is created, the disk cannot be resized in a short time (I know it in my practice). We need to retry until the resize is successful.
-	// Moreover, only the retry is not enough, because if the resize fails one time, even if we succeed afterward, the config in Proxmox will still have error, i.e., the disk size shown in Proxmox will be the old value rather than the resized value.
-	// So we need to SSH to the Proxmox Node to execute a command like qm rescan to refresh the status.
+		// call API to resize disk
+		// There is a bug of proxmox described in https://forum.proxmox.com/threads/bug-a-bug-about-the-api-to-resize-disk-in-version-7-3-3.123400/.
+		// After a VM is created, the disk cannot be resized in a short time (I know it in my practice). We need to retry until the resize is successful.
+		// Moreover, only the retry is not enough, because if the resize fails one time, even if we succeed afterward, the config in Proxmox will still have error, i.e., the disk size shown in Proxmox will be the old value rather than the resized value.
+		// So we need to SSH to the Proxmox Node to execute a command like qm rescan to refresh the status.
 
-	// resize the disk, the input size of this API should be a string with value and unit.
-	diskSize := fmt.Sprintf("%dG", storage)
-	beego.Info(fmt.Sprintf("set the disk [%s] size %s, which may trigger a Proxmox bug.", diskName, diskSize))
-	if err := p.waitForResizeDisk(WaitForTimeOut, 5, vmid, diskName, diskSize); err != nil {
-		outErr := fmt.Errorf("Cloud name [%s], type [%s], CreateVM [%s], waitForResizeDisk, error: %w", p.Name, p.Type, name, err)
-		beego.Error(outErr)
-		return nil, outErr
+		// resize the disk, the input size of this API should be a string with value and unit.
+		diskSize := fmt.Sprintf("%dG", storage)
+		beego.Info(fmt.Sprintf("set the disk [%s] size %s, which may trigger a Proxmox bug.", diskName, diskSize))
+		if err := p.waitForResizeDisk(WaitForTimeOut, 5, vmid, diskName, diskSize); err != nil {
+			outErr := fmt.Errorf("Cloud name [%s], type [%s], CreateVM [%s], waitForResizeDisk, error: %w", p.Name, p.Type, name, err)
+			beego.Error(outErr)
+			return nil, outErr
+		}
+		beego.Info(fmt.Sprintf("Successful! Cloud name [%s], type [%s], CreateVM [%s], config disk [%s] size [%s].", p.Name, p.Type, name, diskName, diskSize))
 	}
-	beego.Info(fmt.Sprintf("Successful! Cloud name [%s], type [%s], CreateVM [%s], config disk [%s] size [%s].", p.Name, p.Type, name, diskName, diskSize))
 
 	// SSH to the Proxmox node to execute the command to fix the problem of the proxmox bug.
 	qmRescanCmd := fmt.Sprintf("qm rescan --vmid %d", vmid)

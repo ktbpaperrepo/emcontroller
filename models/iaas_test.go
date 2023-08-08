@@ -48,10 +48,10 @@ func TestCreateVM(t *testing.T) {
 func TestCreateVms(t *testing.T) {
 	InitSomeThing()
 	var vmsToCreate []IaasVm = []IaasVm{
-		{Cloud: "NOKIA8", Name: "n8-node1", VCpu: 4, Ram: 8192, Storage: 100},
-		{Cloud: "NOKIA8", Name: "n8-node2", VCpu: 4, Ram: 8192, Storage: 100},
-		{Cloud: "NOKIA7", Name: "n7-node1", VCpu: 4, Ram: 8192, Storage: 100},
-		{Cloud: "NOKIA7", Name: "n7-node2", VCpu: 4, Ram: 8192, Storage: 100},
+		{Cloud: "NOKIA8", Name: "n8-node1", VCpu: 4, Ram: 8192, Storage: 3},
+		//{Cloud: "NOKIA8", Name: "n8-node2", VCpu: 4, Ram: 8192, Storage: 100},
+		//{Cloud: "NOKIA7", Name: "n7-node1", VCpu: 4, Ram: 8192, Storage: 100},
+		//{Cloud: "NOKIA7", Name: "n7-node2", VCpu: 4, Ram: 8192, Storage: 100},
 		//{Cloud: "CLAAUDIAweifan", Name: "cnode1", VCpu: 4, Ram: 32768, Storage: 100},
 		//{Cloud: "CLAAUDIAweifan", Name: "cnode2", VCpu: 4, Ram: 32768, Storage: 100},
 	}
