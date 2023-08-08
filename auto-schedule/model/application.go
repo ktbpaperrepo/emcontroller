@@ -56,17 +56,25 @@ func GenerateApplications(inputApps []models.K8sApp) (map[string]Application, er
 				beego.Error(outErr)
 				return nil, outErr
 			}
-			floatRamMi, err := strconv.ParseFloat(strings.TrimSuffix(container.Resources.Requests.Memory, MemUnitSuffix), 64)
-			if err != nil {
-				outErr := fmt.Errorf("Container [%s] container.Resources.Requests.Memory [%s] parse to float64, Error: [%w]", container.Name, container.Resources.Requests.Memory, err)
-				beego.Error(outErr)
-				return nil, outErr
+
+			var floatRamMi float64 = 0
+			if len(container.Resources.Requests.Memory) != 0 {
+				floatRamMi, err = strconv.ParseFloat(strings.TrimSuffix(container.Resources.Requests.Memory, MemUnitSuffix), 64)
+				if err != nil {
+					outErr := fmt.Errorf("Container [%s] container.Resources.Requests.Memory [%s] parse to float64, Error: [%w]", container.Name, container.Resources.Requests.Memory, err)
+					beego.Error(outErr)
+					return nil, outErr
+				}
 			}
-			floatStorGi, err := strconv.ParseFloat(strings.TrimSuffix(container.Resources.Requests.Storage, StorageUnitSuffix), 64)
-			if err != nil {
-				outErr := fmt.Errorf("Container [%s] container.Resources.Requests.Storage [%s] parse to float64, Error: [%w]", container.Name, container.Resources.Requests.Storage, err)
-				beego.Error(outErr)
-				return nil, outErr
+
+			var floatStorGi float64 = 0
+			if len(container.Resources.Requests.Storage) != 0 {
+				floatStorGi, err = strconv.ParseFloat(strings.TrimSuffix(container.Resources.Requests.Storage, StorageUnitSuffix), 64)
+				if err != nil {
+					outErr := fmt.Errorf("Container [%s] container.Resources.Requests.Storage [%s] parse to float64, Error: [%w]", container.Name, container.Resources.Requests.Storage, err)
+					beego.Error(outErr)
+					return nil, outErr
+				}
 			}
 
 			resources.CpuCore += floatCpu

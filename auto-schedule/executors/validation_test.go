@@ -440,6 +440,76 @@ func TestValidateAutoScheduleApp(t *testing.T) {
 			},
 			expectedErrNum: 1,
 		},
+		{
+			name: "resNoMem",
+			app: models.K8sApp{
+				Name:          "resNoMem",
+				Priority:      10,
+				Replicas:      1,
+				AutoScheduled: true,
+				Containers: []models.K8sContainer{
+					{
+						Resources: models.K8sResReq{
+							Limits: models.K8sResList{
+								CPU:     "0.5",
+								Storage: "120Gi",
+							},
+							Requests: models.K8sResList{
+								CPU:     "0.5",
+								Storage: "120Gi",
+							},
+						},
+					},
+				},
+			},
+			expectedErrNum: 0,
+		},
+		{
+			name: "resNoMemSto",
+			app: models.K8sApp{
+				Name:          "resNoMem",
+				Priority:      10,
+				Replicas:      1,
+				AutoScheduled: true,
+				Containers: []models.K8sContainer{
+					{
+						Resources: models.K8sResReq{
+							Limits: models.K8sResList{
+								CPU: "0.5",
+							},
+							Requests: models.K8sResList{
+								CPU: "0.5",
+							},
+						},
+					},
+				},
+			},
+			expectedErrNum: 0,
+		},
+		{
+			name: "resNoSto",
+			app: models.K8sApp{
+				Name:          "resNoSto",
+				Priority:      10,
+				Replicas:      1,
+				AutoScheduled: true,
+				Containers: []models.K8sContainer{
+					{
+						Resources: models.K8sResReq{
+							Limits: models.K8sResList{
+								CPU:    "0.5",
+								Memory: "11Mi",
+							},
+							Requests: models.K8sResList{
+								CPU:    "0.5",
+								Memory: "11Mi",
+							},
+						},
+					},
+				},
+			},
+			expectedErrNum: 0,
+		},
 	}
 	testCases = append(testCases, testCasesContainer...)
 

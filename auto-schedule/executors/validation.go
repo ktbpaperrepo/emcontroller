@@ -86,12 +86,12 @@ func validateResources(res models.K8sResReq) []error {
 	}
 
 	// Memory should have the unit Mi
-	if !strings.HasSuffix(res.Requests.Memory, asmodel.MemUnitSuffix) {
+	if len(res.Requests.Memory) != 0 && !strings.HasSuffix(res.Requests.Memory, asmodel.MemUnitSuffix) {
 		allErrs = append(allErrs, fmt.Errorf("For auto-schedule application container resources, res.Requests.Memory [%s] should have the unit suffix [%s].", res.Requests.Memory, asmodel.MemUnitSuffix))
 	}
 
 	// Storage should have the unit Gi
-	if !strings.HasSuffix(res.Requests.Storage, asmodel.StorageUnitSuffix) {
+	if len(res.Requests.Storage) != 0 && !strings.HasSuffix(res.Requests.Storage, asmodel.StorageUnitSuffix) {
 		allErrs = append(allErrs, fmt.Errorf("For auto-schedule application container resources, res.Requests.Storage [%s] should have the unit suffix [%s].", res.Requests.Storage, asmodel.StorageUnitSuffix))
 	}
 
