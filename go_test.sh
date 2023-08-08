@@ -12,6 +12,7 @@ go test ${CURRENT_DIR}/auto-schedule/executors/ -count=1 -short
 
 go test ${CURRENT_DIR}/models/ -v -count=1 -run TestLeastRemainPct
 go test ${CURRENT_DIR}/models/ -v -count=1 -run TestOverflow
+go test ${CURRENT_DIR}/models/ -v -count=1 -run TestGroupVmsByCloud
 go test ${CURRENT_DIR}/models/ -v -count=1 -run TestCalcVmAvailVcpu
 go test ${CURRENT_DIR}/models/ -v -count=1 -run TestCalcVmAvailRamMiB
 go test ${CURRENT_DIR}/models/ -v -count=1 -run TestCalcVmAvailStorGiB

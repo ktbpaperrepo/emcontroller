@@ -179,7 +179,8 @@ func ensureVms(cloud Iaas) (map[string]*IaasVm, error) {
 	// We should use the information of the network performance test VMs in the following steps, so we use a map to return the VMs information
 	var netTestVmMap map[string]*IaasVm = make(map[string]*IaasVm)
 
-	// Here we cannot check each VM in parallel, because if we create more than one VM in proxmox, there will be problems.
+	// Here we cannot check each VM in parallel, because if we create more than one VM in proxmox, there will be the problem:
+	// "can't lock file '/var/lock/qemu-server/lock-107.conf' - got timeout"
 	// It seems that proxmox does not support creating VMs in parallel.
 
 	// Check each VM in serial

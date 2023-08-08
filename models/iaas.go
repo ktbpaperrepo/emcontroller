@@ -180,31 +180,40 @@ func WaitForSshPasswdAndInit(user string, passwd string, sshIP string, sshPort i
 
 func CreateVms(vms []IaasVm) ([]IaasVm, error) {
 	// create the VMs concurrently
-	// use one goroutine to create one VM
+	// We cannot use one goroutine to create one VM, because if we create more than one VM in proxmox, there will be the problem:
+	// "can't lock file '/var/lock/qemu-server/lock-107.conf' - got timeout"
+	// Therefore, we use one goroutine to create the VMs in one cloud.
+	vmGroups := GroupVmsByCloud(vms)
+
 	var errs []error
 	var createdVms []IaasVm
 	var errsMu sync.Mutex // the slice in golang is not safe for concurrent read/write
 	var createdVmsMu sync.Mutex
 	var wg sync.WaitGroup
-	for _, vm := range vms {
+	for _, vmGroup := range vmGroups {
 		wg.Add(1)
-		go func(v IaasVm) {
+		go func(vg []IaasVm) {
 			defer wg.Done()
-			beego.Info(fmt.Sprintf("Start to create vm Name [%s] Cloud [%s], vcpu cores [%f], ram [%f MiB], storage [%f GiB].", v.Name, v.Cloud, v.VCpu, v.Ram, v.Storage))
-			createdVM, err := Clouds[v.Cloud].CreateVM(v.Name, int(v.VCpu), int(v.Ram), int(v.Storage))
-			if err != nil {
-				outErr := fmt.Errorf("Create vm %s error %w.", v.Name, err)
-				beego.Error(outErr)
-				errsMu.Lock()
-				errs = append(errs, outErr)
-				errsMu.Unlock()
-			} else {
-				beego.Info(fmt.Sprintf("Successful! Create vm:\n%+v\n", createdVM))
-				createdVmsMu.Lock()
-				createdVms = append(createdVms, *createdVM)
-				createdVmsMu.Unlock()
+
+			// in every vm group (every cloud), we create the VMs serially
+			for _, v := range vg {
+				beego.Info(fmt.Sprintf("Start to create vm Name [%s] Cloud [%s], vcpu cores [%f], ram [%f MiB], storage [%f GiB].", v.Name, v.Cloud, v.VCpu, v.Ram, v.Storage))
+				createdVM, err := Clouds[v.Cloud].CreateVM(v.Name, int(v.VCpu), int(v.Ram), int(v.Storage))
+				if err != nil {
+					outErr := fmt.Errorf("Create vm %s error %w.", v.Name, err)
+					beego.Error(outErr)
+					errsMu.Lock()
+					errs = append(errs, outErr)
+					errsMu.Unlock()
+				} else {
+					beego.Info(fmt.Sprintf("Successful! Create vm:\n%+v\n", createdVM))
+					createdVmsMu.Lock()
+					createdVms = append(createdVms, *createdVM)
+					createdVmsMu.Unlock()
+				}
 			}
-		}(vm)
+
+		}(vmGroup)
 	}
 	wg.Wait()
 
@@ -226,4 +235,15 @@ func FindVm(vmName string, vms []IaasVm) (*IaasVm, bool) {
 		}
 	}
 	return nil, false
+}
+
+// group vms, putting the VMs on the same cloud in the same group.
+func GroupVmsByCloud(vms []IaasVm) map[string][]IaasVm {
+	var outVmGroups map[string][]IaasVm = make(map[string][]IaasVm)
+
+	for _, vm := range vms {
+		outVmGroups[vm.Cloud] = append(outVmGroups[vm.Cloud], vm)
+	}
+
+	return outVmGroups
 }

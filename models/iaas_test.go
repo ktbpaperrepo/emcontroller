@@ -48,10 +48,12 @@ func TestCreateVM(t *testing.T) {
 func TestCreateVms(t *testing.T) {
 	InitSomeThing()
 	var vmsToCreate []IaasVm = []IaasVm{
-		{Cloud: "NOKIA10", Name: "node1", VCpu: 4, Ram: 32768, Storage: 100},
-		{Cloud: "NOKIA8", Name: "node2", VCpu: 4, Ram: 32768, Storage: 100},
-		{Cloud: "CLAAUDIAweifan", Name: "cnode1", VCpu: 4, Ram: 32768, Storage: 100},
-		{Cloud: "CLAAUDIAweifan", Name: "cnode2", VCpu: 4, Ram: 32768, Storage: 100},
+		{Cloud: "NOKIA8", Name: "n8-node1", VCpu: 4, Ram: 8192, Storage: 100},
+		{Cloud: "NOKIA8", Name: "n8-node2", VCpu: 4, Ram: 8192, Storage: 100},
+		{Cloud: "NOKIA7", Name: "n7-node1", VCpu: 4, Ram: 8192, Storage: 100},
+		{Cloud: "NOKIA7", Name: "n7-node2", VCpu: 4, Ram: 8192, Storage: 100},
+		//{Cloud: "CLAAUDIAweifan", Name: "cnode1", VCpu: 4, Ram: 32768, Storage: 100},
+		//{Cloud: "CLAAUDIAweifan", Name: "cnode2", VCpu: 4, Ram: 32768, Storage: 100},
 	}
 	if vms, err := CreateVms(vmsToCreate); err != nil {
 		t.Errorf("Create VMs error: %s", err.Error())
@@ -473,6 +475,231 @@ func TestOverflow(t *testing.T) {
 	for i, testCase := range testCases {
 		t.Logf("test: %d, %s", i, testCase.name)
 		actualResult := testCase.resStatus.Overflow()
+		assert.Equal(t, testCase.expectedResult, actualResult, fmt.Sprintf("%s: result is not expected", testCase.name))
+	}
+}
+
+func TestGroupVmsByCloud(t *testing.T) {
+	testCases := []struct {
+		name           string
+		vms            []IaasVm
+		expectedResult map[string][]IaasVm
+	}{
+		{
+			name: "case1",
+			vms: []IaasVm{
+				IaasVm{
+					Name:    "auto-sched-nokia7-0",
+					VCpu:    3,
+					Ram:     9462,
+					Storage: 238,
+					Cloud:   "NOKIA7",
+				},
+				IaasVm{
+					Name:    "auto-sched-nokia7-1",
+					VCpu:    15,
+					Ram:     52154,
+					Storage: 516,
+					Cloud:   "NOKIA7",
+				},
+				IaasVm{
+					Name:    "auto-sched-nokia8-0",
+					VCpu:    38,
+					Ram:     98076,
+					Storage: 482,
+					Cloud:   "NOKIA8",
+				},
+				IaasVm{
+					Name:    "auto-sched-hpe1-0",
+					VCpu:    8,
+					Ram:     2432,
+					Storage: 45,
+					Cloud:   "HPE1",
+				},
+				IaasVm{
+					Name:    "auto-sched-hpe1-1",
+					VCpu:    66,
+					Ram:     453675,
+					Storage: 363,
+					Cloud:   "HPE1",
+				},
+				IaasVm{
+					Name:    "auto-sched-nokia4-0",
+					VCpu:    34,
+					Ram:     73500,
+					Storage: 867,
+					Cloud:   "NOKIA4",
+				},
+			},
+			expectedResult: map[string][]IaasVm{
+				"NOKIA7": []IaasVm{
+					IaasVm{
+						Name:    "auto-sched-nokia7-0",
+						VCpu:    3,
+						Ram:     9462,
+						Storage: 238,
+						Cloud:   "NOKIA7",
+					},
+					IaasVm{
+						Name:    "auto-sched-nokia7-1",
+						VCpu:    15,
+						Ram:     52154,
+						Storage: 516,
+						Cloud:   "NOKIA7",
+					},
+				},
+				"HPE1": []IaasVm{
+					IaasVm{
+						Name:    "auto-sched-hpe1-0",
+						VCpu:    8,
+						Ram:     2432,
+						Storage: 45,
+						Cloud:   "HPE1",
+					},
+					IaasVm{
+						Name:    "auto-sched-hpe1-1",
+						VCpu:    66,
+						Ram:     453675,
+						Storage: 363,
+						Cloud:   "HPE1",
+					},
+				},
+				"NOKIA8": []IaasVm{
+					IaasVm{
+						Name:    "auto-sched-nokia8-0",
+						VCpu:    38,
+						Ram:     98076,
+						Storage: 482,
+						Cloud:   "NOKIA8",
+					},
+				},
+				"NOKIA4": []IaasVm{
+					IaasVm{
+						Name:    "auto-sched-nokia4-0",
+						VCpu:    34,
+						Ram:     73500,
+						Storage: 867,
+						Cloud:   "NOKIA4",
+					},
+				},
+			},
+		},
+		{
+			name: "case2",
+			vms: []IaasVm{
+				IaasVm{
+					Name:    "auto-sched-nokia4-0",
+					VCpu:    3,
+					Ram:     9462,
+					Storage: 238,
+					Cloud:   "NOKIA4",
+				},
+				IaasVm{
+					Name:    "auto-sched-nokia6-0",
+					VCpu:    15,
+					Ram:     52154,
+					Storage: 516,
+					Cloud:   "NOKIA6",
+				},
+				IaasVm{
+					Name:    "auto-sched-nokia8-0",
+					VCpu:    38,
+					Ram:     98076,
+					Storage: 482,
+					Cloud:   "NOKIA8",
+				},
+				IaasVm{
+					Name:    "auto-sched-nokia6-1",
+					VCpu:    8,
+					Ram:     2432,
+					Storage: 45,
+					Cloud:   "NOKIA6",
+				},
+				IaasVm{
+					Name:    "auto-sched-nokia6-2",
+					VCpu:    66,
+					Ram:     453675,
+					Storage: 363,
+					Cloud:   "NOKIA6",
+				},
+				IaasVm{
+					Name:    "auto-sched-nokia4-0",
+					VCpu:    34,
+					Ram:     73500,
+					Storage: 867,
+					Cloud:   "NOKIA4",
+				},
+				IaasVm{
+					Name:    "auto-sched-nokia8-1",
+					VCpu:    34,
+					Ram:     73500,
+					Storage: 867,
+					Cloud:   "NOKIA8",
+				},
+			},
+			expectedResult: map[string][]IaasVm{
+				"NOKIA4": []IaasVm{
+					IaasVm{
+						Name:    "auto-sched-nokia4-0",
+						VCpu:    3,
+						Ram:     9462,
+						Storage: 238,
+						Cloud:   "NOKIA4",
+					},
+					IaasVm{
+						Name:    "auto-sched-nokia4-0",
+						VCpu:    34,
+						Ram:     73500,
+						Storage: 867,
+						Cloud:   "NOKIA4",
+					},
+				},
+				"NOKIA6": []IaasVm{
+					IaasVm{
+						Name:    "auto-sched-nokia6-0",
+						VCpu:    15,
+						Ram:     52154,
+						Storage: 516,
+						Cloud:   "NOKIA6",
+					},
+					IaasVm{
+						Name:    "auto-sched-nokia6-1",
+						VCpu:    8,
+						Ram:     2432,
+						Storage: 45,
+						Cloud:   "NOKIA6",
+					},
+					IaasVm{
+						Name:    "auto-sched-nokia6-2",
+						VCpu:    66,
+						Ram:     453675,
+						Storage: 363,
+						Cloud:   "NOKIA6",
+					},
+				},
+				"NOKIA8": []IaasVm{
+					IaasVm{
+						Name:    "auto-sched-nokia8-0",
+						VCpu:    38,
+						Ram:     98076,
+						Storage: 482,
+						Cloud:   "NOKIA8",
+					},
+					IaasVm{
+						Name:    "auto-sched-nokia8-1",
+						VCpu:    34,
+						Ram:     73500,
+						Storage: 867,
+						Cloud:   "NOKIA8",
+					},
+				},
+			},
+		},
+	}
+
+	for i, testCase := range testCases {
+		t.Logf("test: %d, %s", i, testCase.name)
+		actualResult := GroupVmsByCloud(testCase.vms)
 		assert.Equal(t, testCase.expectedResult, actualResult, fmt.Sprintf("%s: result is not expected", testCase.name))
 	}
 }
