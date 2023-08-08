@@ -56,7 +56,8 @@ func MakeAppsForTest(namePrefix string, count int, possibleVars []appVars) []mod
 		outApps[i].AutoScheduled = true
 		outApps[i].Replicas = 1
 		outApps[i].Priority = random.RandomInt(asmodel.MinPriority, asmodel.MaxPriority)
-		outApps[i].HostNetwork = random.RandomInt(0, 1) == 0
+		//outApps[i].HostNetwork = random.RandomInt(0, 1) == 0
+		outApps[i].HostNetwork = false
 		outApps[i].Containers = []models.K8sContainer{
 			models.K8sContainer{
 				Name:     "container",
