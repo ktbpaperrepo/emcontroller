@@ -2,9 +2,13 @@ package algorithms
 
 import (
 	"fmt"
+	"log"
+	"net/http"
+	"strconv"
 
 	"github.com/KeepTheBeats/routing-algorithms/random"
 	"github.com/astaxie/beego"
+	chart "github.com/wcharczuk/go-chart"
 
 	asmodel "emcontroller/auto-schedule/model"
 	"emcontroller/models"
@@ -34,6 +38,9 @@ type Mcssga struct {
 	// these 2 member variables record the best solution in each iteration as well as its fitness value
 	BestFitnessRecords []float64
 	BestSolnRecords    []asmodel.Solution
+
+	// record the best fitness value in every iteration, to show the evolution trend of the populations
+	BestFitnessEachIter []float64
 }
 
 func NewMcssga(chromosomesCount int, iterationCount int, crossoverProbability float64, mutationProbability float64, stopNoUpdateIteration int) *Mcssga {
@@ -47,6 +54,7 @@ func NewMcssga(chromosomesCount int, iterationCount int, crossoverProbability fl
 		MaxReachableRtt:       0,
 		BestFitnessRecords:    nil,
 		BestSolnRecords:       nil,
+		BestFitnessEachIter:   nil,
 	}
 }
 
@@ -76,13 +84,16 @@ func (m *Mcssga) Schedule(clouds map[string]asmodel.Cloud, apps map[string]asmod
 	for _, app := range apps {
 		beego.Info(models.JsonString(app))
 	}
+	//beego.Info("Applications:", models.JsonString(apps))
+	//beego.Info("Clouds:", models.JsonString(clouds))
+	//beego.Info("appsOrder:", models.JsonString(appsOrder))
 
 	// randomly generate the init population
 	var initPopulation []asmodel.Solution = m.initialize(clouds, apps, appsOrder)
-	beego.Info("initPopulation:")
-	for _, soln := range initPopulation {
-		beego.Info(models.JsonString(soln))
-	}
+	//beego.Info("initPopulation:")
+	//for _, soln := range initPopulation {
+	//	beego.Info(models.JsonString(soln))
+	//}
 
 	// there are IterationCount+1 iterations in total, this is the No. 0 iteration
 	currentPopulation := m.selectionOperator(clouds, apps, initPopulation) // Iteration No. 0
@@ -102,6 +113,7 @@ func (m *Mcssga) Schedule(clouds map[string]asmodel.Cloud, apps map[string]asmod
 		}
 	}
 
+	beego.Info("Best fitness in each iteration:", m.BestFitnessEachIter)
 	beego.Info("Final BestFitnessRecords:", m.BestFitnessRecords)
 	beego.Info("Total iteration number (the following 2 should be equal): ", len(m.BestFitnessRecords), len(m.BestSolnRecords))
 	return m.BestSolnRecords[len(m.BestSolnRecords)-1], nil
@@ -407,6 +419,7 @@ func (m *Mcssga) selectionOperator(clouds map[string]asmodel.Cloud, apps map[str
 	}
 
 	// record them
+	m.BestFitnessEachIter = append(m.BestFitnessEachIter, bestFitThisIter)
 	m.BestFitnessRecords = append(m.BestFitnessRecords, bestFitAllIter)
 	m.BestSolnRecords = append(m.BestSolnRecords, asmodel.SolutionCopy(bestSolnAllIter))
 
@@ -486,4 +499,77 @@ func (m *Mcssga) fitnessOneApp(clouds map[string]asmodel.Cloud, apps map[string]
 	}
 
 	return thisAppFitness
+}
+
+// draw m.BestFitnessEachIter and m.BestFitnessRecords on a line chart, to show the evolution trend
+func (m *Mcssga) DrawEvoChart() {
+	var drawChartFunc func(http.ResponseWriter, *http.Request) = func(res http.ResponseWriter, r *http.Request) {
+		var xValuesAllBest []float64
+		for i, _ := range m.BestFitnessRecords {
+			xValuesAllBest = append(xValuesAllBest, float64(i))
+		}
+
+		graph := chart.Chart{
+			Title: "Evolution",
+			//TitleStyle: chart.Style{
+			//	Show: true,
+			//},
+			//Width: 600,
+			//Height: 1800,
+			//DPI:    300,
+			XAxis: chart.XAxis{
+				Name:      "Iteration Number",
+				NameStyle: chart.StyleShow(),
+				Style:     chart.StyleShow(),
+				ValueFormatter: func(v interface{}) string {
+					return strconv.FormatInt(int64(v.(float64)), 10)
+				},
+			},
+			YAxis: chart.YAxis{
+				AxisType:  chart.YAxisSecondary,
+				Name:      "Fitness",
+				NameStyle: chart.StyleShow(),
+				Style:     chart.StyleShow(),
+			},
+			Background: chart.Style{
+				Padding: chart.Box{
+					Top:  50,
+					Left: 20,
+				},
+			},
+			Series: []chart.Series{
+				chart.ContinuousSeries{
+					Name:    "Best Fitness in each iteration",
+					XValues: xValuesAllBest,
+					YValues: m.BestFitnessRecords,
+				},
+				chart.ContinuousSeries{
+					Name:    "Best Fitness in all iterations",
+					XValues: xValuesAllBest,
+					YValues: m.BestFitnessEachIter,
+					Style: chart.Style{
+						Show:            true,
+						StrokeDashArray: []float64{5.0, 3.0, 2.0, 3.0},
+						StrokeWidth:     1,
+					},
+				},
+			},
+		}
+
+		graph.Elements = []chart.Renderable{
+			chart.LegendThin(&graph),
+		}
+
+		res.Header().Set("Content-Type", "image/png")
+		err := graph.Render(chart.PNG, res)
+		if err != nil {
+			log.Println("Error: graph.Render(chart.PNG, res)", err)
+		}
+	}
+
+	http.HandleFunc("/", drawChartFunc)
+	err := http.ListenAndServe(":8080", nil)
+	if err != nil {
+		log.Println("Error: http.ListenAndServe(\":8080\", nil)", err)
+	}
 }

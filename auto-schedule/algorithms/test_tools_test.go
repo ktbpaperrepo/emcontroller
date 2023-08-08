@@ -39,10 +39,19 @@ func newDepGenHelper(app models.K8sApp, originalIndex int) depGenHelper {
 	}
 }
 
-func MakeAppsForTest(namePrefix string, count int, possibleImages []string) []models.K8sApp {
+// the variables of applications.
+type appVars struct {
+	image    string
+	commands []string
+	ports    []models.PortInfo
+}
+
+func MakeAppsForTest(namePrefix string, count int, possibleVars []appVars) []models.K8sApp {
 	outApps := make([]models.K8sApp, count)
 
 	for i := 0; i < len(outApps); i++ {
+		randomVar := possibleVars[random.RandomInt(0, len(possibleVars)-1)]
+
 		outApps[i].Name = fmt.Sprintf("%s-%d", namePrefix, i)
 		outApps[i].AutoScheduled = true
 		outApps[i].Replicas = 1
@@ -50,9 +59,11 @@ func MakeAppsForTest(namePrefix string, count int, possibleImages []string) []mo
 		outApps[i].HostNetwork = random.RandomInt(0, 1) == 0
 		outApps[i].Containers = []models.K8sContainer{
 			models.K8sContainer{
-				Name:    "container",
-				Image:   possibleImages[random.RandomInt(0, len(possibleImages)-1)],
-				WorkDir: "",
+				Name:     "container",
+				Image:    randomVar.image,
+				Commands: randomVar.commands,
+				Ports:    randomVar.ports,
+				WorkDir:  "",
 				Resources: models.K8sResReq{
 					Limits: models.K8sResList{
 						CPU:    fmt.Sprintf("%.1f", random.NormalRandomBM(1.0, 32.0, 6.0, 6.0)),
@@ -93,12 +104,29 @@ func MakeAppsForTest(namePrefix string, count int, possibleImages []string) []mo
 
 func TestMakeAppsForTest(t *testing.T) {
 	var namePrefix string = "test-app"
-	var count int = 20
-	var possibleImages []string = []string{
-		"172.27.15.31:5000/nginx:1.17.1",
-		"172.27.15.31:5000/printtime:v1",
-		"172.27.15.31:5000/ubuntu:latest",
+	var count int = 40
+
+	var possibleVars []appVars = []appVars{
+		appVars{
+			image: "172.27.15.31:5000/nginx:1.17.1",
+			ports: []models.PortInfo{
+				models.PortInfo{
+					ContainerPort: 80,
+					Name:          "tcp",
+					Protocol:      "tcp",
+					ServicePort:   "100",
+				},
+			},
+		},
+		appVars{
+			image: "172.27.15.31:5000/ubuntu:latest",
+			commands: []string{
+				"bash",
+				"-c",
+				"while true;do sleep 10;done",
+			},
+		},
 	}
 
-	_ = MakeAppsForTest(namePrefix, count, possibleImages)
+	_ = MakeAppsForTest(namePrefix, count, possibleVars)
 }

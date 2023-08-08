@@ -2,8 +2,9 @@ package executors
 
 import (
 	"fmt"
-	"github.com/astaxie/beego"
 	"net/http"
+	
+	"github.com/astaxie/beego"
 
 	"emcontroller/auto-schedule/algorithms"
 	asmodel "emcontroller/auto-schedule/model"
@@ -41,7 +42,7 @@ func CreateAutoScheduleApps(apps []models.K8sApp) ([]models.AppInfo, error, int)
 	//sort.Strings(appsOrder)
 
 	// call the Schedule method in mcasga.go
-	mcssgaInstance := algorithms.NewMcssga(100, 5000, 0.7, 0.2, 200)
+	mcssgaInstance := algorithms.NewMcssga(200, 5000, 0.5, 0.1, 200)
 	solution, err := mcssgaInstance.Schedule(cloudsForScheduling, appsForScheduling, appsOrder)
 	if err != nil {
 		outErr := fmt.Errorf("Run the Schedule method of Mcssga, Error: [%w]", err)
@@ -50,8 +51,15 @@ func CreateAutoScheduleApps(apps []models.K8sApp) ([]models.AppInfo, error, int)
 	}
 	beego.Info(fmt.Sprintf("The algorithm works out the solution: %s\nIts fitness value is %g.", models.JsonString(solution), mcssgaInstance.Fitness(cloudsForScheduling, appsForScheduling, solution)))
 
-	// for debug
-	return []models.AppInfo{}, nil, http.StatusCreated
+	//// for debug
+	//mcssgaInstance.DrawEvoChart()
+	//return []models.AppInfo{}, nil, http.StatusCreated
+
+	/**
+	TODO:
+	1. clean up unused VMs automatically;
+	2. migration: I set a lock, migration and deployment (or multiple deployments) cannot be done at the same time. When doing migration, we skip the resources occupied by the applications to be migrated, and count them as the VM resources. When the resources are not enough, the rolling update may be blocked, because the new pods cannot be created. Maybe I can make a dependency topo-sort to avoid it. Next meeting, I need to discuss this with Preben and Sokol, about whether should I put the migration into this paper or the next paper.
+	*/
 
 	// create the VMs and add them to Kubernetes
 	if _, err := models.AddNewVms(solution.VmsToCreate); err != nil {

@@ -306,7 +306,9 @@ func getAppInfoDeploy(d appsv1.Deployment) (AppInfo, error) {
 		}
 		for _, port := range svc.Spec.Ports {
 			thisApp.SvcPort = append(thisApp.SvcPort, strconv.FormatInt(int64(port.Port), 10))
-			thisApp.NodePort = append(thisApp.NodePort, strconv.FormatInt(int64(port.NodePort), 10))
+			if svc.Spec.Type == corev1.ServiceTypeNodePort {
+				thisApp.NodePort = append(thisApp.NodePort, strconv.FormatInt(int64(port.NodePort), 10))
+			}
 			thisApp.ContainerPort = append(thisApp.ContainerPort, port.TargetPort.String())
 		}
 	} else {
