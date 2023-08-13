@@ -31,6 +31,38 @@ func (c *VmController) DeleteVM() {
 	c.Ctx.ResponseWriter.WriteHeader(200)
 }
 
+// delete multiple VMs
+// test command:
+// curl -i -X DELETE -H Content-Type:application/json http://localhost:20000/vm -d '[{"name":"auto-sched-nokia8-0","cloud":"NOKIA8","id":"106"},{"name":"auto-sched-nokia8-1","cloud":"NOKIA8","id":"107"},{"name":"auto-sched-nokia7-0","cloud":"NOKIA7","id":"104"}]'
+func (c *VmController) DeleteVMs() {
+	var vms []models.IaasVm
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &vms); err != nil {
+		outErr := fmt.Errorf("json.Unmarshal the vms in RequestBody, error: %w", err)
+		beego.Error(outErr)
+		c.Ctx.ResponseWriter.WriteHeader(http.StatusBadRequest)
+		//c.Ctx.WriteString(outErr.Error())
+		if result, err := c.Ctx.ResponseWriter.Write([]byte(outErr.Error())); err != nil {
+			beego.Error(fmt.Sprintf("Write Error to response, error: %s, result: %d", err.Error(), result))
+		}
+		return
+	}
+
+	beego.Info(fmt.Sprintf("Delete VMs %v.", vms))
+
+	// Use the parsed vms as the input information to delete VMs
+	if errs := models.DeleteBatchVms(vms); len(errs) != 0 {
+		outErr := models.HandleErrSlice(errs)
+		beego.Error(fmt.Sprintf("DeleteBatchVms Error: %s", outErr.Error()))
+		c.Ctx.ResponseWriter.WriteHeader(http.StatusInternalServerError)
+		c.Ctx.WriteString(outErr.Error())
+		return
+	}
+
+	beego.Info(fmt.Sprintf("Successful! Delete VMs %v.", vms))
+
+	c.Ctx.ResponseWriter.WriteHeader(http.StatusOK)
+}
+
 // test command:
 // curl -i -X GET http://localhost:20000/cloud/NOKIA7/vm/102
 // curl -i -X GET http://localhost:20000/cloud/CLAAUDIAweifan/vm/8117edb9-0fdc-4334-a1d9-51779e79f377

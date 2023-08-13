@@ -42,7 +42,17 @@ func TestGetQemu(t *testing.T) {
 func TestShutdownQemu(t *testing.T) {
 	InitSomeThing()
 	cloud := Clouds[testPCloudName]
-	resp, err := cloud.(*Proxmox).ShutdownQemu("102")
+	resp, err := cloud.(*Proxmox).ShutdownQemu("106")
+	if err != nil {
+		t.Errorf("error: %s\n", err.Error())
+	}
+	fmt.Printf("%+v\n", string(resp))
+}
+
+func TestStopQemu(t *testing.T) {
+	InitSomeThing()
+	cloud := Clouds["HPE1"]
+	resp, err := cloud.(*Proxmox).StopQemu("107")
 	if err != nil {
 		t.Errorf("error: %s\n", err.Error())
 	}
@@ -52,7 +62,7 @@ func TestShutdownQemu(t *testing.T) {
 func TestDeleteQemu(t *testing.T) {
 	InitSomeThing()
 	cloud := Clouds[testPCloudName]
-	resp, err := cloud.(*Proxmox).DeleteQemu("102")
+	resp, err := cloud.(*Proxmox).DeleteQemu("107")
 	if err != nil {
 		t.Errorf("error: %s\n", err.Error())
 	}

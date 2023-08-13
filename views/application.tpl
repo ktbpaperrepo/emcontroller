@@ -28,11 +28,22 @@
     <br>
     <h3>Existing Applications</h3>
 
+    <button id="deleteSelectedButton" type="button" onclick="deleteBatchApps()">Delete Selected Applications</button>
+
     <table border = 1>
-        <tr> <th></th> <th>App Name</th> <th>Internal Access</th> <th>External Access</th> <th>Status</th> <th>Host Kubernetes Node<br>(PodIP/NodeName/NodeIP)</th> </tr>
+        <tr>
+            <th></th>
+            <th></th>
+            <th>App Name</th>
+            <th>Internal Access</th>
+            <th>External Access</th>
+            <th>Status</th>
+            <th>Host Kubernetes Node<br>(PodIP/NodeName/NodeIP)</th>
+        </tr>
         {{range $appIdx, $app := .applicationList}}
             {{$statusID := printf "appStatus%s" $app.AppName}}
             <tr>
+                <td><input type="checkbox" class="appCheckbox"></td>
                 <td><button type="button" onclick="deleteApp('{{$app.AppName}}', '{{$statusID}}')">Delete</button></td>
                 <td>{{$app.AppName}}</td>
                 <td>

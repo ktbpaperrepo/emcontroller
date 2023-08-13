@@ -75,6 +75,40 @@ func (c *K8sNodeController) DeleteNode() {
 	c.Ctx.ResponseWriter.WriteHeader(200)
 }
 
+// delete multiple Kubernetes Nodes from the cluster
+// test command:
+// curl -i -X DELETE -H Content-Type:application/json http://localhost:20000/k8sNode -d '["auto-sched-hpe1-0","auto-sched-nokia4-0"]'
+func (c *K8sNodeController) DeleteNodes() {
+	var nodeNamesToDelete []string
+
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &nodeNamesToDelete); err != nil {
+		outErr := fmt.Errorf("json.Unmarshal the vms in RequestBody, error: %w", err)
+		beego.Error(outErr)
+		c.Ctx.ResponseWriter.WriteHeader(http.StatusBadRequest)
+		//c.Ctx.WriteString(outErr.Error())
+		if result, err := c.Ctx.ResponseWriter.Write([]byte(outErr.Error())); err != nil {
+			beego.Error(fmt.Sprintf("Write Error to response, error: %s, result: %d", err.Error(), result))
+		}
+		return
+	}
+
+	beego.Info(fmt.Sprintf("Delete Kubernetes Nodes %v.", nodeNamesToDelete))
+
+	// Use the parsed Kubernetes Nodes as the input information to delete Kubernetes Nodes
+	if errs := models.UninstallBatchNodes(nodeNamesToDelete); len(errs) != 0 {
+		outErr := models.HandleErrSlice(errs)
+		beego.Error(fmt.Sprintf("UninstallBatchNodes Error: %s", outErr.Error()))
+		c.Ctx.ResponseWriter.WriteHeader(http.StatusInternalServerError)
+		c.Ctx.WriteString(outErr.Error())
+		return
+	}
+
+	beego.Info(fmt.Sprintf("Successful! Delete Kubernetes Nodes %v.", nodeNamesToDelete))
+
+	c.Ctx.ResponseWriter.WriteHeader(http.StatusOK)
+
+}
+
 func (c *K8sNodeController) AddNodes() {
 	c.TplName = "addK8sNodes.tpl"
 }

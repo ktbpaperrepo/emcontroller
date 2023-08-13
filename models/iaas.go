@@ -2,10 +2,11 @@ package models
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/astaxie/beego"
 	"github.com/gophercloud/gophercloud"
 	"github.com/spf13/viper"
-	"sync"
 )
 
 type Iaas interface {
@@ -246,4 +247,32 @@ func GroupVmsByCloud(vms []IaasVm) map[string][]IaasVm {
 	}
 
 	return outVmGroups
+}
+
+// delete a batch of Virtual Machines concurrently
+func DeleteBatchVms(vms []IaasVm) []error {
+	var errs []error
+	var errsMu sync.Mutex // the slice in golang is not safe for concurrent read/write
+
+	// delete vms in parallel
+	var wg sync.WaitGroup
+
+	for _, vm := range vms {
+		wg.Add(1)
+		go func(v IaasVm) {
+			defer wg.Done()
+
+			err := Clouds[v.Cloud].DeleteVM(v.ID)
+			if err != nil {
+				outErr := fmt.Errorf("Delete vm [%s (ID: %s)] on cloud [%s], error %w.", v.Name, v.ID, v.Cloud, err)
+				beego.Error(outErr)
+				errsMu.Lock()
+				errs = append(errs, outErr)
+				errsMu.Unlock()
+			}
+		}(vm)
+	}
+	wg.Wait()
+
+	return errs
 }

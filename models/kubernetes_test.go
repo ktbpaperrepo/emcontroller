@@ -93,8 +93,21 @@ func TestListNodes(t *testing.T) {
 	nodes, err := ListNodes(metav1.ListOptions{})
 	if err != nil {
 		t.Errorf("test error: %s", err.Error())
+	} else {
+		t.Logf("nodes: %v", nodes)
 	}
-	t.Logf("nodes: %v", nodes)
+}
+
+func TestListNodesNamePrefix(t *testing.T) {
+	InitSomeThing()
+	nodes, err := ListNodesNamePrefix("auto-sched-")
+	if err != nil {
+		t.Errorf("test error: %s", err.Error())
+	} else {
+		for _, node := range nodes {
+			t.Log(node.Name, GetNodeInternalIp(node))
+		}
+	}
 }
 
 func TestGetNode(t *testing.T) {
@@ -154,5 +167,28 @@ func TestUninstallNode(t *testing.T) {
 	err := UninstallNode("node1")
 	if err != nil {
 		t.Errorf("test error: %s", err.Error())
+	}
+}
+
+func TestUninstallBatchNodes(t *testing.T) {
+	InitSomeThing()
+
+	nodesToDelete, err := ListNodesNamePrefix("auto-sched-")
+	if err != nil {
+		t.Errorf("get nodes to delete error: %s", err.Error())
+	}
+
+	var nodeNamesToDelete []string
+	for _, node := range nodesToDelete {
+		nodeNamesToDelete = append(nodeNamesToDelete, node.Name)
+	}
+
+	t.Log("nodes to uninstall:", nodeNamesToDelete)
+
+	errs := UninstallBatchNodes(nodeNamesToDelete)
+	if errs != nil {
+		t.Errorf("uninstall nodes error: %s", HandleErrSlice(errs).Error())
+	} else {
+		t.Logf("Uninstall Kubernetes nodes successfully")
 	}
 }

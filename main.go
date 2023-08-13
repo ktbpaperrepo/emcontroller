@@ -8,6 +8,7 @@ import (
 
 	"github.com/astaxie/beego"
 
+	"emcontroller/auto-schedule/algorithms"
 	"emcontroller/models"
 	_ "emcontroller/routers"
 )
@@ -50,8 +51,10 @@ func main() {
 			beego.Error(fmt.Sprintf("Read config \"NetTestPeriodSec\" error: %s, set the period as the DefaultNetTestPeriodSec", err.Error()))
 			netTestPeriodSec = models.DefaultNetTestPeriodSec
 		}
-		beego.Info(fmt.Sprintf("The period of measuring network performance is %d seconds.", netTestPeriodSec))
+
+		beego.Info(fmt.Sprintf("The period of measuring network performance is %d seconds, which is also the periods of auto-scheduling VMs cleanup.", netTestPeriodSec))
 		go models.CronTaskTimer(models.MeasNetPerf, time.Duration(netTestPeriodSec)*time.Second)
+		go models.CronTaskTimer(algorithms.GcASVms, time.Duration(netTestPeriodSec)*time.Second)
 
 		models.NetTestFuncOn = true
 		models.NetTestPeriodSec = netTestPeriodSec

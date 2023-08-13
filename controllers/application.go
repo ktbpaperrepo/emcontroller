@@ -41,6 +41,40 @@ func (c *ApplicationController) DeleteApp() {
 	c.Ctx.ResponseWriter.WriteHeader(statusCode)
 }
 
+// delete multiple applications
+// test command:
+// curl -i -X DELETE -H Content-Type:application/json http://localhost:20000/application -d '["test-app-24","test-app-26","test-app-5"]'
+func (c *ApplicationController) DeleteApps() {
+	var appNamesToDelete []string
+
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &appNamesToDelete); err != nil {
+		outErr := fmt.Errorf("json.Unmarshal the vms in RequestBody, error: %w", err)
+		beego.Error(outErr)
+		c.Ctx.ResponseWriter.WriteHeader(http.StatusBadRequest)
+		//c.Ctx.WriteString(outErr.Error())
+		if result, err := c.Ctx.ResponseWriter.Write([]byte(outErr.Error())); err != nil {
+			beego.Error(fmt.Sprintf("Write Error to response, error: %s, result: %d", err.Error(), result))
+		}
+		return
+	}
+
+	beego.Info(fmt.Sprintf("Delete Applications %v.", appNamesToDelete))
+
+	// Use the parsed applications as the input information to delete applications
+	if errs := models.DeleteBatchApps(appNamesToDelete); len(errs) != 0 {
+		outErr := models.HandleErrSlice(errs)
+		beego.Error(fmt.Sprintf("DeleteBatchApps Error: %s", outErr.Error()))
+		c.Ctx.ResponseWriter.WriteHeader(http.StatusInternalServerError)
+		c.Ctx.WriteString(outErr.Error())
+		return
+	}
+
+	beego.Info(fmt.Sprintf("Successful! Delete Applications %v.", appNamesToDelete))
+
+	c.Ctx.ResponseWriter.WriteHeader(http.StatusOK)
+
+}
+
 // test command:
 // curl -i -X GET http://localhost:20000/application/test
 func (c *ApplicationController) GetApp() {

@@ -186,3 +186,23 @@ func TestCreateAppsWait(t *testing.T) {
 	}
 
 }
+
+func TestDeleteBatchApps(t *testing.T) {
+	InitSomeThing()
+
+	appsNamesToDelete := []string{
+		"test-app-20",
+		"test-app-29",
+		"test-app-10",
+		"test-app-5",
+		"test-app-18",
+	}
+
+	errs := DeleteBatchApps(appsNamesToDelete)
+	if errs != nil {
+		t.Errorf("Delete applications, error: [%s]", HandleErrSlice(errs).Error())
+	} else {
+		t.Logf("Delete applications successfully")
+	}
+
+}

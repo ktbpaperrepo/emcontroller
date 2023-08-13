@@ -23,11 +23,20 @@
 
     <h3>Existing Kubernetes Nodes (Master Nodes not Shown)</h3>
 
+    <button id="deleteSelectedButton" type="button" onclick="deleteBatchNodes()">Delete Selected Kubernetes Nodes</button>
+
     <table border = 1>
-        <tr> <th></th> <th>Name</th> <th>IP address</th> <th>Status</th> </tr>
+        <tr>
+            <th></th>
+            <th></th>
+            <th>Name</th>
+            <th>IP address</th>
+            <th>Status</th>
+        </tr>
         {{range $nodeIdx, $node := .k8sNodeList}}
             {{$statusID := printf "nodeStatus%s" $node.Name}}
             <tr>
+                <td><input type="checkbox" class="nodeCheckbox"></td>
                 <td><button type="button" onclick="deleteNode('{{$node.Name}}', '{{$statusID}}')">Delete</button></td>
                 <td>{{$node.Name}}</td>
                 <td>{{$node.IP}}</td>

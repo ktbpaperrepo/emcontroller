@@ -22,17 +22,32 @@
 
     <br>
     <h3>Existing VMs in All Clouds</h3>
+
+    <button id="deleteSelectedButton" type="button" onclick="deleteBatchVMs()">Delete Selected VMs</button>
+
     <table border = 1>
         <tr>
-            <th rowspan="2"></th> <th rowspan="2">Multi-Cloud<br>Manager Create</th> <th rowspan="2">Name</th> <th rowspan="2">Cloud Type</th> <th rowspan="2">Cloud</th> <th rowspan="2">ID</th> <th rowspan="2">IP Addresses</th> <th colspan="3">Resources</th> <th rowspan="2">Status</th>
+            <th rowspan="2"></th>
+            <th rowspan="2"></th>
+            <th rowspan="2">Multi-Cloud<br>Manager Create</th>
+            <th rowspan="2">Name</th>
+            <th rowspan="2">Cloud Type</th>
+            <th rowspan="2">Cloud</th>
+            <th rowspan="2">ID</th>
+            <th rowspan="2">IP Addresses</th>
+            <th colspan="3">Resources</th>
+            <th rowspan="2">Status</th>
         </tr>
         <tr>
-            <th>CPU Logical Core</th> <th>Memory (MB)</th> <th>Storage (GB)</th>
+            <th>CPU Logical Core</th>
+            <th>Memory (MB)</th>
+            <th>Storage (GB)</th>
         </tr>
 
         {{range $vmIdx, $vm := .allVms}}
             {{$statusID := printf "vmStatus-%s-%s" $vm.Cloud $vm.ID}}
             <tr>
+                <td><input type="checkbox" class="vmCheckbox"></td>
                 <td><button type="button" onclick="deleteVM('{{$vm.Cloud}}', '{{$vm.ID}}', '{{$statusID}}')">Delete</button></td>
                 {{$colorMcmCreated := "red"}}
                 {{if $vm.McmCreate}}

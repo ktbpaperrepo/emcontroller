@@ -53,3 +53,71 @@ function whileCreatingVM() {
     createButton.setAttribute("disabled", "disabled");
     createButton.insertAdjacentHTML('afterend',`<p>Creating VM ${newVmName.value}, please wait ...</p>`);
 }
+
+// delete multiple VMs
+function deleteBatchVMs() {
+    if (deleteVMLock) {
+        console.log("Another deleting is executing, please try again after a few seconds");
+        return;
+    }
+    lockDeleteVM();
+
+    let deleteSelectedButton = document.getElementById("deleteSelectedButton");
+    deleteSelectedButton.insertAdjacentHTML('afterend',"<p id=\"textForDeleting\">Deleting selected VMs, please wait ...</p>");
+
+    let vmsToDelete = [];
+    let vmCheckboxes = document.getElementsByClassName("vmCheckbox");
+
+    for (let i = 0; i < vmCheckboxes.length; i++) {
+        if (vmCheckboxes[i].checked) {
+            // get the row of the table
+            let row = vmCheckboxes[i].parentNode.parentNode;
+
+            // set the "Status" column as "Deleting"
+            row.cells[11].innerText = "Deleting";
+
+            // get the needed information to delete a VM
+            let vmName = row.cells[3].textContent;
+            let cloudName = row.cells[5].textContent;
+            let vmId = row.cells[6].textContent;
+
+            // make the json body for the request
+            vmsToDelete.push({
+                id: vmId,
+                name: vmName,
+                cloud: cloudName,
+            });
+
+        }
+    }
+
+    // send http request to delete VMs
+    let resp = fetch("/vm",{
+        method: "DELETE",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(vmsToDelete)
+    })
+
+    // The return type of fetch is Promise and the Promise can only be accessed in its then.
+    // I need to access its status code and text.
+    // - The status code can only be accessed in resp.then().
+    // - The text can only be accessed in resp.text().then().
+    // Therefore, I use a 2-layer then() to both access them.
+    resp.then(response => {
+        response.text().then(text => {
+            if (response.status >= 200 && response.status < 300) {
+                console.log("delete VMs successfully. HTTP code: %d. response: %s", response.status, text);
+                setTimeout(unlockDeleteVM, 2000);
+            } else {
+                console.log("delete VMs failed. HTTP code: %d. response: %s", response.status, text);
+                let deletingText = document.getElementById("textForDeleting");
+                deletingText.textContent = `Deleting failed, HTTP code is ${response.status}, error is: ${text}`;
+            }
+        })
+    }).catch(error => {
+        console.error("Error:", error);
+    });
+
+}

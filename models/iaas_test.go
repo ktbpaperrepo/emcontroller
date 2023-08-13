@@ -65,10 +65,31 @@ func TestCreateVms(t *testing.T) {
 
 func TestDeleteVM(t *testing.T) {
 	InitSomeThing()
-	cloud := Clouds[testOsCloudName]
-	err := cloud.DeleteVM("a3e02a3a-7213-462a-bbe4-5411a6f92be2")
+	cloud := Clouds["HPE1"]
+	err := cloud.DeleteVM("107")
 	if err != nil {
 		t.Errorf("error: %s\n", err.Error())
+	}
+}
+
+func TestDeleteBatchVms(t *testing.T) {
+	InitSomeThing()
+
+	vmsToDelete, err := ListVMsNamePrefix("auto-sched-")
+	if err != nil {
+		t.Errorf("get VMs to delete error: %s", err.Error())
+	}
+
+	t.Log("VMs to delete:")
+	for _, vm := range vmsToDelete {
+		t.Logf("%s/%s", vm.Cloud, vm.Name)
+	}
+
+	errs := DeleteBatchVms(vmsToDelete)
+	if errs != nil {
+		t.Errorf("uninstall nodes error: %s", HandleErrSlice(errs).Error())
+	} else {
+		t.Logf("Uninstall Kubernetes nodes successfully")
 	}
 }
 

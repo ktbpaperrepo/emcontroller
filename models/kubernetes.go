@@ -262,6 +262,26 @@ func ListNodes(listOptions metav1.ListOptions) ([]apiv1.Node, error) {
 	return nodes.Items, nil
 }
 
+func ListNodesNamePrefix(prefix string) ([]apiv1.Node, error) {
+	// get all Kubernetes nodes
+	allK8sNodes, err := ListNodes(metav1.ListOptions{})
+	if err != nil {
+		outErr := fmt.Errorf("cleanup auto-scheduling VMs, List Kubernetes Nodes Error: %w", err)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+
+	// filter the nodes with the name prefix
+	var outNodes []apiv1.Node
+	for _, node := range allK8sNodes {
+		if strings.HasPrefix(node.Name, prefix) {
+			outNodes = append(outNodes, node)
+		}
+	}
+
+	return outNodes, nil
+}
+
 func GetNode(name string, getOptions metav1.GetOptions) (*apiv1.Node, error) {
 	ctx := context.Background()
 	node, err := kubernetesClient.CoreV1().Nodes().Get(ctx, name, getOptions)
@@ -631,4 +651,31 @@ func UninstallNode(name string) error {
 	}
 
 	return nil
+}
+
+// delete nodes from the Kubernetes cluster concurrently
+func UninstallBatchNodes(nodeNames []string) []error {
+	var errs []error
+	var errsMu sync.Mutex // the slice in golang is not safe for concurrent read/write
+
+	// uninstall nodes in parallel
+	var wg sync.WaitGroup
+
+	for _, nodeName := range nodeNames {
+		wg.Add(1)
+		go func(nn string) {
+			defer wg.Done()
+			err := UninstallNode(nn)
+			if err != nil {
+				outErr := fmt.Errorf("uninstall node [%s], error %w.", nn, err)
+				beego.Error(outErr)
+				errsMu.Lock()
+				errs = append(errs, outErr)
+				errsMu.Unlock()
+			}
+		}(nodeName)
+	}
+	wg.Wait()
+
+	return errs
 }

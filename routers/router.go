@@ -1,8 +1,9 @@
 package routers
 
 import (
-	"emcontroller/controllers"
 	"github.com/astaxie/beego"
+
+	"emcontroller/controllers"
 )
 
 func init() {
@@ -15,6 +16,7 @@ func init() {
 	beego.Router("/cloud/:cloudName/vm/:vmID", &controllers.VmController{}, "get:GetVM")
 
 	beego.Router("/vm", &controllers.VmController{}, "get:ListVMsAllClouds")
+	beego.Router("/vm", &controllers.VmController{}, "delete:DeleteVMs")
 	beego.Router("/vm/new", &controllers.VmController{}, "get:NewVms")
 	beego.Router("/vm/doNew", &controllers.VmController{}, "post:DoNewVms")
 
@@ -23,6 +25,7 @@ func init() {
 	beego.Router("/upload", &controllers.ImageController{}, "post:Upload")
 
 	beego.Router("/application", &controllers.ApplicationController{}, "get:Get")
+	beego.Router("/application", &controllers.ApplicationController{}, "delete:DeleteApps")
 	beego.Router("/application/:appName", &controllers.ApplicationController{}, "delete:DeleteApp")
 	beego.Router("/application/:appName", &controllers.ApplicationController{}, "get:GetApp")
 	beego.Router("/newApplication", &controllers.ApplicationController{}, "get:NewApplication")
@@ -32,6 +35,7 @@ func init() {
 	beego.Router("/doNewAppGroup", &controllers.AppGroupController{}, "post:DoNewAppGroup")
 
 	beego.Router("/k8sNode", &controllers.K8sNodeController{}, "get:Get")
+	beego.Router("/k8sNode", &controllers.K8sNodeController{}, "delete:DeleteNodes")
 	beego.Router("/k8sNode/:nodeName", &controllers.K8sNodeController{}, "delete:DeleteNode")
 	beego.Router("/k8sNode/add", &controllers.K8sNodeController{}, "get:AddNodes")
 	beego.Router("/k8sNode/doAdd", &controllers.K8sNodeController{}, "post:DoAddNodes")

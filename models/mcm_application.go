@@ -359,6 +359,33 @@ func DeleteApplication(appName string) (error, int) {
 	return nil, http.StatusOK
 }
 
+// delete a batch of applications concurrently
+func DeleteBatchApps(appNames []string) []error {
+	var errs []error
+	var errsMu sync.Mutex // the slice in golang is not safe for concurrent read/write
+
+	// delete applications in parallel
+	var wg sync.WaitGroup
+
+	for _, appName := range appNames {
+		wg.Add(1)
+		go func(an string) {
+			defer wg.Done()
+			err, _ := DeleteApplication(an)
+			if err != nil {
+				outErr := fmt.Errorf("delete application [%s], error %w.", an, err)
+				beego.Error(outErr)
+				errsMu.Lock()
+				errs = append(errs, outErr)
+				errsMu.Unlock()
+			}
+		}(appName)
+	}
+	wg.Wait()
+
+	return errs
+}
+
 // for an application, we need to create a Deployment and a Service for it
 func CreateApplication(app K8sApp) error {
 	if err := ValidateK8sApp(app); err != nil {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/astaxie/beego"
+	apiv1 "k8s.io/api/core/v1"
 )
 
 type K8sNodeInfo struct {
@@ -32,4 +33,22 @@ func AddNewVms(vmsToCreate []IaasVm) ([]IaasVm, error) {
 	}
 
 	return createdVms, nil
+}
+
+// remove a Kubernetes node with a appointed name from a list
+func RemoveNodeFromList(nodeList *[]apiv1.Node, nodeNameToRemove string) {
+	nodeIdx := FindIdxNodeInList(*nodeList, nodeNameToRemove)
+	if nodeIdx >= 0 {
+		*nodeList = append((*nodeList)[:nodeIdx], (*nodeList)[nodeIdx+1:]...)
+	}
+}
+
+// find the index of a Kubernetes node with a appointed name in a list. return -1 if not found.
+func FindIdxNodeInList(nodeList []apiv1.Node, nodeNameToFind string) int {
+	for idx, node := range nodeList {
+		if node.Name == nodeNameToFind {
+			return idx
+		}
+	}
+	return -1
 }
