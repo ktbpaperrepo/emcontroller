@@ -35,7 +35,7 @@ type Mcssga struct {
 
 	MaxReachableRtt float64 // The biggest RTT between any 2 (or 1) reachable clouds, used to calculate fitness values.
 
-	// these 2 member variables record the best solution in each iteration as well as its fitness value
+	// these 2 member variables record the best solution in all iteration as well as its fitness value
 	BestFitnessRecords []float64
 	BestSolnRecords    []asmodel.Solution
 
@@ -541,12 +541,12 @@ func (m *Mcssga) DrawEvoChart() {
 			},
 			Series: []chart.Series{
 				chart.ContinuousSeries{
-					Name:    "Best Fitness in each iteration",
+					Name:    "Best Fitness in all iteration",
 					XValues: xValuesAllBest,
 					YValues: m.BestFitnessRecords,
 				},
 				chart.ContinuousSeries{
-					Name:    "Best Fitness in all iterations",
+					Name:    "Best Fitness in each iterations",
 					XValues: xValuesAllBest,
 					YValues: m.BestFitnessEachIter,
 					Style: chart.Style{
