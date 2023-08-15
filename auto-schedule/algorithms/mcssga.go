@@ -479,12 +479,13 @@ func (m *Mcssga) fitnessOneApp(clouds map[string]asmodel.Cloud, apps map[string]
 			depAppPart := m.MaxReachableRtt * (depAlloCpu / depReqCpu)
 
 			// add the 3 parts of the fitness value of this dependency to the sum
-			thisDepFitness := netPart + thisAppPart + depAppPart
+			thisDepFitness := (netPart + thisAppPart + depAppPart) / 3
 			sumAllDeps += thisDepFitness
 
 		}
 
 		// weighted by applications' priorities.
+		// the maximum possible fitness of an application without priority should be "max reachable RTT"
 		thisAppFitness = sumAllDeps / depNum * float64(thisPri)
 	} else {
 		// If this application does not have dependencies, its fitness will only be contributed by itself.
@@ -495,6 +496,7 @@ func (m *Mcssga) fitnessOneApp(clouds map[string]asmodel.Cloud, apps map[string]
 		thisAppPart := m.MaxReachableRtt * (thisAlloCpu / thisReqCpu)
 
 		// weighted by applications' priorities.
+		// the maximum possible fitness of an application without priority should be "max reachable RTT"
 		thisAppFitness = thisAppPart * float64(thisPri)
 	}
 
