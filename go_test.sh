@@ -26,6 +26,7 @@ funcsToTestInModels="${funcsToTestInModels}|TestFindIdxNodeInList"
 funcsToTestInModels="${funcsToTestInModels}|TestRemoveNodeFromList"
 funcsToTestInModels="${funcsToTestInModels}|TestFindIdxVmInList"
 funcsToTestInModels="${funcsToTestInModels}|TestRemoveVmFromList"
+funcsToTestInModels="${funcsToTestInModels}|TestGetResOccupiedByPod"
 funcsToTestInModels="${funcsToTestInModels})$"
 
 echo "In ${CURRENT_DIR}/models/, the functions to test are ${funcsToTestInModels}."

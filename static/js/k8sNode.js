@@ -60,7 +60,7 @@ function deleteBatchNodes() {
             let row = nodeCheckboxes[i].parentNode.parentNode;
 
             // set the "Status" column as "Deleting"
-            row.cells[4].innerText = "Deleting";
+            row.cells[7].innerText = "Deleting";
 
             // get the needed information to delete a Kubernetes node
             let nodeName = row.cells[2].textContent;

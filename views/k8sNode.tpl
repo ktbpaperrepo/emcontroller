@@ -27,11 +27,17 @@
 
     <table border = 1>
         <tr>
-            <th></th>
-            <th></th>
-            <th>Name</th>
-            <th>IP address</th>
-            <th>Status</th>
+            <th rowspan="2"></th>
+            <th rowspan="2"></th>
+            <th rowspan="2">Name</th>
+            <th rowspan="2">IP address</th>
+            <th colspan="3">Resources (used/total)</th>
+            <th rowspan="2">Status</th>
+        </tr>
+        <tr>
+            <th>CPU Logical Core</th>
+            <th>Memory (MB)</th>
+            <th>Storage (GB)</th>
         </tr>
         {{range $nodeIdx, $node := .k8sNodeList}}
             {{$statusID := printf "nodeStatus%s" $node.Name}}
@@ -40,6 +46,9 @@
                 <td><button type="button" onclick="deleteNode('{{$node.Name}}', '{{$statusID}}')">Delete</button></td>
                 <td>{{$node.Name}}</td>
                 <td>{{$node.IP}}</td>
+                <td>{{$node.UsedResources.CpuCore}}/{{$node.TotalResources.CpuCore}}</td>
+                <td>{{$node.UsedResources.Memory}}/{{$node.TotalResources.Memory}}</td>
+                <td>{{$node.UsedResources.Storage}}/{{$node.TotalResources.Storage}}</td>
                 <td id="{{$statusID}}">{{$node.Status}}</td>
             </tr>
         {{end}}

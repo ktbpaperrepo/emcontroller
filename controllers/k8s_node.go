@@ -6,11 +6,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/astaxie/beego"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
-
 	"emcontroller/models"
+	"github.com/astaxie/beego"
 )
 
 type K8sNodeController struct {
@@ -18,47 +15,7 @@ type K8sNodeController struct {
 }
 
 func (c *K8sNodeController) Get() {
-	// TODO: This code does not work, I do not know the reason.
-	//K8sMasterSelector := labels.NewSelector()
-	//K8sMasterReq, err := labels.NewRequirement(models.K8sMasterNodeRole, selection.NotEquals, []string{""})
-	//if err != nil {
-	//	beego.Error(fmt.Sprintf("Construct Kubernetes Master requirement, error: %s", err.Error()))
-	//}
-	//K8sMasterSelector.Add(*K8sMasterReq)
-	//beego.Info(fmt.Sprintf("List nodes with selector: %v", K8sMasterSelector))
-	//beego.Info(fmt.Sprintf("List nodes with selector: %s", K8sMasterSelector.String()))
-	//nodes, err := models.ListNodes(metav1.ListOptions{LabelSelector: K8sMasterSelector.String()})
-
-	nodes, err := models.ListNodes(metav1.ListOptions{})
-	if err != nil {
-		beego.Error(fmt.Sprintf("List Kubernetes nodes, error: %s", err.Error()))
-	}
-
-	selectorControlPlane := labels.SelectorFromSet(labels.Set(map[string]string{
-		models.K8sMasterNodeRole: "",
-	}))
-
-	var k8sNodeList []models.K8sNodeInfo
-	for _, node := range nodes {
-		if selectorControlPlane.Matches(labels.Set(node.Labels)) {
-			beego.Info(fmt.Sprintf("node %s is a Master node, so we do not show it.", node.Name))
-			continue
-		}
-
-		// I think there is no need to hide these network test nodes, or else there will be other troubles.
-		//if models.NodeHasTaint(&node, models.NetTestTaint) {
-		//	beego.Info(fmt.Sprintf("node %s is a network performance test node, so we do not show it.", node.Name))
-		//	continue
-		//}
-
-		k8sNodeList = append(k8sNodeList, models.K8sNodeInfo{
-			Name:   node.Name,
-			IP:     models.GetNodeInternalIp(node),
-			Status: models.ExtractNodeStatus(node),
-		})
-	}
-
-	c.Data["k8sNodeList"] = k8sNodeList
+	c.Data["k8sNodeList"] = models.ListK8sNodes()
 	c.TplName = "k8sNode.tpl"
 }
 
