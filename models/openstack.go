@@ -120,7 +120,14 @@ func (os *Openstack) GetVM(vmID string) (*IaasVm, error) {
 	if err != nil {
 		outErr := fmt.Errorf("Cloud name [%s], type [%s], project id [%s], Get flavor %s error: %w", os.Name, os.Type, os.ProjectID, flavorID, err)
 		beego.Error(outErr)
-		return nil, outErr
+		if IsOs404(err) { // when flavor is deleted, the VM can still work, we simply show the Vcpu and Ram as -1.
+			flavor = &flavors.Flavor{
+				VCPUs: -1,
+				RAM:   -1,
+			}
+		} else {
+			return nil, outErr
+		}
 	}
 
 	// get the storage from the attached volumes
