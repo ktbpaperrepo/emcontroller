@@ -42,7 +42,7 @@ func CreateAutoScheduleApps(apps []models.K8sApp) ([]models.AppInfo, error, int)
 	//sort.Strings(appsOrder)
 
 	// call the Schedule method in mcasga.go
-	mcssgaInstance := algorithms.NewMcssga(200, 5000, 0.6, 0.013, 200)
+	mcssgaInstance := algorithms.NewMcssga(200, 5000, 0.3, 0.019, 200)
 	solution, err := mcssgaInstance.Schedule(cloudsForScheduling, appsForScheduling, appsOrder)
 	if err != nil {
 		outErr := fmt.Errorf("Run the Schedule method of Mcssga, Error: [%w]", err)
