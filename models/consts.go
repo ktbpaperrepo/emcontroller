@@ -51,12 +51,13 @@ const (
 
 	// resources reserved for Linux System and Kubernetes
 	// Now, what I know is that auto-schedule will use them, and maybe other functioins also need them.
-	ReservedCPULogicCore float64 = 1
-	ReservedRamMiB       float64 = 1024
-	//ReservedStorageGiB   float64 = 10
-	//ReservedStoragePercentage float64 = 0.15 // for the storage we should reserve "totalStorage * ReservedStoragePercentage + ReservedStorageGiB"
-	ReservedStorageGiB        float64 = 30
-	ReservedStoragePercentage float64 = 0 // if the VM storage is very big, this percentage will reserve too much space, which is not efficient
+	ReservedCPULogicCore      float64 = 1
+	ReservedRamMiB            float64 = 1024
+	ReservedStorageGiB        float64 = 10
+	ReservedStoragePercentage float64 = 0.15 // for the storage we should reserve "totalStorage * ReservedStoragePercentage + ReservedStorageGiB"
+	// We use percentage to reserve storage, because:
+	// Kubernetes reserves node disk by percentage, so we should also use percentage, or else multi-cloud manager will think that some nodes have enough storage but Kubernete does not, in which condition Kubernetes will evict pods because of out of disk.
+
 	/*
 		NOTE: To be safe,
 		when calculating "VM available resources" from "VM total resources", we should use math.Floor;

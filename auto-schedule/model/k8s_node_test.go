@@ -63,7 +63,7 @@ func TestGenK8sNodeFromPods(t *testing.T) {
 				ResidualResources: GenericResources{
 					CpuCore: 2.9,
 					Memory:  6668,
-					Storage: 160,
+					Storage: 150,
 				},
 			},
 		},
@@ -132,7 +132,7 @@ func TestGenK8sNodeFromPods(t *testing.T) {
 				ResidualResources: GenericResources{
 					CpuCore: 1.7,
 					Memory:  6002,
-					Storage: 153,
+					Storage: 143,
 				},
 			},
 		},
@@ -259,7 +259,7 @@ func TestGenK8sNodeFromApps(t *testing.T) {
 				ResidualResources: GenericResources{
 					CpuCore: 12.7,
 					Memory:  5154,
-					Storage: 175,
+					Storage: 160,
 				},
 			},
 		},
@@ -368,7 +368,7 @@ func TestGenK8sNodeFromApps(t *testing.T) {
 				ResidualResources: GenericResources{
 					CpuCore: 10.7,
 					Memory:  4614,
-					Storage: 160,
+					Storage: 145,
 				},
 			},
 		},

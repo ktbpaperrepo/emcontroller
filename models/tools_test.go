@@ -81,7 +81,7 @@ func TestCalcVmAvailStorGiB(t *testing.T) {
 		{
 			name:           "case1",
 			totalStorGiB:   200,
-			expectedResult: 170,
+			expectedResult: 160,
 		},
 		{
 			name:           "case2",
@@ -96,7 +96,7 @@ func TestCalcVmAvailStorGiB(t *testing.T) {
 		{
 			name:           "case decimal",
 			totalStorGiB:   128.6,
-			expectedResult: 98,
+			expectedResult: 99,
 		},
 	}
 
@@ -181,22 +181,22 @@ func TestCalcVmTotalStorGiB(t *testing.T) {
 		{
 			name:           "case1",
 			availStorGiB:   160,
-			expectedResult: 190,
+			expectedResult: 200,
 		},
 		{
 			name:           "case2",
 			availStorGiB:   0,
-			expectedResult: 30,
+			expectedResult: 12,
 		},
 		{
 			name:           "case3",
 			availStorGiB:   9,
-			expectedResult: 39,
+			expectedResult: 23,
 		},
 		{
 			name:           "case decimal",
 			availStorGiB:   128.6,
-			expectedResult: 159,
+			expectedResult: 164,
 		},
 	}
 
