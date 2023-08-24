@@ -188,7 +188,7 @@ func TestInnerGetDedVmOneGroup(t *testing.T) {
 				Cloud:   "NOKIA4",
 				VCpu:    10,
 				Ram:     3544,
-				Storage: 89,
+				Storage: 95,
 			},
 		},
 		{
@@ -201,7 +201,7 @@ func TestInnerGetDedVmOneGroup(t *testing.T) {
 				Cloud:   "NOKIA4",
 				VCpu:    13,
 				Ram:     3214,
-				Storage: 55,
+				Storage: 66,
 			},
 		},
 	}
@@ -253,21 +253,21 @@ func TestInnerGetDedicatedVmsToCreate(t *testing.T) {
 					Cloud:   "NOKIA4",
 					VCpu:    10,
 					Ram:     3698,
-					Storage: 49,
+					Storage: 61,
 				},
 				models.IaasVm{
 					Name:    "auto-sched-nokia4-2",
 					Cloud:   "NOKIA4",
 					VCpu:    13,
 					Ram:     3544,
-					Storage: 89,
+					Storage: 95,
 				},
 				models.IaasVm{
 					Name:    "auto-sched-nokia4-3",
 					Cloud:   "NOKIA4",
 					VCpu:    12,
 					Ram:     3214,
-					Storage: 55,
+					Storage: 66,
 				},
 			},
 			expectedCloudAfter: asmodel.Cloud{
@@ -284,7 +284,7 @@ func TestInnerGetDedicatedVmsToCreate(t *testing.T) {
 					InUse: models.ResSet{
 						VCpu:    61,
 						Ram:     69848,
-						Storage: 822,
+						Storage: 851,
 						Vm:      -1,
 						Port:    -1,
 						Volume:  -1,
@@ -299,7 +299,7 @@ func TestInnerGetDedicatedVmsToCreate(t *testing.T) {
 						Cloud:   "NOKIA4",
 						VCpu:    10,
 						Ram:     3698,
-						Storage: 49,
+						Storage: 61,
 					}, apps, []string{
 						"app3", "app4", "app1",
 					}),
@@ -308,7 +308,7 @@ func TestInnerGetDedicatedVmsToCreate(t *testing.T) {
 						Cloud:   "NOKIA4",
 						VCpu:    13,
 						Ram:     3544,
-						Storage: 89,
+						Storage: 95,
 					}, apps, []string{
 						"app2", "app5", "app7",
 					}),
@@ -317,7 +317,7 @@ func TestInnerGetDedicatedVmsToCreate(t *testing.T) {
 						Cloud:   "NOKIA4",
 						VCpu:    12,
 						Ram:     3214,
-						Storage: 55,
+						Storage: 66,
 					}, apps, []string{
 						"app6", "app4", "app8",
 					}),
