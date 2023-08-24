@@ -15,13 +15,29 @@ type ApplicationController struct {
 	beego.Controller
 }
 
+// get all applications
+// test command:
+// curl -i -X GET -H Accept:application/json http://localhost:20000/application
 func (c *ApplicationController) Get() {
+	acceptType := c.Ctx.Request.Header.Get("Accept")
+	beego.Info(fmt.Sprintf("The header \"Accept\" is [%s]", acceptType))
+
 	appList, err := models.ListApplications()
 	if err != nil {
 		beego.Error(fmt.Sprintf("ListApplications error: %s", err.Error()))
 	}
-	c.Data["applicationList"] = appList
-	c.TplName = "application.tpl"
+
+	switch {
+	case strings.Contains(strings.ToLower(acceptType), JsonContentType):
+		beego.Info(fmt.Sprintf("The output should be json"))
+		c.Data["json"] = appList
+		c.ServeJSON()
+	default:
+		beego.Info(fmt.Sprintf("The output should be web"))
+		c.Data["applicationList"] = appList
+		c.TplName = "application.tpl"
+	}
+
 }
 
 // DeleteApp delete the deployment and service of the application
