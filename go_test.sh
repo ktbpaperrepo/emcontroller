@@ -30,5 +30,5 @@ funcsToTestInModels="${funcsToTestInModels}|TestGetResOccupiedByPod"
 funcsToTestInModels="${funcsToTestInModels})$"
 
 echo "In ${CURRENT_DIR}/models/, the functions to test are ${funcsToTestInModels}."
-go test ${CURRENT_DIR}/models/ -v -count=1 -run "${funcsToTestInModels}"
+go test ${CURRENT_DIR}/models/ -count=1 -run "${funcsToTestInModels}"
 
