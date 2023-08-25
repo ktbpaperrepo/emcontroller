@@ -15,6 +15,10 @@ import (
 	"github.com/astaxie/beego"
 )
 
+// In Proxmox, the disks are not only used by VMs, but also by the server itself.
+// To reduce the risk that VMs uses more space than Proxmox server, we reserve some space for Proxmox server, the unit is GiB
+const reservedStorage float64 = 100
+
 type Proxmox struct {
 	Name            string
 	Type            string
@@ -821,7 +825,7 @@ func (p *Proxmox) CheckResources() (ResourceStatus, error) {
 			Ram:     totalMemoryUnitB / 1024 / 1024, // unit MiB
 			Vm:      -1,
 			Volume:  -1,
-			Storage: totalStorageUnitB / 1024 / 1024 / 1024, // unit GiB
+			Storage: totalStorageUnitB/1024/1024/1024 - reservedStorage, // unit GiB
 			Port:    -1,
 		},
 		InUse: ResSet{
