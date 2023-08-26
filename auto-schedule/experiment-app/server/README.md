@@ -16,3 +16,10 @@ An example to call multi-cloud manager to run this containerized application is:
 ```shell
 curl -i -X POST -H Content-Type:application/json -d '{"name":"exp-app2","replicas":1,"hostNetwork":false,"nodeName":"testmem","containers":[{"name":"exp-app2","image":"172.27.15.31:5000/mcexp:latest","workDir":"","resources":{"limits":{"memory":"5000Mi","cpu":"2","storage":"10Gi"},"requests":{"memory":"5000Mi","cpu":"0.5","storage":"10Gi"}},"commands":["./experiment-app"],"args":["5000000","2","5000","10","http://exp-app1-service:81/experiment"],"env":null,"mounts":null,"ports":[{"containerPort":3333,"name":"tcp","protocol":"tcp","servicePort":"81","nodePort":"30002"}]}],"priority":0,"autoScheduled":false}' http://172.27.15.31:20000/doNewApplication
 ```
+
+### How to call this application?
+Send HTTP `GET` request to the port `:3333` and uri `/experiment`.
+```shell
+curl -i -X GET http://<IP>:3333/experiment
+```
+The application will put the **time consumed by the clouds** in the response body, which is from the time when this application receives the request to the time when it sends the response. The unit is `millisecond (ms)`.
