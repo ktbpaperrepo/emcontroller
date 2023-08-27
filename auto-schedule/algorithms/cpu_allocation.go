@@ -19,7 +19,7 @@ func allocateCpus(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Appli
 	// avoiding changing the original solution
 	solnWithCpu := asmodel.SolutionCopy(solnWithVm)
 
-	// We should allocate VMs cloud by cloud.
+	// We should allocate CPUs cloud by cloud.
 	for _, cloud := range clouds {
 		solnWithCpuThisCloud, acceptable := allocateCpusOneCloud(cloud, apps, appsOrder, solnWithVm)
 		if !acceptable { // if any cloud cannot accept the scheduled applications, this whole solution is not acceptable.
