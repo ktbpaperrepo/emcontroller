@@ -9,7 +9,7 @@ import (
 	asmodel "emcontroller/auto-schedule/model"
 )
 
-func TestInnerSetMaxReaRtt(t *testing.T) {
+func TestSetMaxReaRtt(t *testing.T) {
 	testCases := []struct {
 		name           string
 		m              *Mcssga
@@ -33,7 +33,7 @@ func TestInnerSetMaxReaRtt(t *testing.T) {
 	for i, testCase := range testCases {
 		t.Logf("test: %d, %s", i, testCase.name)
 		assert.InDelta(t, 0, testCase.m.MaxReachableRtt, testDelta, fmt.Sprintf("%s: result is not expected", testCase.name))
-		testCase.m.setMaxReaRtt(testCase.clouds)
+		testCase.m.SetMaxReaRtt(testCase.clouds)
 		assert.InDelta(t, testCase.expectedResult, testCase.m.MaxReachableRtt, testDelta, fmt.Sprintf("%s: result is not expected", testCase.name))
 	}
 }

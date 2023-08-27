@@ -13,6 +13,9 @@ import (
 	"emcontroller/models"
 )
 
+// when deploying an application group, user can use this HTTP header to choose the scheduling algorithm to use.
+const SAHeaderKey string = "Mcm-Scheduling-Algorithm"
+
 type AppGroupController struct {
 	beego.Controller
 }
@@ -45,7 +48,7 @@ func (c *AppGroupController) DoNewAppGroup() {
 
 // Used for json request, input is json
 // test command:
-// curl -i -X POST -H Content-Type:application/json -d '[ { "priority": 2, "autoScheduled": true, "name": "group-printtime", "replicas": 1, "hostNetwork": false, "containers": [ { "name": "printtime", "image": "172.27.15.31:5000/printtime:v1", "workDir": "/printtime", "resources": { "limits": { "memory": "30Mi", "cpu": "1.2", "storage": "2Gi" }, "requests": { "memory": "30Mi", "cpu": "1.2", "storage": "2Gi" } }, "commands": [ "bash" ], "args": [ "-c", "python3 -u main.py > $LOGFILE" ], "env": [ { "name": "PARAMETER1", "value": "testRenderenv1" }, { "name": "LOGFILE", "value": "/tmp/234/printtime.log" } ], "mounts": [ { "vmPath": "/tmp/asdff", "containerPath": "/tmp/234" }, { "vmPath": "/tmp/uyyyy", "containerPath": "/tmp/2345" } ] } ], "dependencies": [ { "appName": "group-nginx" }, { "appName": "group-ubuntu" } ] }, { "priority": 4, "autoScheduled": true, "name": "group-nginx", "replicas": 1, "hostNetwork": true, "containers": [ { "name": "nginx", "image": "172.27.15.31:5000/nginx:1.17.1", "workDir": "", "resources": { "limits": { "memory": "1024Mi", "cpu": "2.1", "storage": "20Gi" }, "requests": { "memory": "1024Mi", "cpu": "2.1", "storage": "20Gi" } }, "ports": [ { "containerPort": 80, "name": "fsd", "protocol": "tcp", "servicePort": "80", "nodePort": "30001" } ] } ], "dependencies": [ { "appName": "group-ubuntu" } ] }, { "priority": 4, "autoScheduled": true, "name": "group-ubuntu", "replicas": 1, "hostNetwork": true, "containers": [ { "name": "ubuntu", "image": "172.27.15.31:5000/ubuntu:latest", "workDir": "", "resources": { "limits": { "memory": "512Mi", "cpu": "2.1", "storage": "20Gi" }, "requests": { "memory": "512Mi", "cpu": "2.1", "storage": "20Gi" } }, "commands": [ "bash", "-c", "while true;do sleep 10;done" ], "args": null, "env": [ { "name": "asfasf", "value": "asfasf" }, { "name": "asdfsdf", "value": "sfsdf" } ], "mounts": [ { "vmPath": "/tmp/asdff", "containerPath": "/tmp/log" } ], "ports": null } ], "dependencies": [] } ]' http://localhost:20000/doNewAppGroup
+// curl -i -X POST -H Content-Type:application/json -H Mcm-Scheduling-Algorithm:Mcssga -d '[ { "priority": 2, "autoScheduled": true, "name": "group-printtime", "replicas": 1, "hostNetwork": false, "containers": [ { "name": "printtime", "image": "172.27.15.31:5000/printtime:v1", "workDir": "/printtime", "resources": { "limits": { "memory": "30Mi", "cpu": "1.2", "storage": "2Gi" }, "requests": { "memory": "30Mi", "cpu": "1.2", "storage": "2Gi" } }, "commands": [ "bash" ], "args": [ "-c", "python3 -u main.py > $LOGFILE" ], "env": [ { "name": "PARAMETER1", "value": "testRenderenv1" }, { "name": "LOGFILE", "value": "/tmp/234/printtime.log" } ], "mounts": [ { "vmPath": "/tmp/asdff", "containerPath": "/tmp/234" }, { "vmPath": "/tmp/uyyyy", "containerPath": "/tmp/2345" } ] } ], "dependencies": [ { "appName": "group-nginx" }, { "appName": "group-ubuntu" } ] }, { "priority": 4, "autoScheduled": true, "name": "group-nginx", "replicas": 1, "hostNetwork": true, "containers": [ { "name": "nginx", "image": "172.27.15.31:5000/nginx:1.17.1", "workDir": "", "resources": { "limits": { "memory": "1024Mi", "cpu": "2.1", "storage": "20Gi" }, "requests": { "memory": "1024Mi", "cpu": "2.1", "storage": "20Gi" } }, "ports": [ { "containerPort": 80, "name": "fsd", "protocol": "tcp", "servicePort": "80", "nodePort": "30001" } ] } ], "dependencies": [ { "appName": "group-ubuntu" } ] }, { "priority": 4, "autoScheduled": true, "name": "group-ubuntu", "replicas": 1, "hostNetwork": true, "containers": [ { "name": "ubuntu", "image": "172.27.15.31:5000/ubuntu:latest", "workDir": "", "resources": { "limits": { "memory": "512Mi", "cpu": "2.1", "storage": "20Gi" }, "requests": { "memory": "512Mi", "cpu": "2.1", "storage": "20Gi" } }, "commands": [ "bash", "-c", "while true;do sleep 10;done" ], "args": null, "env": [ { "name": "asfasf", "value": "asfasf" }, { "name": "asdfsdf", "value": "sfsdf" } ], "mounts": [ { "vmPath": "/tmp/asdff", "containerPath": "/tmp/log" } ], "ports": null } ], "dependencies": [] } ]' http://localhost:20000/doNewAppGroup
 func (c *AppGroupController) DoNewAppGroupJson() {
 	var apps []models.K8sApp
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &apps); err != nil {
@@ -60,7 +63,10 @@ func (c *AppGroupController) DoNewAppGroupJson() {
 
 	beego.Info(fmt.Sprintf("From json input, we successfully parsed applications [%+v]", apps))
 
-	outApps, err, statusCode := executors.CreateAutoScheduleApps(apps)
+	schedAlgorithm := c.Ctx.Request.Header.Get(SAHeaderKey)
+	beego.Info(fmt.Sprintf("The header %s is [%s]", SAHeaderKey, schedAlgorithm))
+
+	outApps, err, statusCode := executors.CreateAutoScheduleApps(apps, schedAlgorithm)
 	if err != nil {
 		outErr := fmt.Errorf("executors.CreateAutoScheduleApps(apps), error: %w", err)
 		beego.Error(outErr)

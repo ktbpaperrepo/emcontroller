@@ -59,7 +59,7 @@ func NewMcssga(chromosomesCount int, iterationCount int, crossoverProbability fl
 }
 
 // Traverse all clouds to find the max RTT between any 2 (or 1) reachable clouds, and set it as the MaxReachableRtt of Mcssga.
-func (m *Mcssga) setMaxReaRtt(clouds map[string]asmodel.Cloud) {
+func (m *Mcssga) SetMaxReaRtt(clouds map[string]asmodel.Cloud) {
 	var maxReaRtt float64 = 0
 	for _, srcCloud := range clouds {
 		for _, ns := range srcCloud.NetState {
@@ -73,7 +73,8 @@ func (m *Mcssga) setMaxReaRtt(clouds map[string]asmodel.Cloud) {
 }
 
 func (m *Mcssga) Schedule(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string) (asmodel.Solution, error) {
-	m.setMaxReaRtt(clouds)
+	beego.Info("Using scheduling algorithm:", McssgaName)
+	m.SetMaxReaRtt(clouds)
 	beego.Info("MaxReachableRtt:", m.MaxReachableRtt)
 
 	beego.Info("Clouds:")

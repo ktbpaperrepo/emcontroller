@@ -11,7 +11,8 @@ import (
 	"emcontroller/models"
 )
 
-func CreateAutoScheduleApps(apps []models.K8sApp) ([]models.AppInfo, error, int) {
+// algoName is the name of the scheduling algorithm to use.
+func CreateAutoScheduleApps(apps []models.K8sApp, algoName string) ([]models.AppInfo, error, int) {
 
 	// we only accept the valid applications, or otherwise we will have too much unnecessary workload
 	if errs := ValidateAutoScheduleApps(apps); len(errs) != 0 {
@@ -41,24 +42,49 @@ func CreateAutoScheduleApps(apps []models.K8sApp) ([]models.AppInfo, error, int)
 	//// for debug, sometimes, we need the fixed apps order to do some comparison.
 	//sort.Strings(appsOrder)
 
-	// call the Schedule method in mcasga.go
+	// call the Scheduling method according to the input parameter "algo"
+
+	// create algorithm instances, and put them in a map
 	mcssgaInstance := algorithms.NewMcssga(200, 5000, 0.3, 0.019, 200)
-	solution, err := mcssgaInstance.Schedule(cloudsForScheduling, appsForScheduling, appsOrder)
+	var allAlgos map[string]algorithms.SchedulingAlgorithm = make(map[string]algorithms.SchedulingAlgorithm)
+	allAlgos[algorithms.McssgaName] = mcssgaInstance
+	allAlgos[algorithms.CompRandName] = algorithms.NewCompRand()
+	allAlgos[algorithms.BERandName] = algorithms.NewBERand()
+
+	// select the algorithm to use according to the input parameter algoName
+	beego.Info(fmt.Sprintf("Looking for the algorithm \"%s\".", algoName))
+	var algoToUse algorithms.SchedulingAlgorithm
+	var algoNameToUse string = algoName
+	if algo, exist := allAlgos[algoName]; exist {
+		beego.Info(fmt.Sprintf("Algorithm \"%s\" is found.", algoName))
+		algoToUse = algo
+	} else { // if we cannot find the input algoName, we use MCASSGA algorithm by default.
+		algoNameToUse = algorithms.McssgaName
+		beego.Info(fmt.Sprintf("Algorithm \"%s\" is not found, so we use \"%s\" by default.", algoName, algoNameToUse))
+		algoToUse = mcssgaInstance
+	}
+
+	solution, err := algoToUse.Schedule(cloudsForScheduling, appsForScheduling, appsOrder)
 	if err != nil {
-		outErr := fmt.Errorf("Run the Schedule method of Mcssga, Error: [%w]", err)
+		outErr := fmt.Errorf("Run the Schedule method of %s, Error: [%w]", algoNameToUse, err)
 		beego.Error(outErr)
 		return []models.AppInfo{}, outErr, http.StatusInternalServerError
 	}
+
+	// If we did not use Mcssga to schedule apps, now its max rtt has not been set, so we should set it now to calculate the fitness value in the following log.
+	mcssgaInstance.SetMaxReaRtt(cloudsForScheduling)
 	beego.Info(fmt.Sprintf("The algorithm works out the solution: %s\nIts fitness value is %g.", models.JsonString(solution), mcssgaInstance.Fitness(cloudsForScheduling, appsForScheduling, solution)))
 
 	//// for debug
-	//mcssgaInstance.DrawEvoChart()
+	//if mcssgaAlgo, ok := algoToUse.(*algorithms.Mcssga); ok {
+	//	mcssgaAlgo.DrawEvoChart()
+	//}
 	//return []models.AppInfo{}, nil, http.StatusCreated
 
 	/**
 	TODO:
-	1. clean up unused VMs automatically;
-	2. migration: I set a lock, migration and deployment (or multiple deployments) cannot be done at the same time. When doing migration, we skip the resources occupied by the applications to be migrated, and count them as the VM resources. When the resources are not enough, the rolling update may be blocked, because the new pods cannot be created. Maybe I can make a dependency topo-sort to avoid it. Next meeting, I need to discuss this with Preben and Sokol, about whether should I put the migration into this paper or the next paper.
+	migration: I set a lock, migration and deployment (or multiple deployments) cannot be done at the same time. When doing migration, we skip the resources occupied by the applications to be migrated, and count them as the VM resources. When the resources are not enough, the rolling update may be blocked, because the new pods cannot be created. Maybe I can make a dependency topo-sort to avoid it.
+	I will put the migration into the next paper.
 	*/
 
 	// create the VMs and add them to Kubernetes
