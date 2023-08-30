@@ -3,10 +3,11 @@ package application_generator
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/KeepTheBeats/routing-algorithms/random"
 	"io"
 	"net/http"
 	"sort"
+
+	"github.com/KeepTheBeats/routing-algorithms/random"
 
 	asmodel "emcontroller/auto-schedule/model"
 	"emcontroller/models"
@@ -132,7 +133,7 @@ const (
 	minNodePort int = 30000
 	maxNodePort int = 32768
 
-	mcmEndpoint string = "localhost:20000"
+	mcmEndpoint string = "172.27.15.31:20000"
 
 	workload  int    = 5000000 //input value of cumulative sum
 	exptImage string = "172.27.15.31:5000/mcexp:20230824"
@@ -264,9 +265,11 @@ func MakeExperimentApps(namePrefix string, count int) ([]models.K8sApp, error) {
 	sort.Sort(depGenHelperSlice(depHelpers))
 
 	for i := 0; i < len(depHelpers); i++ {
+		// according to an existing paper, I use 16/196=0.0816 as the possibility that one application depends on another.
+		depPoss := float64(16) / float64(196)
 		for j := i + 1; j < len(depHelpers); j++ {
-			// according to an existing paper, I use 16/196*2=0.1633 as the possibility that one application depends on another.
-			if random.RandomFloat64(0, 1) < float64(16)/float64(196)*float64(2) {
+			if random.RandomFloat64(0, 1) < depPoss {
+				depPoss /= 4 // the more dependencies an app has, the lower possibility it can have more deps.
 				// this will be read by the scheduling algorithm.
 				outApps[depHelpers[i].oriIdx].Dependencies = append(outApps[depHelpers[i].oriIdx].Dependencies, models.Dependency{AppName: depHelpers[j].appName})
 				// this is to let the app access its dependent ones

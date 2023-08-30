@@ -3,6 +3,7 @@ package algorithms
 import (
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"strconv"
 
@@ -22,6 +23,13 @@ In our fitness function, we do not need to consider to make unacceptable chromos
 Instead, in our init function, mutation selector, crossover selector, we should guarantee that all generated solutions/chromosomes are acceptable. For mutation and crossover if we get an unacceptable solution, we can repeat, excluding the generated unacceptable ones, until we get an acceptable solution.
 */
 
+// TODO: currently, this is measured. In the future, this may be able to:
+// possibility 1. be set by a dedicated user request;
+// possibility 2. be set in the user request for auto-scheduling;
+// possibility 3. be set for every application separately;
+// const expAppCompuTimeOneCpu float64 = 50
+const expAppCompuTimeOneCpu float64 = 12
+
 // Multi-Cloud Service Scheduling Genetic Algorithm (MCSSGA)
 type Mcssga struct {
 	ChromosomesCount     int // One chromosome is a solution
@@ -33,7 +41,9 @@ type Mcssga struct {
 	StopNoUpdateIteration int
 	CurNoUpdateIteration  int // record how many iterations the best solution has not updated currently.
 
-	MaxReachableRtt float64 // The biggest RTT between any 2 (or 1) reachable clouds, used to calculate fitness values.
+	MaxReachableRtt       float64            // The biggest RTT between any 2 (or 1) reachable clouds, used to calculate fitness values. unit millisecond (ms)
+	ExpAppCompuTimeOneCpu float64            // the expected computation time of every application by one CPU core.  unit millisecond (ms)
+	FitnessDp             map[string]float64 // the record for dynamic programming in Fitness calculation, to reduce the scheduling time.
 
 	// these 2 member variables record the best solution in all iteration as well as its fitness value
 	BestFitnessRecords []float64
@@ -52,6 +62,7 @@ func NewMcssga(chromosomesCount int, iterationCount int, crossoverProbability fl
 		StopNoUpdateIteration: stopNoUpdateIteration,
 		CurNoUpdateIteration:  0,
 		MaxReachableRtt:       0,
+		ExpAppCompuTimeOneCpu: expAppCompuTimeOneCpu,
 		BestFitnessRecords:    nil,
 		BestSolnRecords:       nil,
 		BestFitnessEachIter:   nil,
@@ -367,8 +378,8 @@ func (m *Mcssga) selectionOperator(clouds map[string]asmodel.Cloud, apps map[str
 	pickHelper := make([]int, len(fitnesses)) // for binary tournament selection
 
 	// to record the solution with the highest fitness value in the new population generated in this iteration
-	var bestFitThisIter float64 = -maxAccRttMs // initialized with a very small value
-	var bestFitThisIterIdx int = 0             // the index of the solution with the highest fitness value in the old population
+	var bestFitThisIter float64 = -math.MaxFloat64 // initialized with a very small value
+	var bestFitThisIterIdx int = 0                 // the index of the solution with the highest fitness value in the old population
 
 	// in every population, there should be m.ChromosomesCount chromosomes
 	for i := 0; i < m.ChromosomesCount; i++ {
@@ -431,10 +442,9 @@ func (m *Mcssga) selectionOperator(clouds map[string]asmodel.Cloud, apps map[str
 func (m *Mcssga) Fitness(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, chromosome asmodel.Solution) float64 {
 	var fitnessValue float64
 
+	m.FitnessDp = make(map[string]float64) // clear the dp record
 	for appName, _ := range apps {
-		if chromosome.AppsSolution[appName].Accepted { // only accepted applications can contribute to the fitness
-			fitnessValue += m.fitnessOneApp(clouds, apps, chromosome, appName)
-		}
+		fitnessValue += m.fitnessOneApp(clouds, apps, chromosome, appName)
 	}
 
 	return fitnessValue
@@ -442,16 +452,36 @@ func (m *Mcssga) Fitness(clouds map[string]asmodel.Cloud, apps map[string]asmode
 
 // calculate the fitness value contributed by an application
 func (m *Mcssga) fitnessOneApp(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, chromosome asmodel.Solution, thisAppName string) float64 {
-	var thisAppFitness float64 // result
+
+	// dynamic programming to reduce the scheduling time
+	if recordedFitness, exist := m.FitnessDp[thisAppName]; exist {
+		return recordedFitness
+	}
 
 	thisPri := apps[thisAppName].Priority // the fitness values should be weighted by applications' priorities.
-	depNum := float64(len(apps[thisAppName].Dependencies))
-	if depNum > 0 {
-		// If this application has dependencies, we calculate the sum of the fitness contributed by all dependencies, and then calculate the average value.
 
-		var sumAllDeps float64 = 0
+	var thisAppFitness float64 // result
+
+	// if an application is rejected, it contributes a negative fitness value
+	if !chromosome.AppsSolution[thisAppName].Accepted {
+		thisAppFitness = -(m.ExpAppCompuTimeOneCpu + m.MaxReachableRtt) * float64(thisPri)
+	} else {
 
 		// if this app is accepted, all its dependent apps are also accepted, which is guaranteed by our dependency acceptable check
+
+		// calculate the computation part of this application
+		thisAlloCpu := chromosome.AppsSolution[thisAppName].AllocatedCpuCore
+		thisReqCpu := apps[thisAppName].Resources.CpuCore
+		// the maximum possible computation part of fitness of an application without priority should be "m.ExpAppCompuTimeOneCpu"
+		thisAppPart := m.ExpAppCompuTimeOneCpu * (thisAlloCpu / thisReqCpu)
+
+		/**
+		If this application does not have dependencies, its fitness will only be affected by itself.
+		if this application has dependencies, its fitness will be affected by all its dependent apps and their dependent apps, so this is a recursive function.
+		If this application has dependencies, we calculate the sum of the fitness contributed by all dependencies, but do not calculate the average value, because in practice all dependencies should be accessed.
+		*/
+
+		var sumAllDeps float64 = 0
 		for _, dep := range apps[thisAppName].Dependencies {
 			depAppName := dep.AppName
 
@@ -470,40 +500,19 @@ func (m *Mcssga) fitnessOneApp(clouds map[string]asmodel.Cloud, apps map[string]
 			}
 			netPart := m.MaxReachableRtt - thisRtt
 
-			// calculate this application's computation part of the fitness value of this dependency
-			thisAlloCpu := chromosome.AppsSolution[thisAppName].AllocatedCpuCore
-			thisReqCpu := apps[thisAppName].Resources.CpuCore
+			// calculate the dependent application's fitness value, including its computation part, network part, and dependent apps part.
+			depAppPart := m.fitnessOneApp(clouds, apps, chromosome, depAppName)
 
-			thisAppPart := m.MaxReachableRtt * (thisAlloCpu / thisReqCpu)
-
-			// calculate the dependent application's computation part of the fitness value of this dependency
-			depAlloCpu := chromosome.AppsSolution[depAppName].AllocatedCpuCore
-			depReqCpu := apps[depAppName].Resources.CpuCore
-
-			depAppPart := m.MaxReachableRtt * (depAlloCpu / depReqCpu)
-
-			// add the 3 parts of the fitness value of this dependency to the sum
-			thisDepFitness := (netPart + thisAppPart + depAppPart) / 3
+			// add the 2 parts of the fitness value of this dependency to the sum
+			thisDepFitness := netPart + depAppPart
 			sumAllDeps += thisDepFitness
-
 		}
 
-		// weighted by applications' priorities.
-		// the maximum possible fitness of an application without priority should be "max reachable RTT"
-		thisAppFitness = sumAllDeps / depNum * float64(thisPri)
-	} else {
-		// If this application does not have dependencies, its fitness will only be contributed by itself.
-
-		thisAlloCpu := chromosome.AppsSolution[thisAppName].AllocatedCpuCore
-		thisReqCpu := apps[thisAppName].Resources.CpuCore
-
-		thisAppPart := m.MaxReachableRtt * (thisAlloCpu / thisReqCpu)
-
-		// weighted by applications' priorities.
-		// the maximum possible fitness of an application without priority should be "max reachable RTT"
-		thisAppFitness = thisAppPart * float64(thisPri)
+		// For an app without dependencies, sumAllDeps will be 0.
+		thisAppFitness = (thisAppPart + sumAllDeps) * float64(thisPri) // weighted by applications' priorities.
 	}
 
+	m.FitnessDp[thisAppName] = thisAppFitness
 	return thisAppFitness
 }
 
