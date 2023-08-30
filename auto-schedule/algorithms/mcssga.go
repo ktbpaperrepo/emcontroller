@@ -376,7 +376,7 @@ func (m *Mcssga) selectionOperator(clouds map[string]asmodel.Cloud, apps map[str
 
 		// binary tournament selection
 		picked := random.RandomPickN(pickHelper, 2)
-		if fitnesses[picked[0]] > fitnesses[picked[1]] {
+		if fitnesses[picked[0]] > fitnesses[picked[1]] { // the larger, the better
 			selChrIdx = picked[0]
 		} else {
 			selChrIdx = picked[1]
@@ -432,7 +432,9 @@ func (m *Mcssga) Fitness(clouds map[string]asmodel.Cloud, apps map[string]asmode
 	var fitnessValue float64
 
 	for appName, _ := range apps {
-		fitnessValue += m.fitnessOneApp(clouds, apps, chromosome, appName)
+		if chromosome.AppsSolution[appName].Accepted { // only accepted applications can contribute to the fitness
+			fitnessValue += m.fitnessOneApp(clouds, apps, chromosome, appName)
+		}
 	}
 
 	return fitnessValue
@@ -449,6 +451,7 @@ func (m *Mcssga) fitnessOneApp(clouds map[string]asmodel.Cloud, apps map[string]
 
 		var sumAllDeps float64 = 0
 
+		// if this app is accepted, all its dependent apps are also accepted, which is guaranteed by our dependency acceptable check
 		for _, dep := range apps[thisAppName].Dependencies {
 			depAppName := dep.AppName
 
