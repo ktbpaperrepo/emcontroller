@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -61,9 +62,9 @@ func TestGenK8sNodeFromPods(t *testing.T) {
 			expectedResult: K8sNode{
 				Name: "n8test",
 				ResidualResources: GenericResources{
-					CpuCore: 2.9,
-					Memory:  6668,
-					Storage: 150,
+					CpuCore: math.Max(models.CalcVmAvailVcpu(4)-0.1, 0),
+					Memory:  math.Max(models.CalcVmAvailRamMiB(8192)-500, 0),
+					Storage: math.Max(models.CalcVmAvailStorGiB(200)-10, 0),
 				},
 			},
 		},
@@ -130,9 +131,9 @@ func TestGenK8sNodeFromPods(t *testing.T) {
 			expectedResult: K8sNode{
 				Name: "n8test",
 				ResidualResources: GenericResources{
-					CpuCore: 1.7,
-					Memory:  6002,
-					Storage: 143,
+					CpuCore: math.Max(models.CalcVmAvailVcpu(4)-0.1-1.2, 0),
+					Memory:  math.Max(models.CalcVmAvailRamMiB(8192)-500-666, 0),
+					Storage: math.Max(models.CalcVmAvailStorGiB(200)-10-7, 0),
 				},
 			},
 		},
@@ -257,9 +258,9 @@ func TestGenK8sNodeFromApps(t *testing.T) {
 			expectedResult: K8sNode{
 				Name: "n8test",
 				ResidualResources: GenericResources{
-					CpuCore: 12.7,
-					Memory:  5154,
-					Storage: 160,
+					CpuCore: math.Max(models.CalcVmAvailVcpu(20)-3.9-2.4, 0),
+					Memory:  math.Max(models.CalcVmAvailRamMiB(8192)-990-1024, 0),
+					Storage: math.Max(models.CalcVmAvailStorGiB(230)-10-15, 0),
 				},
 			},
 		},
@@ -366,9 +367,9 @@ func TestGenK8sNodeFromApps(t *testing.T) {
 			expectedResult: K8sNode{
 				Name: "n8test",
 				ResidualResources: GenericResources{
-					CpuCore: 10.7,
-					Memory:  4614,
-					Storage: 145,
+					CpuCore: math.Max(models.CalcVmAvailVcpu(20)-3.9-2.4-2.0, 0),
+					Memory:  math.Max(models.CalcVmAvailRamMiB(8192)-990-1024-540, 0),
+					Storage: math.Max(models.CalcVmAvailStorGiB(230)-10-15-15, 0),
 				},
 			},
 		},
