@@ -21,7 +21,11 @@ func NewBERand() *BERand {
 
 func (m *BERand) Schedule(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string) (asmodel.Solution, error) {
 	beego.Info("Using scheduling algorithm:", BERandName)
+	return CmpRandomAcceptMostSolution(clouds, apps, appsOrder), nil
+}
 
+// Generate a solution randomly, doing the best to accept more applications, the different with that in Mcssga is that this method uses CmpRefineSoln method to refine solutions.
+func CmpRandomAcceptMostSolution(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string) asmodel.Solution {
 	// initialize an all-reject solution with all applications rejected.
 	var solution asmodel.Solution = asmodel.GenEmptySoln()
 	for _, app := range apps {
@@ -68,5 +72,5 @@ func (m *BERand) Schedule(clouds map[string]asmodel.Cloud, apps map[string]asmod
 		delete(untriedApps, pickedAppName)
 	}
 
-	return solution, nil
+	return solution
 }

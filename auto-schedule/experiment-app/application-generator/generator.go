@@ -189,7 +189,7 @@ func getAllApps(mcmEp string) ([]models.AppInfo, error) {
 }
 
 // make applications for experiments
-func MakeExperimentApps(namePrefix string, count int) ([]models.K8sApp, error) {
+func MakeExperimentApps(namePrefix string, count int, depDivisor float64) ([]models.K8sApp, error) {
 	outApps := make([]models.K8sApp, count)
 
 	occNodePorts, err := getOccupiedNodePorts(mcmEndpoint)
@@ -271,7 +271,7 @@ func MakeExperimentApps(namePrefix string, count int) ([]models.K8sApp, error) {
 		depPoss := float64(16) / float64(196)
 		for j := i + 1; j < len(depHelpers); j++ {
 			if random.RandomFloat64(0, 1) < depPoss {
-				depPoss /= 4 // the more dependencies an app has, the lower possibility it can have more deps.
+				depPoss /= depDivisor // the more dependencies an app has, the lower possibility it can have more deps.
 				// this will be read by the scheduling algorithm.
 				outApps[depHelpers[i].oriIdx].Dependencies = append(outApps[depHelpers[i].oriIdx].Dependencies, models.Dependency{AppName: depHelpers[j].appName})
 				// this is to let the app access its dependent ones

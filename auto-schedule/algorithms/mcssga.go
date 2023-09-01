@@ -28,7 +28,7 @@ Instead, in our init function, mutation selector, crossover selector, we should 
 // possibility 2. be set in the user request for auto-scheduling;
 // possibility 3. be set for every application separately;
 // const expAppCompuTimeOneCpu float64 = 50
-const expAppCompuTimeOneCpu float64 = 12
+const expAppCompuTimeOneCpu float64 = 35
 
 // Multi-Cloud Service Scheduling Genetic Algorithm (MCSSGA)
 type Mcssga struct {

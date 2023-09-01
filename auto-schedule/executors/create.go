@@ -42,14 +42,22 @@ func CreateAutoScheduleApps(apps []models.K8sApp, algoName string) ([]models.App
 	//// for debug, sometimes, we need the fixed apps order to do some comparison.
 	//sort.Strings(appsOrder)
 
+	// the parameters for genetic algorithms
+	var chromosomesCount int = 200
+	var iterationCount int = 5000
+	var crossoverProbability float64 = 0.3
+	var mutationProbability float64 = 0.019
+	var stopNoUpdateIteration int = 200
+
 	// call the Scheduling method according to the input parameter "algo"
 
 	// create algorithm instances, and put them in a map
-	mcssgaInstance := algorithms.NewMcssga(200, 5000, 0.3, 0.019, 200)
+	mcssgaInstance := algorithms.NewMcssga(chromosomesCount, iterationCount, crossoverProbability, mutationProbability, stopNoUpdateIteration)
 	var allAlgos map[string]algorithms.SchedulingAlgorithm = make(map[string]algorithms.SchedulingAlgorithm)
 	allAlgos[algorithms.McssgaName] = mcssgaInstance
 	allAlgos[algorithms.CompRandName] = algorithms.NewCompRand()
 	allAlgos[algorithms.BERandName] = algorithms.NewBERand()
+	allAlgos[algorithms.AmagaName] = algorithms.NewAmaga(chromosomesCount, iterationCount, crossoverProbability, mutationProbability, stopNoUpdateIteration)
 
 	// select the algorithm to use according to the input parameter algoName
 	beego.Info(fmt.Sprintf("Looking for the algorithm \"%s\".", algoName))
@@ -76,8 +84,15 @@ func CreateAutoScheduleApps(apps []models.K8sApp, algoName string) ([]models.App
 	beego.Info(fmt.Sprintf("The algorithm works out the solution: %s\nIts fitness value is %g.", models.JsonString(solution), mcssgaInstance.Fitness(cloudsForScheduling, appsForScheduling, solution)))
 
 	//// for debug
-	//if mcssgaAlgo, ok := algoToUse.(*algorithms.Mcssga); ok {
-	//	mcssgaAlgo.DrawEvoChart()
+	////if mcssgaAlgo, ok := algoToUse.(*algorithms.Mcssga); ok {
+	////	mcssgaAlgo.DrawEvoChart()
+	////}
+	//switch realAlgo := algoToUse.(type) {
+	//case *algorithms.Mcssga:
+	//	realAlgo.DrawEvoChart()
+	//case *algorithms.Amaga:
+	//	realAlgo.DrawEvoChart()
+	//default:
 	//}
 	//return []models.AppInfo{}, nil, http.StatusCreated
 
