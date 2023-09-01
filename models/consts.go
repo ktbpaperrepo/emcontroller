@@ -53,6 +53,7 @@ const (
 	// Now, what I know is that auto-schedule will use them, and maybe other functioins also need them.
 	ReservedCPULogicCore      float64 = 1
 	ReservedRamMiB            float64 = 1024
+	ReservedRamMiBPercentage  float64 = 0.1
 	ReservedStorageGiB        float64 = 10
 	ReservedStoragePercentage float64 = 0.25 // for the storage we should reserve "totalStorage * ReservedStoragePercentage + ReservedStorageGiB"
 	// We use percentage to reserve storage, because:

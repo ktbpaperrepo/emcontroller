@@ -46,7 +46,7 @@ func TestCalcVmAvailRamMiB(t *testing.T) {
 		{
 			name:           "case1",
 			totalRamMiB:    16384,
-			expectedResult: 15360,
+			expectedResult: 13721,
 		},
 		{
 			name:           "case2",
@@ -56,12 +56,12 @@ func TestCalcVmAvailRamMiB(t *testing.T) {
 		{
 			name:           "case decimal 1",
 			totalRamMiB:    16384.7,
-			expectedResult: 15360,
+			expectedResult: 13722,
 		},
 		{
 			name:           "case decimal 2",
 			totalRamMiB:    16384.2,
-			expectedResult: 15360,
+			expectedResult: 13721,
 		},
 	}
 
@@ -146,22 +146,22 @@ func TestCalcVmTotalRamMiB(t *testing.T) {
 		{
 			name:           "case1",
 			availRamMiB:    16384,
-			expectedResult: 17408,
+			expectedResult: 19343,
 		},
 		{
 			name:           "case2",
 			availRamMiB:    0,
-			expectedResult: 1024,
+			expectedResult: 1138,
 		},
 		{
 			name:           "case decimal 1",
 			availRamMiB:    16384.7,
-			expectedResult: 17409,
+			expectedResult: 19343,
 		},
 		{
 			name:           "case decimal 2",
 			availRamMiB:    16384.2,
-			expectedResult: 17409,
+			expectedResult: 19343,
 		},
 	}
 

@@ -97,7 +97,7 @@ func CalcVmAvailVcpu(totalVcpu float64) float64 {
 
 // Calculate the available Memory (MiB) of a VM
 func CalcVmAvailRamMiB(totalRamMiB float64) float64 {
-	provisionalResult := math.Floor(totalRamMiB - ReservedRamMiB)
+	provisionalResult := math.Floor(totalRamMiB - (totalRamMiB*ReservedRamMiBPercentage + ReservedRamMiB))
 	if provisionalResult < 0 {
 		provisionalResult = 0
 	}
@@ -124,7 +124,7 @@ func CalcVmTotalVcpu(availVcpu float64) float64 {
 
 // Calculate the needed total Memory (MiB) of a VM from its needed available Memory (MiB)
 func CalcVmTotalRamMiB(availRamMiB float64) float64 {
-	return math.Ceil(availRamMiB + ReservedRamMiB)
+	return math.Ceil((availRamMiB + ReservedRamMiB) / (1.0 - ReservedRamMiBPercentage))
 }
 
 // Calculate the needed total Storage (GiB) of a VM from its needed available Storage (GiB)
