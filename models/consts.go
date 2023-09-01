@@ -20,7 +20,7 @@ const (
 	ProxmoxIaas   string = "proxmox"
 
 	McmSign        string = "mcmcreated" // add this sign something, meaning that it is created by multi-cloud manager
-	WaitForTimeOut int    = 600          // unit second. wait for 10 minutes when creating or deleting something
+	WaitForTimeOut int    = 1800         // unit second. wait for 30 minutes when creating or deleting something. At first, it was 10 minutes, but Proxmox often use more than 10 minutes to clone a VM, so I changed this to 30 minutes.
 
 	SshUser     string        = "ubuntu"
 	SshRootUser string        = "root"
