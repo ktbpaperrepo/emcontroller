@@ -114,6 +114,7 @@ type appRes struct {
 	storage int // unit GiB
 }
 
+// from real applications or applications in the experiments of existing papers
 var appsToChoose []appRes = []appRes{
 	appRes{name: "existingPaperApp1", cpu: 2, memory: 1024, storage: 8},
 	appRes{name: "existingPaperApp2", cpu: 2, memory: 1024, storage: 4},
@@ -135,10 +136,10 @@ const (
 
 	mcmEndpoint string = "172.27.15.31:20000"
 
-	workload  int    = 5000000 //input value of cumulative sum
-	exptImage string = "172.27.15.31:5000/mcexp:20230824"
-	baseCmd   string = "./experiment-app"
-	svcPort   int    = 81
+	defaultWorkload int    = 5000000 // input value of cumulative sum
+	exptImage       string = "172.27.15.31:5000/mcexp:20230824"
+	baseCmd         string = "./experiment-app"
+	svcPort         int    = 81
 )
 
 // call multi-cloud manager API to get all occupied nodePorts. The input parameter is the endpoint (IP:port) of multi-cloud manager
@@ -224,6 +225,7 @@ func MakeExperimentApps(namePrefix string, count int) ([]models.K8sApp, error) {
 
 		// randomly generate a priority between the min and max values
 		outApps[i].Priority = random.RandomInt(asmodel.MinPriority, asmodel.MaxPriority)
+		workload := int(random.NormalRandomBM(55000, 1415000, 381475, 352936)) // measured from real applications
 
 		outApps[i].Containers = []models.K8sContainer{
 			models.K8sContainer{
