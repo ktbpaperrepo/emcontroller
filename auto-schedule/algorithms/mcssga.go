@@ -96,9 +96,9 @@ func (m *Mcssga) Schedule(clouds map[string]asmodel.Cloud, apps map[string]asmod
 	for _, app := range apps {
 		beego.Info(models.JsonString(app))
 	}
-	//beego.Info("Applications:", models.JsonString(apps))
-	//beego.Info("Clouds:", models.JsonString(clouds))
-	//beego.Info("appsOrder:", models.JsonString(appsOrder))
+	beego.Info("Applications:", models.JsonString(apps))
+	beego.Info("Clouds:", models.JsonString(clouds))
+	beego.Info("appsOrder:", models.JsonString(appsOrder))
 
 	// randomly generate the init population
 	var initPopulation []asmodel.Solution = m.initialize(clouds, apps, appsOrder)
