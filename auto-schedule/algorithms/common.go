@@ -23,7 +23,7 @@ const (
 	McssgaName   string = "Mcssga"
 	CompRandName string = "CompRand"
 	BERandName   string = "BERand"
-	AmagaName    string = "Amaga"
+	AmpgaName    string = "Ampga"
 )
 
 var (

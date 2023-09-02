@@ -58,7 +58,7 @@ func CreateAutoScheduleApps(apps []models.K8sApp, algoName string) ([]models.App
 	allAlgos[algorithms.McssgaName] = mcssgaInstance
 	allAlgos[algorithms.CompRandName] = algorithms.NewCompRand()
 	allAlgos[algorithms.BERandName] = algorithms.NewBERand()
-	allAlgos[algorithms.AmagaName] = algorithms.NewAmaga(chromosomesCount, iterationCount, crossoverProbability, mutationProbability, stopNoUpdateIteration)
+	allAlgos[algorithms.AmpgaName] = algorithms.NewApaga(chromosomesCount, iterationCount, crossoverProbability, mutationProbability, stopNoUpdateIteration)
 
 	// select the algorithm to use according to the input parameter algoName
 	beego.Info(fmt.Sprintf("Looking for the algorithm \"%s\".", algoName))
@@ -91,7 +91,7 @@ func CreateAutoScheduleApps(apps []models.K8sApp, algoName string) ([]models.App
 	//switch realAlgo := algoToUse.(type) {
 	//case *algorithms.Mcssga:
 	//	realAlgo.DrawEvoChart()
-	//case *algorithms.Amaga:
+	//case *algorithms.Ampga:
 	//	realAlgo.DrawEvoChart()
 	//default:
 	//}

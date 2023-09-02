@@ -15,12 +15,12 @@ import (
 )
 
 /**
-An algorithm for comparison, with name "Accept More Applications Genetic Algorithm (AMAGA)". This algorithm only aim at accepting as more applications as possible, and it is a genetic algorithm.
+An algorithm for comparison, with name "Accept More Priority Genetic Algorithm (AMPGA)". This algorithm only aim at accepting as more high-priority applications as possible, and it is a genetic algorithm.
 In the experiment, we will compare MCSSGA with this algorithm.
 */
 
-// Accept More Applications Genetic Algorithm (AMAGA)
-type Amaga struct {
+// Accept More Priority Genetic Algorithm (AMPGA)
+type Ampga struct {
 	ChromosomesCount     int // One chromosome is a solution
 	IterationCount       int // In each iteration, a population will be generated. One population consists of some solutions.
 	CrossoverProbability float64
@@ -38,8 +38,8 @@ type Amaga struct {
 	BestFitnessEachIter []float64
 }
 
-func NewAmaga(chromosomesCount int, iterationCount int, crossoverProbability float64, mutationProbability float64, stopNoUpdateIteration int) *Amaga {
-	return &Amaga{
+func NewApaga(chromosomesCount int, iterationCount int, crossoverProbability float64, mutationProbability float64, stopNoUpdateIteration int) *Ampga {
+	return &Ampga{
 		ChromosomesCount:      chromosomesCount,
 		IterationCount:        iterationCount,
 		CrossoverProbability:  crossoverProbability,
@@ -52,8 +52,8 @@ func NewAmaga(chromosomesCount int, iterationCount int, crossoverProbability flo
 	}
 }
 
-func (a *Amaga) Schedule(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string) (asmodel.Solution, error) {
-	beego.Info("Using scheduling algorithm:", AmagaName)
+func (a *Ampga) Schedule(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string) (asmodel.Solution, error) {
+	beego.Info("Using scheduling algorithm:", AmpgaName)
 
 	// randomly generate the init population
 	var initPopulation []asmodel.Solution = a.initialize(clouds, apps, appsOrder)
@@ -83,7 +83,7 @@ func (a *Amaga) Schedule(clouds map[string]asmodel.Cloud, apps map[string]asmode
 }
 
 // use "best effort random" method to generate some solutions as the init population
-func (a *Amaga) initialize(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string) []asmodel.Solution {
+func (a *Ampga) initialize(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string) []asmodel.Solution {
 	var initPopulation []asmodel.Solution
 	for i := 0; i < a.ChromosomesCount; i++ {
 		var oneSolution asmodel.Solution = CmpRandomAcceptMostSolution(clouds, apps, appsOrder)
@@ -94,7 +94,7 @@ func (a *Amaga) initialize(clouds map[string]asmodel.Cloud, apps map[string]asmo
 }
 
 // the selection operator of Genetic Algorithm
-func (a *Amaga) selectionOperator(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, population []asmodel.Solution) []asmodel.Solution {
+func (a *Ampga) selectionOperator(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, population []asmodel.Solution) []asmodel.Solution {
 
 	// calculate the fitness of every chromosome in the current (old) population
 	fitnesses := make([]float64, len(population))
@@ -170,12 +170,12 @@ func (a *Amaga) selectionOperator(clouds map[string]asmodel.Cloud, apps map[stri
 }
 
 // the fitness function of this algorithm
-func (a *Amaga) Fitness(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, chromosome asmodel.Solution) float64 {
+func (a *Ampga) Fitness(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, chromosome asmodel.Solution) float64 {
 	var fitnessValue float64
 
-	for appName, _ := range apps {
+	for appName, app := range apps {
 		if chromosome.AppsSolution[appName].Accepted { // This algorithm only aim at accepting as more applications as possible.
-			fitnessValue += 1
+			fitnessValue += float64(app.Priority)
 		}
 	}
 
@@ -183,7 +183,7 @@ func (a *Amaga) Fitness(clouds map[string]asmodel.Cloud, apps map[string]asmodel
 }
 
 // the crossover operator of Genetic Algorithm.
-func (a *Amaga) crossoverOperator(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string, population []asmodel.Solution) []asmodel.Solution {
+func (a *Ampga) crossoverOperator(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string, population []asmodel.Solution) []asmodel.Solution {
 	// If a chromosome has less than 2 genes, we cannot do crossover.
 	if len(apps) <= 1 {
 		return population
@@ -255,7 +255,7 @@ func (a *Amaga) crossoverOperator(clouds map[string]asmodel.Cloud, apps map[stri
 }
 
 // the mutation operator of Genetic Algorithm
-func (a *Amaga) mutationOperator(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string, population []asmodel.Solution) []asmodel.Solution {
+func (a *Ampga) mutationOperator(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string, population []asmodel.Solution) []asmodel.Solution {
 	var mutatedPopulation []asmodel.Solution = make([]asmodel.Solution, len(population))
 
 	for i := 0; i < len(population); i++ { // a chromosome
@@ -291,7 +291,7 @@ func (a *Amaga) mutationOperator(clouds map[string]asmodel.Cloud, apps map[strin
 }
 
 // The function to mutate a gene. After the mutation, a gene should become a different one, unless it is not accepted originally.
-func (a *Amaga) geneMutate(clouds map[string]asmodel.Cloud, ori asmodel.SingleAppSolution) asmodel.SingleAppSolution {
+func (a *Ampga) geneMutate(clouds map[string]asmodel.Cloud, ori asmodel.SingleAppSolution) asmodel.SingleAppSolution {
 	var mutated asmodel.SingleAppSolution = asmodel.SasCopy(asmodel.RejSoln)
 
 	cloudsToPick := asmodel.CloudMapCopy(clouds)
@@ -308,7 +308,7 @@ func (a *Amaga) geneMutate(clouds map[string]asmodel.Cloud, ori asmodel.SingleAp
 }
 
 // draw a.BestFitnessEachIter and a.BestFitnessRecords on a line chart, to show the evolution trend
-func (a *Amaga) DrawEvoChart() {
+func (a *Ampga) DrawEvoChart() {
 	var drawChartFunc func(http.ResponseWriter, *http.Request) = func(res http.ResponseWriter, r *http.Request) {
 		var xValuesAllBest []float64
 		for i, _ := range a.BestFitnessRecords {
