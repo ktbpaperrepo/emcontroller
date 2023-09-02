@@ -1,0 +1,5 @@
+Algorithm Name,Scheduling Request Count,Usable Solution Count,Total App Count,Total Accepted App Count,Total App Priority,Total Accepted App Priority,Solution Usable Rate,App Acceptance Rate,App Priority Weighted Acceptance Rate
+CompRand,3,0,180,0,976,0,0,0,0
+BERand,3,3,180,62,976,489,1,0.34444444444444444,0.5010245901639344
+Ampga,3,3,180,128,976,828,1,0.7111111111111111,0.8483606557377049
+Mcssga,3,3,180,132,976,798,1,0.7333333333333333,0.8176229508196722

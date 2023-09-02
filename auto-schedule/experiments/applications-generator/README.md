@@ -6,11 +6,11 @@ This is a simple program to generate a group of applications in json type, which
 1. Configure the parameters for the function `TestMakeExperimentApps`, including the endpoint of Multi-Cloud Manager. 
 2. At the root directory of this project, run:
 ```
-go test <Project Root Directory>/auto-schedule/experiment-app/application-generator/ -v -count=1 -run TestMakeExperimentApps
+go test <Project Root Directory>/auto-schedule/experiments/applications-generator/ -v -count=1 -run TestMakeExperimentApps
 ```
 For example, if the `<Project Root Directory>` is `/mnt/c/mine/code/gocode/src/emcontroller`, we should execute:
 ```
-go test /mnt/c/mine/code/gocode/src/emcontroller/auto-schedule/experiment-app/application-generator/ -v -count=1 -run TestMakeExperimentApps
+go test /mnt/c/mine/code/gocode/src/emcontroller/auto-schedule/experiments/applications-generator/ -v -count=1 -run TestMakeExperimentApps
 ```
 
 ### How to send a request to multi-cloud manager to deploy these applications?

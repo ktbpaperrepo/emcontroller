@@ -9,10 +9,10 @@ import (
 	"strconv"
 	"time"
 
-	"emcontroller/auto-schedule/experiment-app/server/cpu"
-	"emcontroller/auto-schedule/experiment-app/server/dependency"
-	"emcontroller/auto-schedule/experiment-app/server/memory"
-	"emcontroller/auto-schedule/experiment-app/server/storage"
+	"emcontroller/auto-schedule/experiments/server/cpu"
+	"emcontroller/auto-schedule/experiments/server/dependency"
+	"emcontroller/auto-schedule/experiments/server/memory"
+	"emcontroller/auto-schedule/experiments/server/storage"
 )
 
 var cpuNumToUse int

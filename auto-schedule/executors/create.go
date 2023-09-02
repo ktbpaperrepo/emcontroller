@@ -84,10 +84,12 @@ func CreateAutoScheduleApps(apps []models.K8sApp, algoName string) ([]models.App
 	mcssgaInstance.SetMaxReaRtt(cloudsForScheduling)
 	beego.Info(fmt.Sprintf("The algorithm works out the solution: %s\nIts fitness value is %g.", models.JsonString(solution), mcssgaInstance.Fitness(cloudsForScheduling, appsForScheduling, solution)))
 
-	//// for debug
-	////if mcssgaAlgo, ok := algoToUse.(*algorithms.Mcssga); ok {
-	////	mcssgaAlgo.DrawEvoChart()
-	////}
+	//// This part is for debug ----------------------------
+	//
+	//// draw evolution chart
+	//if mcssgaAlgo, ok := algoToUse.(*algorithms.Mcssga); ok {
+	//	mcssgaAlgo.DrawEvoChart()
+	//}
 	//switch realAlgo := algoToUse.(type) {
 	//case *algorithms.Mcssga:
 	//	realAlgo.DrawEvoChart()
@@ -95,7 +97,16 @@ func CreateAutoScheduleApps(apps []models.K8sApp, algoName string) ([]models.App
 	//	realAlgo.DrawEvoChart()
 	//default:
 	//}
-	//return []models.AppInfo{}, nil, http.StatusCreated
+	//
+	//// return accepted names for experiments
+	//var acceptedApps []models.AppInfo
+	//for appName, app := range appsForScheduling {
+	//	if solution.AppsSolution[appName].Accepted {
+	//		acceptedApps = append(acceptedApps, models.AppInfo{AppName: appName, Priority: app.Priority})
+	//	}
+	//}
+	//return acceptedApps, nil, http.StatusCreated
+	//// This part is for debug ----------------------------
 
 	/**
 	TODO:

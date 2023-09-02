@@ -1,4 +1,4 @@
-package application_generator
+package applicationsgenerator
 
 import (
 	"testing"
