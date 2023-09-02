@@ -3,6 +3,7 @@ package executors
 import (
 	"fmt"
 	"net/http"
+	"sort"
 
 	"github.com/astaxie/beego"
 
@@ -39,8 +40,8 @@ func CreateAutoScheduleApps(apps []models.K8sApp, algoName string) ([]models.App
 	// In some steps of scheduling, we need a fixed order of applications.
 	appsOrder := algorithms.GenerateAppsOrder(appsForScheduling)
 
-	//// for debug, sometimes, we need the fixed apps order to do some comparison.
-	//sort.Strings(appsOrder)
+	// Whether this order is fixed or random does not affect the performance of algorithms, because the applications are generated randomly, which will not be changed by a fixed order. However, when we fix the order here, the comparison between different algorithms can have the same input, because apps order is one input parameter.
+	sort.Strings(appsOrder)
 
 	// the parameters for genetic algorithms
 	var chromosomesCount int = 200
