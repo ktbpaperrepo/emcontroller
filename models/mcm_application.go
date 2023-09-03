@@ -798,3 +798,23 @@ func CreateAppAndWait(appToCreate K8sApp) (AppInfo, error) {
 	beego.Info(fmt.Sprintf("Successful! Create application [%s].", appToCreate.Name))
 	return outAppInfo, nil
 }
+
+func ListAppsNamePrefix(prefix string) ([]AppInfo, error) {
+	// get all applications of multi-cloud manager
+	allApps, err := ListApplications()
+	if err != nil {
+		outErr := fmt.Errorf("ListApplications error: %w", err)
+		beego.Error(outErr)
+		return nil, outErr
+	}
+
+	// filter the nodes with the name prefix
+	var outApps []AppInfo
+	for _, app := range allApps {
+		if strings.HasPrefix(app.AppName, prefix) {
+			outApps = append(outApps, app)
+		}
+	}
+
+	return outApps, nil
+}

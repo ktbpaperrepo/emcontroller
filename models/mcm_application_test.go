@@ -187,16 +187,22 @@ func TestCreateAppsWait(t *testing.T) {
 
 }
 
+// This unit test can be used to delete some application with a specific name prefix conveniently.
 func TestDeleteBatchApps(t *testing.T) {
 	InitSomeThing()
 
-	appsNamesToDelete := []string{
-		"test-app-20",
-		"test-app-29",
-		"test-app-10",
-		"test-app-5",
-		"test-app-18",
+	var appsNamesToDelete []string
+
+	apps, err := ListAppsNamePrefix("expt-app-")
+	if err != nil {
+		t.Fatalf("test error: %s", err.Error())
+	} else {
+		for _, app := range apps {
+			appsNamesToDelete = append(appsNamesToDelete, app.AppName)
+		}
 	}
+
+	t.Log("apps to uninstall:", appsNamesToDelete)
 
 	errs := DeleteBatchApps(appsNamesToDelete)
 	if errs != nil {
@@ -205,4 +211,16 @@ func TestDeleteBatchApps(t *testing.T) {
 		t.Logf("Delete applications successfully")
 	}
 
+}
+
+func TestListAppsNamePrefix(t *testing.T) {
+	InitSomeThing()
+	apps, err := ListAppsNamePrefix("expt-app-")
+	if err != nil {
+		t.Errorf("test error: %s", err.Error())
+	} else {
+		for _, app := range apps {
+			t.Logf("app: %s, hosts: %+v", app.AppName, app.Hosts)
+		}
+	}
 }
