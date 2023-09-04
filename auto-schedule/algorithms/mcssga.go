@@ -23,12 +23,17 @@ In our fitness function, we do not need to consider to make unacceptable chromos
 Instead, in our init function, mutation selector, crossover selector, we should guarantee that all generated solutions/chromosomes are acceptable. For mutation and crossover if we get an unacceptable solution, we can repeat, excluding the generated unacceptable ones, until we get an acceptable solution.
 */
 
-// TODO: currently, this is measured. In the future, this may be able to:
-// possibility 1. be set by a dedicated user request;
-// possibility 2. be set in the user request for auto-scheduling;
-// possibility 3. be set for every application separately;
-// const expAppCompuTimeOneCpu float64 = 50
-const expAppCompuTimeOneCpu float64 = 35
+const (
+	// TODO: currently, this is measured. In the future, this may be able to:
+	// possibility 1. be set by a dedicated user request;
+	// possibility 2. be set in the user request for auto-scheduling;
+	// possibility 3. be set for every application separately;
+	// expAppCompuTimeOneCpu float64 = 50
+	expAppCompuTimeOneCpu float64 = 35
+
+	enlargerScaleMaxCompuTime float64 = 10   // minimum allocated CPU is 0.1, so the max computation time should enlarger 10 times.
+	enlargerScaleMaxRTT       float64 = 1.25 // because the minimum computation part is not 0, minimum RTT should also not be 0.
+)
 
 // Multi-Cloud Service Scheduling Genetic Algorithm (MCSSGA)
 type Mcssga struct {
@@ -462,18 +467,18 @@ func (m *Mcssga) fitnessOneApp(clouds map[string]asmodel.Cloud, apps map[string]
 
 	var thisAppFitness float64 // result
 
-	// if an application is rejected, it contributes a negative fitness value
+	// if an application is rejected, it contributes a very big negative fitness value, this is to encourage higher priority-weighted acceptance rate
 	if !chromosome.AppsSolution[thisAppName].Accepted {
-		thisAppFitness = -(m.ExpAppCompuTimeOneCpu + m.MaxReachableRtt) * float64(thisPri)
+		thisAppFitness = -(m.ExpAppCompuTimeOneCpu*enlargerScaleMaxCompuTime + m.MaxReachableRtt*enlargerScaleMaxRTT) * (float64(len(apps)) / 5.0) * float64(thisPri)
 	} else {
 
 		// if this app is accepted, all its dependent apps are also accepted, which is guaranteed by our dependency acceptable check
 
 		// calculate the computation part of this application
 		thisAlloCpu := chromosome.AppsSolution[thisAppName].AllocatedCpuCore
-		thisReqCpu := apps[thisAppName].Resources.CpuCore
+		//thisReqCpu := apps[thisAppName].Resources.CpuCore
 		// the maximum possible computation part of fitness of an application without priority should be "m.ExpAppCompuTimeOneCpu"
-		thisAppPart := m.ExpAppCompuTimeOneCpu * (thisAlloCpu / thisReqCpu)
+		thisAppPart := m.ExpAppCompuTimeOneCpu*enlargerScaleMaxCompuTime - m.ExpAppCompuTimeOneCpu/thisAlloCpu
 
 		/**
 		If this application does not have dependencies, its fitness will only be affected by itself.
@@ -498,7 +503,7 @@ func (m *Mcssga) fitnessOneApp(clouds map[string]asmodel.Cloud, apps map[string]
 			} else {
 				thisRtt = clouds[thisCloudName].NetState[depCloudName].Rtt
 			}
-			netPart := m.MaxReachableRtt - thisRtt
+			netPart := m.MaxReachableRtt*enlargerScaleMaxRTT - thisRtt // because the minimum computation part is not 0, this minimum should also not be 0.
 
 			// calculate the dependent application's fitness value, including its computation part, network part, and dependent apps part.
 			depAppPart := m.fitnessOneApp(clouds, apps, chromosome, depAppName)
