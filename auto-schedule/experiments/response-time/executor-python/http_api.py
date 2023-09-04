@@ -5,7 +5,7 @@ import data_types
 from types import SimpleNamespace
 
 # endpoint of multi-cloud manager
-MCM_END_POINT = "172.21.112.122:20000"
+MCM_END_POINT = "172.27.15.31:20000"
 
 
 def resp_code_successful(code: int) -> bool:
