@@ -57,7 +57,17 @@ func TestMakeExperimentApps(t *testing.T) {
 	var namePrefix string = "expt-app"
 	var count int = 60
 
-	_, err := MakeExperimentApps(namePrefix, count, 6)
+	_, err := MakeExperimentApps(namePrefix, count, 6, false)
+	if err != nil {
+		t.Errorf("MakeExperimentApps error: %s", err.Error())
+	}
+}
+
+func TestMakeFastExperimentApps(t *testing.T) {
+	var namePrefix string = "expt-app"
+	var count int = 60
+
+	_, err := MakeExperimentApps(namePrefix, count, 6, true)
 	if err != nil {
 		t.Errorf("MakeExperimentApps error: %s", err.Error())
 	}

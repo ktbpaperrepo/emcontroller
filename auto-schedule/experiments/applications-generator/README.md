@@ -8,9 +8,17 @@ This is a simple program to generate a group of applications in json type, which
 ```
 go test <Project Root Directory>/auto-schedule/experiments/applications-generator/ -v -count=1 -run TestMakeExperimentApps
 ```
+or
+```
+go test <Project Root Directory>/auto-schedule/experiments/applications-generator/ -v -count=1 -run TestMakeFastExperimentApps
+```
 For example, if the `<Project Root Directory>` is `/mnt/c/mine/code/gocode/src/emcontroller`, we should execute:
 ```
 go test /mnt/c/mine/code/gocode/src/emcontroller/auto-schedule/experiments/applications-generator/ -v -count=1 -run TestMakeExperimentApps
+```
+or
+```
+go test /mnt/c/mine/code/gocode/src/emcontroller/auto-schedule/experiments/applications-generator/ -v -count=1 -run TestMakeFastExperimentApps
 ```
 
 ### How to send a request to multi-cloud manager to deploy these applications?

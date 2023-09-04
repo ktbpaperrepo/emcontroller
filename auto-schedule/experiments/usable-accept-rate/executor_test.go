@@ -52,7 +52,7 @@ func TestExecute(t *testing.T) {
 
 	// We repeat experiment to reduce the impact from random factors. In every repeat, we generate different applications.
 	for i := 0; i < repeatCount; i++ {
-		apps, err := applicationsgenerator.MakeExperimentApps(appNamePrefix, appCount, 6)
+		apps, err := applicationsgenerator.MakeExperimentApps(appNamePrefix, appCount, 6, false)
 		if err != nil {
 			t.Errorf("MakeExperimentApps error: %s", err.Error())
 		}

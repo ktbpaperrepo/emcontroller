@@ -189,7 +189,7 @@ func getAllApps(mcmEp string) ([]models.AppInfo, error) {
 }
 
 // make applications for experiments
-func MakeExperimentApps(namePrefix string, count int, depDivisor float64) ([]models.K8sApp, error) {
+func MakeExperimentApps(namePrefix string, count int, depDivisor float64, fastMode bool) ([]models.K8sApp, error) {
 	outApps := make([]models.K8sApp, count)
 
 	occNodePorts, err := getOccupiedNodePorts(mcmEndpoint)
@@ -227,12 +227,17 @@ func MakeExperimentApps(namePrefix string, count int, depDivisor float64) ([]mod
 		outApps[i].Priority = random.RandomInt(asmodel.MinPriority, asmodel.MaxPriority)
 		workload := int(random.NormalRandomBM(55000, 1415000, 381475, 352936)) // measured from real applications
 
+		args := []string{fmt.Sprintf("%d", workload), fmt.Sprintf("%d", chosenApp.cpu), fmt.Sprintf("%d", chosenApp.memory), fmt.Sprintf("%d", chosenApp.storage)}
+		if fastMode { // fast mode is to test the functions. In this mode, the applications will not use time to occupy memory and storage.
+			args = []string{fmt.Sprintf("%d", workload), fmt.Sprintf("%d", chosenApp.cpu), fmt.Sprintf("%d", 0), fmt.Sprintf("%d", 0)}
+		}
+
 		outApps[i].Containers = []models.K8sContainer{
 			models.K8sContainer{
 				Name:     "container",
 				Image:    exptImage,
 				Commands: []string{baseCmd},
-				Args:     []string{fmt.Sprintf("%d", workload), fmt.Sprintf("%d", chosenApp.cpu), fmt.Sprintf("%d", chosenApp.memory), fmt.Sprintf("%d", chosenApp.storage)},
+				Args:     args,
 				Ports: []models.PortInfo{
 					models.PortInfo{
 						ContainerPort: 3333,
