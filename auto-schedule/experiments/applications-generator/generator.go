@@ -137,7 +137,7 @@ const (
 	mcmEndpoint string = "172.27.15.31:20000"
 
 	defaultWorkload int    = 5000000 // input value of cumulative sum
-	exptImage       string = "172.27.15.31:5000/mcexp:20230824"
+	exptImage       string = "172.27.15.31:5000/mcexp:20230905"
 	baseCmd         string = "./experiment-app"
 	svcPort         int    = 81
 )
