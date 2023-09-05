@@ -74,6 +74,11 @@ func main() {
 	// set the maximum number of CPUs to use
 	runtime.GOMAXPROCS(cpuNumToUse)
 
+	//// run some routine work in a goroutine, or otherwise this application's workload is too small. The effect is rubbish, so I commented it.
+	//for i := 0; i < cpuNumToUse; i++ {
+	//	go routineWork()
+	//}
+
 	http.HandleFunc("/experiment", reqFunc)
 
 	if err := http.ListenAndServe(":3333", nil); err != nil {
@@ -105,4 +110,15 @@ func reqFunc(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(exeTimeMs))
 	return
+}
+
+// The effect is rubbish, so I commented it.
+func routineWork() {
+	counter := 1
+	for {
+		counter++
+		if counter >= 10000 {
+			counter = 1
+		}
+	}
 }
