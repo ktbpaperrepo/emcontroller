@@ -236,7 +236,7 @@ func TestInnerAddScheInfoToApps(t *testing.T) {
 							Resources: models.K8sResReq{
 								Limits: models.K8sResList{
 									Memory:  "30Mi",
-									CPU:     "1.2",
+									CPU:     "1.0",
 									Storage: "2Gi",
 								},
 								Requests: models.K8sResList{
@@ -542,7 +542,7 @@ func TestInnerAddScheInfoToApps(t *testing.T) {
 							Resources: models.K8sResReq{
 								Limits: models.K8sResList{
 									Memory:  "1024Mi",
-									CPU:     "2.1",
+									CPU:     "1.1",
 									Storage: "20Gi",
 								},
 								Requests: models.K8sResList{
@@ -583,7 +583,7 @@ func TestInnerAddScheInfoToApps(t *testing.T) {
 							Resources: models.K8sResReq{
 								Limits: models.K8sResList{
 									Memory:  "512Mi",
-									CPU:     "2.1",
+									CPU:     "0.8",
 									Storage: "20Gi",
 								},
 								Requests: models.K8sResList{
