@@ -34,12 +34,12 @@ func TestInnerAddScheInfoToApps(t *testing.T) {
 							Resources: models.K8sResReq{
 								Limits: models.K8sResList{
 									Memory:  "30Mi",
-									CPU:     "1.2",
+									CPU:     "1",
 									Storage: "2Gi",
 								},
 								Requests: models.K8sResList{
 									Memory:  "30Mi",
-									CPU:     "1.2",
+									CPU:     "1",
 									Storage: "2Gi",
 								},
 							},
@@ -95,12 +95,12 @@ func TestInnerAddScheInfoToApps(t *testing.T) {
 							Resources: models.K8sResReq{
 								Limits: models.K8sResList{
 									Memory:  "1024Mi",
-									CPU:     "2.1",
+									CPU:     "2",
 									Storage: "20Gi",
 								},
 								Requests: models.K8sResList{
 									Memory:  "1024Mi",
-									CPU:     "2.1",
+									CPU:     "2",
 									Storage: "20Gi",
 								},
 							},
@@ -135,12 +135,12 @@ func TestInnerAddScheInfoToApps(t *testing.T) {
 							Resources: models.K8sResReq{
 								Limits: models.K8sResList{
 									Memory:  "512Mi",
-									CPU:     "2.1",
+									CPU:     "2",
 									Storage: "20Gi",
 								},
 								Requests: models.K8sResList{
 									Memory:  "512Mi",
-									CPU:     "2.1",
+									CPU:     "2",
 									Storage: "20Gi",
 								},
 							},
@@ -178,7 +178,7 @@ func TestInnerAddScheInfoToApps(t *testing.T) {
 						Accepted:         true,
 						TargetCloudName:  "NOKIA7",
 						K8sNodeName:      "auto-sched-nokia7-0",
-						AllocatedCpuCore: 2.1,
+						AllocatedCpuCore: 2,
 					},
 					"group-printtime": asmodel.SingleAppSolution{
 						Accepted:         true,
@@ -236,12 +236,12 @@ func TestInnerAddScheInfoToApps(t *testing.T) {
 							Resources: models.K8sResReq{
 								Limits: models.K8sResList{
 									Memory:  "30Mi",
-									CPU:     "1.0",
+									CPU:     "1",
 									Storage: "2Gi",
 								},
 								Requests: models.K8sResList{
 									Memory:  "30Mi",
-									CPU:     "1.0",
+									CPU:     "1",
 									Storage: "2Gi",
 								},
 							},
@@ -298,12 +298,12 @@ func TestInnerAddScheInfoToApps(t *testing.T) {
 							Resources: models.K8sResReq{
 								Limits: models.K8sResList{
 									Memory:  "1024Mi",
-									CPU:     "2.1",
+									CPU:     "2",
 									Storage: "20Gi",
 								},
 								Requests: models.K8sResList{
 									Memory:  "1024Mi",
-									CPU:     "2.1",
+									CPU:     "2",
 									Storage: "20Gi",
 								},
 							},
@@ -343,12 +343,12 @@ func TestInnerAddScheInfoToApps(t *testing.T) {
 							Resources: models.K8sResReq{
 								Limits: models.K8sResList{
 									Memory:  "30Mi",
-									CPU:     "1.2",
+									CPU:     "1",
 									Storage: "2Gi",
 								},
 								Requests: models.K8sResList{
 									Memory:  "30Mi",
-									CPU:     "1.2",
+									CPU:     "1",
 									Storage: "2Gi",
 								},
 							},
@@ -404,12 +404,12 @@ func TestInnerAddScheInfoToApps(t *testing.T) {
 							Resources: models.K8sResReq{
 								Limits: models.K8sResList{
 									Memory:  "1024Mi",
-									CPU:     "2.1",
+									CPU:     "2",
 									Storage: "20Gi",
 								},
 								Requests: models.K8sResList{
 									Memory:  "1024Mi",
-									CPU:     "2.1",
+									CPU:     "2",
 									Storage: "20Gi",
 								},
 							},
@@ -444,12 +444,12 @@ func TestInnerAddScheInfoToApps(t *testing.T) {
 							Resources: models.K8sResReq{
 								Limits: models.K8sResList{
 									Memory:  "512Mi",
-									CPU:     "2.1",
+									CPU:     "2",
 									Storage: "20Gi",
 								},
 								Requests: models.K8sResList{
 									Memory:  "512Mi",
-									CPU:     "2.1",
+									CPU:     "2",
 									Storage: "20Gi",
 								},
 							},
@@ -487,7 +487,7 @@ func TestInnerAddScheInfoToApps(t *testing.T) {
 						Accepted:         true,
 						TargetCloudName:  "NOKIA7",
 						K8sNodeName:      "auto-sched-nokia7-0",
-						AllocatedCpuCore: 1.100000001,
+						AllocatedCpuCore: 1,
 					},
 					"group-printtime": asmodel.SingleAppSolution{
 						Accepted: false,
@@ -496,7 +496,7 @@ func TestInnerAddScheInfoToApps(t *testing.T) {
 						Accepted:         true,
 						TargetCloudName:  "NOKIA8",
 						K8sNodeName:      "auto-sched-nokia8-0",
-						AllocatedCpuCore: 0.7999999,
+						AllocatedCpuCore: 1,
 					},
 				},
 				VmsToCreate: []models.IaasVm{
@@ -542,12 +542,12 @@ func TestInnerAddScheInfoToApps(t *testing.T) {
 							Resources: models.K8sResReq{
 								Limits: models.K8sResList{
 									Memory:  "1024Mi",
-									CPU:     "1.1",
+									CPU:     "1",
 									Storage: "20Gi",
 								},
 								Requests: models.K8sResList{
 									Memory:  "1024Mi",
-									CPU:     "1.1",
+									CPU:     "1",
 									Storage: "20Gi",
 								},
 							},
@@ -583,12 +583,12 @@ func TestInnerAddScheInfoToApps(t *testing.T) {
 							Resources: models.K8sResReq{
 								Limits: models.K8sResList{
 									Memory:  "512Mi",
-									CPU:     "0.8",
+									CPU:     "1",
 									Storage: "20Gi",
 								},
 								Requests: models.K8sResList{
 									Memory:  "512Mi",
-									CPU:     "0.8",
+									CPU:     "1",
 									Storage: "20Gi",
 								},
 							},

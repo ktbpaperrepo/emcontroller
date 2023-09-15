@@ -334,12 +334,90 @@ func TestValidateAutoScheduleApp(t *testing.T) {
 					},
 				},
 			},
+			expectedErrNum: 1,
+		},
+		{
+			name: "resLiReCpuLargerThan10_1",
+			app: models.K8sApp{
+				Name:          "resLiReCpuLargerThan10_1",
+				Priority:      10,
+				Replicas:      1,
+				AutoScheduled: true,
+				Containers: []models.K8sContainer{
+					{
+						Resources: models.K8sResReq{
+							Limits: models.K8sResList{
+								Memory:  "11Mi",
+								CPU:     "15",
+								Storage: "12Gi",
+							},
+							Requests: models.K8sResList{
+								Memory:  "11Mi",
+								CPU:     "15",
+								Storage: "12Gi",
+							},
+						},
+					},
+				},
+			},
 			expectedErrNum: 0,
 		},
 		{
-			name: "resLiReCpuWrong",
+			name: "resLiReCpuLargerThan10_2",
 			app: models.K8sApp{
-				Name:          "resLiReCpuWrong",
+				Name:          "resLiReCpuLargerThan10_2",
+				Priority:      10,
+				Replicas:      1,
+				AutoScheduled: true,
+				Containers: []models.K8sContainer{
+					{
+						Resources: models.K8sResReq{
+							Limits: models.K8sResList{
+								Memory:  "11Mi",
+								CPU:     "50",
+								Storage: "12Gi",
+							},
+							Requests: models.K8sResList{
+								Memory:  "11Mi",
+								CPU:     "50",
+								Storage: "12Gi",
+							},
+						},
+					},
+				},
+			},
+			expectedErrNum: 0,
+		},
+		{
+			name: "resLiReCpuLargerThan10_3",
+			app: models.K8sApp{
+				Name:          "resLiReCpuLargerThan10_3",
+				Priority:      10,
+				Replicas:      1,
+				AutoScheduled: true,
+				Containers: []models.K8sContainer{
+					{
+						Resources: models.K8sResReq{
+							Limits: models.K8sResList{
+								Memory:  "11Mi",
+								CPU:     "123",
+								Storage: "12Gi",
+							},
+							Requests: models.K8sResList{
+								Memory:  "11Mi",
+								CPU:     "123",
+								Storage: "12Gi",
+							},
+						},
+					},
+				},
+			},
+			expectedErrNum: 0,
+		},
+		{
+			name: "resLiReCpuWrongWith_m",
+			app: models.K8sApp{
+				Name:          "resLiReCpuWrongWith_m",
 				Priority:      10,
 				Replicas:      1,
 				AutoScheduled: true,
@@ -426,12 +504,12 @@ func TestValidateAutoScheduleApp(t *testing.T) {
 						Resources: models.K8sResReq{
 							Limits: models.K8sResList{
 								Memory:  "11Mi",
-								CPU:     "0.5",
+								CPU:     "3",
 								Storage: "12000Mi",
 							},
 							Requests: models.K8sResList{
 								Memory:  "11Mi",
-								CPU:     "0.5",
+								CPU:     "3",
 								Storage: "12000Mi",
 							},
 						},
@@ -451,11 +529,11 @@ func TestValidateAutoScheduleApp(t *testing.T) {
 					{
 						Resources: models.K8sResReq{
 							Limits: models.K8sResList{
-								CPU:     "0.5",
+								CPU:     "2",
 								Storage: "120Gi",
 							},
 							Requests: models.K8sResList{
-								CPU:     "0.5",
+								CPU:     "2",
 								Storage: "120Gi",
 							},
 						},
@@ -475,10 +553,10 @@ func TestValidateAutoScheduleApp(t *testing.T) {
 					{
 						Resources: models.K8sResReq{
 							Limits: models.K8sResList{
-								CPU: "0.5",
+								CPU: "25",
 							},
 							Requests: models.K8sResList{
-								CPU: "0.5",
+								CPU: "25",
 							},
 						},
 					},
@@ -497,11 +575,11 @@ func TestValidateAutoScheduleApp(t *testing.T) {
 					{
 						Resources: models.K8sResReq{
 							Limits: models.K8sResList{
-								CPU:    "0.5",
+								CPU:    "5",
 								Memory: "11Mi",
 							},
 							Requests: models.K8sResList{
-								CPU:    "0.5",
+								CPU:    "5",
 								Memory: "11Mi",
 							},
 						},

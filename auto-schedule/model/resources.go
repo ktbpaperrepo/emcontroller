@@ -13,7 +13,8 @@ import (
 )
 
 const (
-	CpuResReg         string = `^[0-9]+(\.[0-9]+)?$`
+	//CpuResReg         string = `^[0-9]+(\.[0-9]+)?$` // can be a decimal
+	CpuResReg         string = `^[0-9]+$` // must be an integer, because we use "static CPU Manager policy" in Kubernetes
 	MemUnitSuffix     string = "Mi"
 	StorageUnitSuffix string = "Gi"
 )

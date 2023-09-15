@@ -7,7 +7,8 @@ import (
 )
 
 const (
-	cpuCoreStep float64 = 0.1 // also named as stride. This can be seen as the unit that we allocate CPU cores in our algorithm.
+	// previously cpuCoreStep was set as 0.1, consistent with the stride in Kubernetes, but we need to use static CPU Manager policy, which requires all CPU requests and limits are integers.
+	cpuCoreStep float64 = 1 // also named as stride. This can be seen as the unit that we allocate CPU cores in our algorithm.
 
 	// On a cloud, when existing VMs do not have enough resources for the applications scheduled here, we have 3 possible choices to create a new VM:
 	// 1. a VM with 50% resources; if 50% is not enough, do 3.

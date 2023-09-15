@@ -610,7 +610,7 @@ func TestInnerSubRes(t *testing.T) {
 			},
 		}
 		subRes(vm, app, true)
-		assert.InDelta(t, 6.4, vm.ResidualResources.CpuCore, testDelta)
+		assert.InDelta(t, 5.5, vm.ResidualResources.CpuCore, testDelta)
 		assert.InDelta(t, 9216, vm.ResidualResources.Memory, testDelta)
 		assert.InDelta(t, 91, vm.ResidualResources.Storage, testDelta)
 
@@ -626,7 +626,7 @@ func TestInnerSubRes(t *testing.T) {
 			},
 		}
 		subRes(vm, app, true)
-		assert.InDelta(t, 6.3, vm.ResidualResources.CpuCore, testDelta)
+		assert.InDelta(t, 4.5, vm.ResidualResources.CpuCore, testDelta)
 		assert.InDelta(t, 7216, vm.ResidualResources.Memory, testDelta)
 		assert.InDelta(t, 91, vm.ResidualResources.Storage, testDelta)
 	}()
@@ -687,7 +687,7 @@ func TestInnerVmResMeetAllRestAppsAll(t *testing.T) {
 
 func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 	cloud, apps, soln := cloudAppsSolnForTest()
-	appsThisCloud := findAppsOneCloud(cloud, apps, soln) // need 0.4 CPU, 3214 Memory, 66 Storage in total.
+	appsThisCloud := findAppsOneCloud(cloud, apps, soln) // need 4 CPU, 3214 Memory, 66 Storage in total.
 	appsOrder := appOrdersForTest()[0]
 
 	t.Log()
@@ -709,7 +709,7 @@ func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 	vm := asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 2,
+			CpuCore: 4,
 			Memory:  10240,
 			Storage: 100,
 		},
@@ -726,7 +726,7 @@ func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.2,
+			CpuCore: 2,
 			Memory:  10240,
 			Storage: 100,
 		},
@@ -739,7 +739,7 @@ func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.1,
+			CpuCore: 1,
 			Memory:  10240,
 			Storage: 100,
 		},
@@ -752,7 +752,7 @@ func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.3,
+			CpuCore: 3,
 			Memory:  10240,
 			Storage: 100,
 		},
@@ -770,7 +770,7 @@ func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.6,
+			CpuCore: 6,
 			Memory:  2000,
 			Storage: 100,
 		},
@@ -783,7 +783,7 @@ func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.6,
+			CpuCore: 6,
 			Memory:  1200,
 			Storage: 100,
 		},
@@ -796,7 +796,7 @@ func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.2,
+			CpuCore: 6,
 			Memory:  3000,
 			Storage: 100,
 		},
@@ -813,7 +813,7 @@ func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.6,
+			CpuCore: 6,
 			Memory:  3000,
 			Storage: 100,
 		},
@@ -829,7 +829,7 @@ func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.6,
+			CpuCore: 6,
 			Memory:  3000,
 			Storage: 100,
 		},
@@ -845,7 +845,7 @@ func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.6,
+			CpuCore: 6,
 			Memory:  10,
 			Storage: 100,
 		},
@@ -861,7 +861,7 @@ func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.6,
+			CpuCore: 1,
 			Memory:  1200,
 			Storage: 100,
 		},
@@ -877,7 +877,7 @@ func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.6,
+			CpuCore: 10,
 			Memory:  10,
 			Storage: 100,
 		},
@@ -974,7 +974,7 @@ func TestInnerVmResMeetAllRestAppsNoPriLimit(t *testing.T) {
 
 func TestInnerVmResMeetAllRestAppsMaxPri(t *testing.T) {
 	cloud, apps, soln := cloudAppsSolnForTest()
-	appsThisCloud := findAppsOneCloud(cloud, apps, soln) // need 0.4 CPU, 3214 Memory, 66 Storage in total.
+	appsThisCloud := findAppsOneCloud(cloud, apps, soln) // need 4 CPU, 3214 Memory, 66 Storage in total.
 	appsOrder := appOrdersForTest()[0]
 
 	t.Log()
@@ -1013,7 +1013,7 @@ func TestInnerVmResMeetAllRestAppsMaxPri(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.1,
+			CpuCore: 1,
 			Memory:  10240,
 			Storage: 100,
 		},
@@ -1026,7 +1026,7 @@ func TestInnerVmResMeetAllRestAppsMaxPri(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.05,
+			CpuCore: 0,
 			Memory:  10240,
 			Storage: 100,
 		},
@@ -1039,7 +1039,7 @@ func TestInnerVmResMeetAllRestAppsMaxPri(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.3,
+			CpuCore: 3,
 			Memory:  10240,
 			Storage: 100,
 		},
@@ -1057,7 +1057,7 @@ func TestInnerVmResMeetAllRestAppsMaxPri(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.6,
+			CpuCore: 6,
 			Memory:  1000,
 			Storage: 100,
 		},
@@ -1070,7 +1070,7 @@ func TestInnerVmResMeetAllRestAppsMaxPri(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.6,
+			CpuCore: 6,
 			Memory:  1000,
 			Storage: 100,
 		},
@@ -1087,7 +1087,7 @@ func TestInnerVmResMeetAllRestAppsMaxPri(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.6,
+			CpuCore: 6,
 			Memory:  1000,
 			Storage: 100,
 		},
@@ -1103,7 +1103,7 @@ func TestInnerVmResMeetAllRestAppsMaxPri(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.6,
+			CpuCore: 1,
 			Memory:  1000,
 			Storage: 100,
 		},
@@ -1119,7 +1119,7 @@ func TestInnerVmResMeetAllRestAppsMaxPri(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.6,
+			CpuCore: 6,
 			Memory:  10,
 			Storage: 100,
 		},
@@ -1135,7 +1135,7 @@ func TestInnerVmResMeetAllRestAppsMaxPri(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.6,
+			CpuCore: 6,
 			Memory:  1200,
 			Storage: 100,
 		},
@@ -1151,7 +1151,7 @@ func TestInnerVmResMeetAllRestAppsMaxPri(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.6,
+			CpuCore: 6,
 			Memory:  10,
 			Storage: 100,
 		},
@@ -1248,7 +1248,7 @@ func TestInnerVmResMeetAllRestAppsMaxPri(t *testing.T) {
 
 func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
 	cloud, apps, soln := cloudAppsSolnForTest()
-	appsThisCloud := findAppsOneCloud(cloud, apps, soln) // need 0.4 CPU, 3214 Memory, 66 Storage in total.
+	appsThisCloud := findAppsOneCloud(cloud, apps, soln) // need 4 CPU, 3214 Memory, 66 Storage in total.
 	appsOrder := appOrdersForTest()[0]
 
 	t.Log()
@@ -1287,7 +1287,7 @@ func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.1,
+			CpuCore: 1,
 			Memory:  10240,
 			Storage: 100,
 		},
@@ -1300,7 +1300,7 @@ func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.05,
+			CpuCore: 0,
 			Memory:  10240,
 			Storage: 100,
 		},
@@ -1313,7 +1313,7 @@ func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.3,
+			CpuCore: 3,
 			Memory:  10240,
 			Storage: 100,
 		},
@@ -1331,7 +1331,7 @@ func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.6,
+			CpuCore: 6,
 			Memory:  1100,
 			Storage: 100,
 		},
@@ -1344,7 +1344,7 @@ func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.6,
+			CpuCore: 6,
 			Memory:  500,
 			Storage: 100,
 		},
@@ -1357,7 +1357,7 @@ func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.6,
+			CpuCore: 6,
 			Memory:  1100,
 			Storage: 100,
 		},
@@ -1374,7 +1374,7 @@ func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.6,
+			CpuCore: 6,
 			Memory:  1100,
 			Storage: 100,
 		},
@@ -1390,7 +1390,7 @@ func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.6,
+			CpuCore: 1,
 			Memory:  1100,
 			Storage: 100,
 		},
@@ -1406,7 +1406,7 @@ func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.6,
+			CpuCore: 6,
 			Memory:  10,
 			Storage: 100,
 		},
@@ -1422,7 +1422,7 @@ func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.6,
+			CpuCore: 1,
 			Memory:  1200,
 			Storage: 100,
 		},
@@ -1438,7 +1438,7 @@ func TestInnerVmResMeetAllRestAppsNotMaxPri(t *testing.T) {
 	vm = asmodel.K8sNode{
 		Name: "vm",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 0.6,
+			CpuCore: 100,
 			Memory:  10,
 			Storage: 100,
 		},

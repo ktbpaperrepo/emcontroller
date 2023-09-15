@@ -327,7 +327,7 @@ func TestInnerCheckValidDistriCpu(t *testing.T) {
 			vm: asmodel.K8sNode{
 				Name: "node1",
 				ResidualResources: asmodel.GenericResources{
-					CpuCore: 0.7,
+					CpuCore: 7,
 					Memory:  4096,
 					Storage: 80,
 				},
@@ -340,7 +340,7 @@ func TestInnerCheckValidDistriCpu(t *testing.T) {
 			vm: asmodel.K8sNode{
 				Name: "node1",
 				ResidualResources: asmodel.GenericResources{
-					CpuCore: 0.8,
+					CpuCore: 8,
 					Memory:  4096,
 					Storage: 80,
 				},
@@ -353,7 +353,7 @@ func TestInnerCheckValidDistriCpu(t *testing.T) {
 			vm: asmodel.K8sNode{
 				Name: "node1",
 				ResidualResources: asmodel.GenericResources{
-					CpuCore: 0.9,
+					CpuCore: 9,
 					Memory:  4096,
 					Storage: 80,
 				},
@@ -366,7 +366,7 @@ func TestInnerCheckValidDistriCpu(t *testing.T) {
 			vm: asmodel.K8sNode{
 				Name: "node1",
 				ResidualResources: asmodel.GenericResources{
-					CpuCore: 0.5,
+					CpuCore: 5,
 					Memory:  4096,
 					Storage: 80,
 				},
@@ -379,7 +379,7 @@ func TestInnerCheckValidDistriCpu(t *testing.T) {
 			vm: asmodel.K8sNode{
 				Name: "node1",
 				ResidualResources: asmodel.GenericResources{
-					CpuCore: 0.9,
+					CpuCore: 9,
 					Memory:  4096,
 					Storage: 80,
 				},
@@ -411,7 +411,7 @@ func TestInnerDistrCpuNextApp(t *testing.T) {
 	vm := asmodel.K8sNode{
 		Name: "node1",
 		ResidualResources: asmodel.GenericResources{
-			CpuCore: 20,
+			CpuCore: 200,
 			Memory:  4096,
 			Storage: 80,
 		},
@@ -420,28 +420,28 @@ func TestInnerDistrCpuNextApp(t *testing.T) {
 	t.Log("Round 1")
 	thisAppName, allocatedCpu := distrCpuNextApp(vm, apps, appOrder)
 	assert.Equal(t, "app3", thisAppName)
-	assert.InDelta(t, 20*(1.4/151.4), allocatedCpu, testDelta)
+	assert.InDelta(t, 200*(1.4/151.4), allocatedCpu, testDelta)
 
 	actualAllocatedCpu := mymath.UnitFloor(allocatedCpu, cpuCoreStep)
-	assert.InDelta(t, 0.1, actualAllocatedCpu, testDelta)
+	assert.InDelta(t, 1, actualAllocatedCpu, testDelta)
 
 	if actualAllocatedCpu > apps[thisAppName].Resources.CpuCore {
 		actualAllocatedCpu = apps[thisAppName].Resources.CpuCore
 	}
-	assert.InDelta(t, 0.1, actualAllocatedCpu, testDelta)
+	assert.InDelta(t, 1, actualAllocatedCpu, testDelta)
 
 	delete(apps, thisAppName)
 	vm.ResidualResources.CpuCore -= actualAllocatedCpu
 	assert.Equal(t, 7, len(apps))
-	assert.InDelta(t, 19.9, vm.ResidualResources.CpuCore, testDelta)
+	assert.InDelta(t, 199, vm.ResidualResources.CpuCore, testDelta)
 
 	t.Log("Round 2")
 	thisAppName, allocatedCpu = distrCpuNextApp(vm, apps, appOrder)
 	assert.Equal(t, "app2", thisAppName)
-	assert.InDelta(t, 19.9*(39.0/150.0), allocatedCpu, testDelta)
+	assert.InDelta(t, 199*(39.0/150.0), allocatedCpu, testDelta)
 
 	actualAllocatedCpu = mymath.UnitFloor(allocatedCpu, cpuCoreStep)
-	assert.InDelta(t, 5.1, actualAllocatedCpu, testDelta)
+	assert.InDelta(t, 51, actualAllocatedCpu, testDelta)
 
 	if actualAllocatedCpu > apps[thisAppName].Resources.CpuCore {
 		actualAllocatedCpu = apps[thisAppName].Resources.CpuCore
@@ -451,43 +451,43 @@ func TestInnerDistrCpuNextApp(t *testing.T) {
 	delete(apps, thisAppName)
 	vm.ResidualResources.CpuCore -= actualAllocatedCpu
 	assert.Equal(t, 6, len(apps))
-	assert.InDelta(t, 16, vm.ResidualResources.CpuCore, testDelta)
+	assert.InDelta(t, 195.1, vm.ResidualResources.CpuCore, testDelta)
 
 	t.Log("Round 3")
 	thisAppName, allocatedCpu = distrCpuNextApp(vm, apps, appOrder)
 	assert.Equal(t, "app5", thisAppName)
-	assert.InDelta(t, 16*(10.0/111.0), allocatedCpu, testDelta)
+	assert.InDelta(t, 195.1*(10.0/111.0), allocatedCpu, testDelta)
 
 	actualAllocatedCpu = mymath.UnitFloor(allocatedCpu, cpuCoreStep)
-	assert.InDelta(t, 1.4, actualAllocatedCpu, testDelta)
+	assert.InDelta(t, 17, actualAllocatedCpu, testDelta)
 
 	if actualAllocatedCpu > apps[thisAppName].Resources.CpuCore {
 		actualAllocatedCpu = apps[thisAppName].Resources.CpuCore
 	}
-	assert.InDelta(t, 1.4, actualAllocatedCpu, testDelta)
+	assert.InDelta(t, 5, actualAllocatedCpu, testDelta)
 
 	delete(apps, thisAppName)
 	vm.ResidualResources.CpuCore -= actualAllocatedCpu
 	assert.Equal(t, 5, len(apps))
-	assert.InDelta(t, 14.6, vm.ResidualResources.CpuCore, testDelta)
+	assert.InDelta(t, 190.1, vm.ResidualResources.CpuCore, testDelta)
 
 	t.Log("Round 4")
 	thisAppName, allocatedCpu = distrCpuNextApp(vm, apps, appOrder)
 	assert.Equal(t, "app1", thisAppName)
-	assert.InDelta(t, 14.6*(12.0/101.0), allocatedCpu, testDelta)
+	assert.InDelta(t, 190.1*(12.0/101.0), allocatedCpu, testDelta)
 
 	actualAllocatedCpu = mymath.UnitFloor(allocatedCpu, cpuCoreStep)
-	assert.InDelta(t, 1.7, actualAllocatedCpu, testDelta)
+	assert.InDelta(t, 22, actualAllocatedCpu, testDelta)
 
 	if actualAllocatedCpu > apps[thisAppName].Resources.CpuCore {
 		actualAllocatedCpu = apps[thisAppName].Resources.CpuCore
 	}
-	assert.InDelta(t, 1.7, actualAllocatedCpu, testDelta)
+	assert.InDelta(t, 2.4, actualAllocatedCpu, testDelta)
 
 	delete(apps, thisAppName)
 	vm.ResidualResources.CpuCore -= actualAllocatedCpu
 	assert.Equal(t, 4, len(apps))
-	assert.InDelta(t, 12.9, vm.ResidualResources.CpuCore, testDelta)
+	assert.InDelta(t, 187.7, vm.ResidualResources.CpuCore, testDelta)
 }
 
 func TestInnerDistrCpuApps(t *testing.T) {
@@ -650,25 +650,25 @@ func TestInnerVmCpuWeightedAllocation(t *testing.T) {
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 2.1,
+						AllocatedCpuCore: 1,
 					},
 					"app4": asmodel.SingleAppSolution{
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 1.3,
+						AllocatedCpuCore: 1,
 					},
 					"app6": asmodel.SingleAppSolution{
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 1.3,
+						AllocatedCpuCore: 2,
 					},
 					"app7": asmodel.SingleAppSolution{
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 0.5,
+						AllocatedCpuCore: 1,
 					},
 				},
 			},
@@ -678,7 +678,7 @@ func TestInnerVmCpuWeightedAllocation(t *testing.T) {
 			vm: asmodel.K8sNode{
 				Name: "auto-sched-nokia6-3",
 				ResidualResources: asmodel.GenericResources{
-					CpuCore: 1.2,
+					CpuCore: 30,
 					Memory:  4096,
 					Storage: 80,
 				},
@@ -692,13 +692,73 @@ func TestInnerVmCpuWeightedAllocation(t *testing.T) {
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 0.2,
+						AllocatedCpuCore: 3.3,
 					},
 					"app2": asmodel.SingleAppSolution{
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 0.2,
+						AllocatedCpuCore: 1.4,
+					},
+					"app3": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: 2,
+					},
+					"app4": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: 5.1,
+					},
+					"app6": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: 3.4,
+					},
+					"app7": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: cpuCoreStep,
+					},
+					"app8": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: cpuCoreStep,
+					},
+				},
+			},
+		},
+		{
+			name: "case2-2",
+			vm: asmodel.K8sNode{
+				Name: "auto-sched-nokia6-3",
+				ResidualResources: asmodel.GenericResources{
+					CpuCore: 15,
+					Memory:  4096,
+					Storage: 80,
+				},
+			},
+			appsThisVm: appsForTest()[5],
+			appsOrder:  appOrdersForTest()[0],
+			solnWithVm: solnsForTest()[5],
+			expectedResult: asmodel.Solution{
+				AppsSolution: map[string]asmodel.SingleAppSolution{
+					"app1": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: 3,
+					},
+					"app2": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: 1.4,
 					},
 					"app3": asmodel.SingleAppSolution{
 						Accepted:         true,
@@ -710,13 +770,13 @@ func TestInnerVmCpuWeightedAllocation(t *testing.T) {
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 0.3,
+						AllocatedCpuCore: 5,
 					},
 					"app6": asmodel.SingleAppSolution{
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 0.2,
+						AllocatedCpuCore: 2,
 					},
 					"app7": asmodel.SingleAppSolution{
 						Accepted:         true,
@@ -738,7 +798,7 @@ func TestInnerVmCpuWeightedAllocation(t *testing.T) {
 			vm: asmodel.K8sNode{
 				Name: "auto-sched-nokia6-3",
 				ResidualResources: asmodel.GenericResources{
-					CpuCore: 3.0,
+					CpuCore: 17,
 					Memory:  4096,
 					Storage: 80,
 				},
@@ -798,7 +858,7 @@ func TestInnerVmCpuWeightedAllocation(t *testing.T) {
 			vm: asmodel.K8sNode{
 				Name: "auto-sched-nokia6-3",
 				ResidualResources: asmodel.GenericResources{
-					CpuCore: 3.0,
+					CpuCore: 20,
 					Memory:  4096,
 					Storage: 80,
 				},
@@ -812,13 +872,13 @@ func TestInnerVmCpuWeightedAllocation(t *testing.T) {
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 0.3,
+						AllocatedCpuCore: 3,
 					},
 					"app2": asmodel.SingleAppSolution{
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 0.2,
+						AllocatedCpuCore: 2,
 					},
 					"app3": asmodel.SingleAppSolution{
 						Accepted:         true,
@@ -830,19 +890,139 @@ func TestInnerVmCpuWeightedAllocation(t *testing.T) {
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 0.1,
+						AllocatedCpuCore: 1,
 					},
 					"app6": asmodel.SingleAppSolution{
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 2,
+						AllocatedCpuCore: 5,
 					},
 					"app7": asmodel.SingleAppSolution{
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 0.2,
+						AllocatedCpuCore: 4,
+					},
+					"app8": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: cpuCoreStep,
+					},
+				},
+			},
+		},
+		{
+			name: "case4-2",
+			vm: asmodel.K8sNode{
+				Name: "auto-sched-nokia6-3",
+				ResidualResources: asmodel.GenericResources{
+					CpuCore: 13,
+					Memory:  4096,
+					Storage: 80,
+				},
+			},
+			appsThisVm: appsForTest()[7],
+			appsOrder:  appOrdersForTest()[0],
+			solnWithVm: solnsForTest()[5],
+			expectedResult: asmodel.Solution{
+				AppsSolution: map[string]asmodel.SingleAppSolution{
+					"app1": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: 3,
+					},
+					"app2": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: 2,
+					},
+					"app3": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: cpuCoreStep,
+					},
+					"app4": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: 1,
+					},
+					"app6": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: 4,
+					},
+					"app7": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: cpuCoreStep,
+					},
+					"app8": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: cpuCoreStep,
+					},
+				},
+			},
+		},
+		{
+			name: "case4-3",
+			vm: asmodel.K8sNode{
+				Name: "auto-sched-nokia6-3",
+				ResidualResources: asmodel.GenericResources{
+					CpuCore: 10,
+					Memory:  4096,
+					Storage: 80,
+				},
+			},
+			appsThisVm: appsForTest()[7],
+			appsOrder:  appOrdersForTest()[0],
+			solnWithVm: solnsForTest()[5],
+			expectedResult: asmodel.Solution{
+				AppsSolution: map[string]asmodel.SingleAppSolution{
+					"app1": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: 2,
+					},
+					"app2": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: 1,
+					},
+					"app3": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: cpuCoreStep,
+					},
+					"app4": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: cpuCoreStep,
+					},
+					"app6": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: 3,
+					},
+					"app7": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: cpuCoreStep,
 					},
 					"app8": asmodel.SingleAppSolution{
 						Accepted:         true,
@@ -878,7 +1058,7 @@ func TestInnerAllocateCpusOneVm(t *testing.T) {
 			vm: asmodel.K8sNode{
 				Name: "auto-sched-nokia6-3",
 				ResidualResources: asmodel.GenericResources{
-					CpuCore: 3.0,
+					CpuCore: 20,
 					Memory:  4096,
 					Storage: 80,
 				},
@@ -893,13 +1073,13 @@ func TestInnerAllocateCpusOneVm(t *testing.T) {
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 0.3,
+						AllocatedCpuCore: 3,
 					},
 					"app2": asmodel.SingleAppSolution{
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 0.2,
+						AllocatedCpuCore: 2,
 					},
 					"app3": asmodel.SingleAppSolution{
 						Accepted:         true,
@@ -911,19 +1091,202 @@ func TestInnerAllocateCpusOneVm(t *testing.T) {
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 0.1,
+						AllocatedCpuCore: 1,
 					},
 					"app6": asmodel.SingleAppSolution{
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 2,
+						AllocatedCpuCore: 11,
 					},
 					"app7": asmodel.SingleAppSolution{
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 0.2,
+						AllocatedCpuCore: cpuCoreStep,
+					},
+					"app8": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: cpuCoreStep,
+					},
+				},
+			},
+		},
+		{
+			name: "case vm less than requested 2",
+			vm: asmodel.K8sNode{
+				Name: "auto-sched-nokia6-3",
+				ResidualResources: asmodel.GenericResources{
+					CpuCore: 10,
+					Memory:  4096,
+					Storage: 80,
+				},
+			},
+			apps:           appsForTest()[8],
+			appsOrder:      appOrdersForTest()[0],
+			appNamesThisVm: []string{"app1", "app2", "app3", "app4", "app6", "app7", "app8"},
+			solnWithVm:     solnsForTest()[5],
+			expectedResult: asmodel.Solution{
+				AppsSolution: map[string]asmodel.SingleAppSolution{
+					"app1": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: 1,
+					},
+					"app2": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: cpuCoreStep,
+					},
+					"app3": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: cpuCoreStep,
+					},
+					"app4": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: cpuCoreStep,
+					},
+					"app6": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: 4,
+					},
+					"app7": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: cpuCoreStep,
+					},
+					"app8": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: cpuCoreStep,
+					},
+				},
+			},
+		},
+		{
+			name: "case vm less than requested 3",
+			vm: asmodel.K8sNode{
+				Name: "auto-sched-nokia6-3",
+				ResidualResources: asmodel.GenericResources{
+					CpuCore: 15,
+					Memory:  4096,
+					Storage: 80,
+				},
+			},
+			apps:           appsForTest()[8],
+			appsOrder:      appOrdersForTest()[0],
+			appNamesThisVm: []string{"app1", "app2", "app3", "app4", "app6", "app7", "app8"},
+			solnWithVm:     solnsForTest()[5],
+			expectedResult: asmodel.Solution{
+				AppsSolution: map[string]asmodel.SingleAppSolution{
+					"app1": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: 2,
+					},
+					"app2": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: 1,
+					},
+					"app3": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: cpuCoreStep,
+					},
+					"app4": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: cpuCoreStep,
+					},
+					"app6": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: 8,
+					},
+					"app7": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: cpuCoreStep,
+					},
+					"app8": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: cpuCoreStep,
+					},
+				},
+			},
+		},
+		{
+			name: "case vm less than requested 4",
+			vm: asmodel.K8sNode{
+				Name: "auto-sched-nokia6-3",
+				ResidualResources: asmodel.GenericResources{
+					CpuCore: 32,
+					Memory:  4096,
+					Storage: 80,
+				},
+			},
+			apps:           appsForTest()[8],
+			appsOrder:      appOrdersForTest()[0],
+			appNamesThisVm: []string{"app1", "app2", "app3", "app4", "app6", "app7", "app8"},
+			solnWithVm:     solnsForTest()[5],
+			expectedResult: asmodel.Solution{
+				AppsSolution: map[string]asmodel.SingleAppSolution{
+					"app1": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: 3,
+					},
+					"app2": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: 2,
+					},
+					"app3": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: cpuCoreStep,
+					},
+					"app4": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: 1,
+					},
+					"app6": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: 20,
+					},
+					"app7": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: 4,
 					},
 					"app8": asmodel.SingleAppSolution{
 						Accepted:         true,
@@ -939,7 +1302,7 @@ func TestInnerAllocateCpusOneVm(t *testing.T) {
 			vm: asmodel.K8sNode{
 				Name: "auto-sched-nokia6-3",
 				ResidualResources: asmodel.GenericResources{
-					CpuCore: 6,
+					CpuCore: 33,
 					Memory:  4096,
 					Storage: 80,
 				},
@@ -954,43 +1317,104 @@ func TestInnerAllocateCpusOneVm(t *testing.T) {
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 0.3,
+						AllocatedCpuCore: 3,
 					},
 					"app2": asmodel.SingleAppSolution{
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 0.2,
+						AllocatedCpuCore: 2,
 					},
 					"app3": asmodel.SingleAppSolution{
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 0.2,
+						AllocatedCpuCore: 2,
 					},
 					"app4": asmodel.SingleAppSolution{
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 0.1,
+						AllocatedCpuCore: 1,
 					},
 					"app6": asmodel.SingleAppSolution{
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 2,
+						AllocatedCpuCore: 20,
 					},
 					"app7": asmodel.SingleAppSolution{
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 0.4,
+						AllocatedCpuCore: 4,
 					},
 					"app8": asmodel.SingleAppSolution{
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 0.1,
+						AllocatedCpuCore: 1,
+					},
+				},
+			},
+		},
+		{
+			name: "case vm more than requested 2",
+			vm: asmodel.K8sNode{
+				Name: "auto-sched-nokia6-3",
+				ResidualResources: asmodel.GenericResources{
+					CpuCore: 34,
+					Memory:  4096,
+					Storage: 80,
+				},
+			},
+			apps:           appsForTest()[8],
+			appsOrder:      appOrdersForTest()[0],
+			appNamesThisVm: []string{"app1", "app2", "app3", "app4", "app6", "app7", "app8"},
+			solnWithVm:     solnsForTest()[5],
+			expectedResult: asmodel.Solution{
+				AppsSolution: map[string]asmodel.SingleAppSolution{
+					"app1": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: 3,
+					},
+					"app2": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: 2,
+					},
+					"app3": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: 2,
+					},
+					"app4": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: 1,
+					},
+					"app6": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: 20,
+					},
+					"app7": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: 4,
+					},
+					"app8": asmodel.SingleAppSolution{
+						Accepted:         true,
+						TargetCloudName:  "NOKIA6",
+						K8sNodeName:      "auto-sched-nokia6-3",
+						AllocatedCpuCore: 1,
 					},
 				},
 			},

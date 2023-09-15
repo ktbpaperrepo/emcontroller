@@ -29,9 +29,9 @@ const (
 	// possibility 2. be set in the user request for auto-scheduling;
 	// possibility 3. be set for every application separately;
 	// expAppCompuTimeOneCpu float64 = 50
-	expAppCompuTimeOneCpu float64 = 35
+	expAppCompuTimeOneCpu float64 = 35 // expected computation time by one CPU core, unit: ms
 
-	enlargerScaleMaxCompuTime float64 = 10   // minimum allocated CPU is 0.1, so the max computation time should enlarger 10 times.
+	enlargerScaleMaxCompuTime float64 = 1    // minimum allocated CPU is 1, so the max computation time should enlarger 1 times.
 	enlargerScaleMaxRTT       float64 = 1.25 // because the minimum computation part is not 0, minimum RTT should also not be 0.
 )
 

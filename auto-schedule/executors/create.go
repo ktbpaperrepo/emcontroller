@@ -148,8 +148,8 @@ func addScheInfoToApps(apps []models.K8sApp, scheSoln asmodel.Solution) []models
 		// add node name
 		app.NodeName = scheSoln.AppsSolution[app.Name].K8sNodeName
 		// configure allocated CPU
-		app.Containers[0].Resources.Requests.CPU = fmt.Sprintf("%.1f", scheSoln.AppsSolution[app.Name].AllocatedCpuCore)
-		app.Containers[0].Resources.Limits.CPU = fmt.Sprintf("%.1f", scheSoln.AppsSolution[app.Name].AllocatedCpuCore)
+		app.Containers[0].Resources.Requests.CPU = fmt.Sprintf("%.0f", scheSoln.AppsSolution[app.Name].AllocatedCpuCore)
+		app.Containers[0].Resources.Limits.CPU = fmt.Sprintf("%.0f", scheSoln.AppsSolution[app.Name].AllocatedCpuCore)
 
 		appsWithScheInfo = append(appsWithScheInfo, app)
 	}

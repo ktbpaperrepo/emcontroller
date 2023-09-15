@@ -441,7 +441,7 @@ func TestInnerCalcNeededRes(t *testing.T) {
 			minCpu:   true,
 			expectedResult: asmodel.AppResources{
 				GenericResources: asmodel.GenericResources{
-					CpuCore: 0.2,
+					CpuCore: 2,
 					Memory:  2014,
 					Storage: 25,
 				},
@@ -467,7 +467,7 @@ func TestInnerCalcNeededRes(t *testing.T) {
 			minCpu:   true,
 			expectedResult: asmodel.AppResources{
 				GenericResources: asmodel.GenericResources{
-					CpuCore: 0.4,
+					CpuCore: 4,
 					Memory:  3060,
 					Storage: 80,
 				},

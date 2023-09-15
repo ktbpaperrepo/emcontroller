@@ -14,7 +14,7 @@ type NetworkState struct {
 
 // Check network state from MySQL and return the result as a matrix.
 func GetNetState() (map[string]map[string]NetworkState, error) {
-	// TODO: After finishing developing almost all functions, add this if.
+	// TODO: Do not add this if, because without this, multi-cloud manager is more flexible.
 	//if !NetTestFuncOn {
 	//	outErr := fmt.Errorf("%s", NetTestFuncOffMsg)
 	//	beego.Error(outErr)

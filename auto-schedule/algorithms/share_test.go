@@ -1282,7 +1282,7 @@ func appsForTest() []map[string]asmodel.Application {
 				Priority: 10,
 				Resources: asmodel.AppResources{
 					GenericResources: asmodel.GenericResources{
-						CpuCore: 0.3,
+						CpuCore: 3,
 						Memory:  1024,
 						Storage: 10,
 					},
@@ -1293,7 +1293,7 @@ func appsForTest() []map[string]asmodel.Application {
 				Priority: 10,
 				Resources: asmodel.AppResources{
 					GenericResources: asmodel.GenericResources{
-						CpuCore: 0.2,
+						CpuCore: 2,
 						Memory:  990,
 						Storage: 15,
 					},
@@ -1304,7 +1304,7 @@ func appsForTest() []map[string]asmodel.Application {
 				Priority: 1,
 				Resources: asmodel.AppResources{
 					GenericResources: asmodel.GenericResources{
-						CpuCore: 0.2,
+						CpuCore: 2,
 						Memory:  990,
 						Storage: 15,
 					},
@@ -1315,7 +1315,7 @@ func appsForTest() []map[string]asmodel.Application {
 				Priority: 10,
 				Resources: asmodel.AppResources{
 					GenericResources: asmodel.GenericResources{
-						CpuCore: 0.1,
+						CpuCore: 1,
 						Memory:  660,
 						Storage: 6,
 					},
@@ -1326,7 +1326,7 @@ func appsForTest() []map[string]asmodel.Application {
 				Priority: 5,
 				Resources: asmodel.AppResources{
 					GenericResources: asmodel.GenericResources{
-						CpuCore: 2,
+						CpuCore: 5,
 						Memory:  990,
 						Storage: 15,
 					},
@@ -1337,7 +1337,7 @@ func appsForTest() []map[string]asmodel.Application {
 				Priority: 2,
 				Resources: asmodel.AppResources{
 					GenericResources: asmodel.GenericResources{
-						CpuCore: 0.4,
+						CpuCore: 4,
 						Memory:  540,
 						Storage: 35,
 					},
@@ -1348,7 +1348,7 @@ func appsForTest() []map[string]asmodel.Application {
 				Priority: 1,
 				Resources: asmodel.AppResources{
 					GenericResources: asmodel.GenericResources{
-						CpuCore: 0.1,
+						CpuCore: 1,
 						Memory:  540,
 						Storage: 15,
 					},
@@ -1361,7 +1361,7 @@ func appsForTest() []map[string]asmodel.Application {
 				Priority: 10,
 				Resources: asmodel.AppResources{
 					GenericResources: asmodel.GenericResources{
-						CpuCore: 0.3,
+						CpuCore: 3,
 						Memory:  1024,
 						Storage: 10,
 					},
@@ -1372,7 +1372,7 @@ func appsForTest() []map[string]asmodel.Application {
 				Priority: 10,
 				Resources: asmodel.AppResources{
 					GenericResources: asmodel.GenericResources{
-						CpuCore: 0.2,
+						CpuCore: 2,
 						Memory:  990,
 						Storage: 15,
 					},
@@ -1383,7 +1383,7 @@ func appsForTest() []map[string]asmodel.Application {
 				Priority: 1,
 				Resources: asmodel.AppResources{
 					GenericResources: asmodel.GenericResources{
-						CpuCore: 0.2,
+						CpuCore: 2,
 						Memory:  990,
 						Storage: 15,
 					},
@@ -1394,7 +1394,7 @@ func appsForTest() []map[string]asmodel.Application {
 				Priority: 10,
 				Resources: asmodel.AppResources{
 					GenericResources: asmodel.GenericResources{
-						CpuCore: 0.1,
+						CpuCore: 1,
 						Memory:  660,
 						Storage: 6,
 					},
@@ -1405,7 +1405,7 @@ func appsForTest() []map[string]asmodel.Application {
 				Priority: 2,
 				Resources: asmodel.AppResources{
 					GenericResources: asmodel.GenericResources{
-						CpuCore: 6.3,
+						CpuCore: 12,
 						Memory:  990,
 						Storage: 15,
 					},
@@ -1416,7 +1416,7 @@ func appsForTest() []map[string]asmodel.Application {
 				Priority: 5,
 				Resources: asmodel.AppResources{
 					GenericResources: asmodel.GenericResources{
-						CpuCore: 2,
+						CpuCore: 20,
 						Memory:  990,
 						Storage: 15,
 					},
@@ -1427,7 +1427,7 @@ func appsForTest() []map[string]asmodel.Application {
 				Priority: 2,
 				Resources: asmodel.AppResources{
 					GenericResources: asmodel.GenericResources{
-						CpuCore: 0.4,
+						CpuCore: 4,
 						Memory:  540,
 						Storage: 35,
 					},
@@ -1438,7 +1438,7 @@ func appsForTest() []map[string]asmodel.Application {
 				Priority: 1,
 				Resources: asmodel.AppResources{
 					GenericResources: asmodel.GenericResources{
-						CpuCore: 0.1,
+						CpuCore: 1,
 						Memory:  540,
 						Storage: 15,
 					},
