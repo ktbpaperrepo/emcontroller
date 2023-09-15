@@ -1,18 +1,22 @@
 import glob
-import csv
+import json
 import numpy as np
 import matplotlib.pyplot as plt
 
 import data_types
 import csv_operation
 
-REPEAT_COUNT = 2  # We repeat the experiments for REPEAT_COUNT times.
+REPEAT_COUNT = 3  # We repeat the experiments for REPEAT_COUNT times.
 DEVICE_COUNT = 1  # we use DEVICE_COUNT devices to send requests.
 APP_COUNT = 60  # In every repeat, we deploy APP_COUNT applications.
 REQ_COUNT_PER_APP = 5  # In every repeat, on every device, we access every application REQ_COUNT_PER_APP times.
 ALGO_NAMES = [
     "BERand", "Ampga", "Mcssga"
 ]  # the names of all algorithms to be evaluated in this experiment
+
+#  the minimum and maximum possible priorities
+MIN_PRI = 1
+MAX_PRI = 10
 
 ATTR_TO_METRIC: dict[str, str] = {
     "resp_time":
@@ -23,6 +27,11 @@ ATTR_TO_METRIC: dict[str, str] = {
     "priority-weighted response time (ms)",
     "pri_wei_resp_time_in_clouds":
     "priority-weighted response time in clouds (ms)",
+}
+
+NON_PRI_ATTR_TO_METRIC: dict[str, str] = {
+    "resp_time": "response time (ms)",
+    "resp_time_in_clouds": "response time in clouds (ms)",
 }
 
 
@@ -82,7 +91,8 @@ def make_cdf_data(all_data: dict[str, list[data_types.ResultData]],
     return metric_data
 
 
-def draw_cdf(cdf_data: dict[str, list[float]], metric_name: str):
+def draw_cdf(cdf_data: dict[str, list[float]], metric_name: str,
+             mark_every: int):
     markers = ["*", "v", "+", "x", "d", "1"]
     marker_idx = 0
 
@@ -93,7 +103,7 @@ def draw_cdf(cdf_data: dict[str, list[float]], metric_name: str):
         plt.plot(sorted_data,
                  cumulative_prob,
                  marker=markers[marker_idx],
-                 markevery=(0, 20),
+                 markevery=mark_every,
                  label=algo_name)
         marker_idx += 1
         if marker_idx >= len(markers):
@@ -106,6 +116,35 @@ def draw_cdf(cdf_data: dict[str, list[float]], metric_name: str):
     plt.show()
 
 
+# draw CDF charts for every metric
+def draw_cdf_every_metric(data_to_draw: dict[str,
+                                             list[data_types.ResultData]]):
+    for attr_name, metric_name in ATTR_TO_METRIC.items():
+        metric_data = make_cdf_data(data_to_draw, attr_name)
+        draw_cdf(metric_data, metric_name, 20)
+
+
+# draw CDF charts for metrics not weighted by priorities
+def draw_cdf_non_pri_metric(data_to_draw: dict[str,
+                                               list[data_types.ResultData]]):
+    for attr_name, metric_name in NON_PRI_ATTR_TO_METRIC.items():
+        metric_data = make_cdf_data(data_to_draw, attr_name)
+        draw_cdf(metric_data, metric_name, 1)
+
+
+# filter the data about the applications with the specified priority
+def filter_data_with_priority(
+        all_data: dict[str, list[data_types.ResultData]],
+        priority: int) -> dict[str, list[data_types.ResultData]]:
+    out_data: dict[str, list[data_types.ResultData]] = dict()
+    for algo_name, algo_data in all_data.items():
+        out_data[algo_name] = []
+        for _, one_data in enumerate(algo_data):
+            if one_data.priority == priority:
+                out_data[algo_name].append(one_data)
+    return out_data
+
+
 def main():
     all_data: dict[str, list[data_types.ResultData]] = dict()
     for _, algo_name in enumerate(ALGO_NAMES):  # initialize the dict
@@ -113,6 +152,17 @@ def main():
 
     # load all data
     for i in range(REPEAT_COUNT):
+        # in a repeat, the apps are the same for all algorithms
+        app_name_to_pri: dict[str, int] = dict()
+
+        # from the app deploy request json to read all applications including rejected ones
+        with open("data/repeat{}/request_applications.json".format(
+                i + 1)) as json_file:
+            app_reqs = json.load(json_file)
+            for _, app_req in enumerate(app_reqs):
+                app_name_to_pri[app_req["name"]] = app_req["priority"]
+
+        # read the data from csv files
         for algo_name in ALGO_NAMES:
             # use glob to get the paths of all csv files in this folder
             csv_files_pattern = "data/repeat{}/{}/*.csv".format(
@@ -120,23 +170,72 @@ def main():
             csv_file_names = glob.glob(csv_files_pattern)
             # read every csv files in this folder
             for _, file_name in enumerate(csv_file_names):
-                all_data[algo_name].extend(csv_operation.read_csv(file_name))
+                data_in_file = csv_operation.read_csv(file_name)
+                all_data[algo_name].extend(data_in_file)
 
+                # For this file, complement the data for rejected applications
+                app_name_to_pri_this_file: dict[str, int] = dict()
+                for name, pri in app_name_to_pri.items():
+                    app_name_to_pri_this_file[name] = pri
+
+                for _, data_item in enumerate(data_in_file):
+                    del app_name_to_pri_this_file[data_item.app_name]
+
+                if len(data_in_file) + len(
+                        app_name_to_pri_this_file) != APP_COUNT:
+                    print("total app count:", APP_COUNT)
+                    print("accepted app count:", len(data_in_file))
+                    print("rejected app count:",
+                          len(app_name_to_pri_this_file))
+                    raise Exception(
+                        "accepted app count, rejected app count, and total app count are not mapped."
+                    )
+
+                for name, pri in app_name_to_pri_this_file.items():
+                    all_data[algo_name].append(
+                        data_types.ResultData(app_name=name,
+                                              priority=pri,
+                                              resp_time=-1,
+                                              resp_time_in_clouds=-1,
+                                              pri_wei_resp_time=-1,
+                                              pri_wei_resp_time_in_clouds=-1))
+
+    # ----------------------------
     # complement the data for rejected applications
-    comp_count_per_algo = REPEAT_COUNT * DEVICE_COUNT * APP_COUNT * REQ_COUNT_PER_APP
+    # comp_count_per_algo = REPEAT_COUNT * DEVICE_COUNT * APP_COUNT * REQ_COUNT_PER_APP
     data_for_rej_apps = calc_values_for_rejected(all_data)
 
-    print(f"Every algorithm should have {comp_count_per_algo} items of data.")
+    # # deprecated old code, complementing data without considering the priorities of rejected applications.
+    # print(f"Every algorithm should have {comp_count_per_algo} items of data.")
+    # for _, algo_name in enumerate(ALGO_NAMES):
+    #     algo_data = all_data[algo_name]
+    #     num_to_comp = comp_count_per_algo - len(algo_data)
+
+    #     print(
+    #         f"Algorithm: {algo_name} has {len(algo_data)} items, so complement {num_to_comp} items to it."
+    #     )
+
+    #     all_data[algo_name].extend(
+    #         [data_for_rej_apps for i in range(num_to_comp)])
+
+    # Even for the rejected applications, we complement their priority-weighted metrics according to their priorities
     for _, algo_name in enumerate(ALGO_NAMES):
-        algo_data = all_data[algo_name]
-        num_to_comp = comp_count_per_algo - len(algo_data)
+        for idx, _ in enumerate(all_data[algo_name]):
+            if all_data[algo_name][idx].resp_time == -1:
+                all_data[algo_name][
+                    idx].resp_time = data_for_rej_apps.resp_time
+                all_data[algo_name][idx].pri_wei_resp_time = float(
+                    all_data[algo_name]
+                    [idx].priority) * all_data[algo_name][idx].resp_time
 
-        print(
-            f"Algorithm: {algo_name} has {len(algo_data)} items, so complement {num_to_comp} items to it."
-        )
+                all_data[algo_name][
+                    idx].resp_time_in_clouds = data_for_rej_apps.resp_time_in_clouds
+                all_data[algo_name][
+                    idx].pri_wei_resp_time_in_clouds = all_data[algo_name][
+                        idx].resp_time_in_clouds * float(
+                            all_data[algo_name][idx].priority)
 
-        all_data[algo_name].extend(
-            [data_for_rej_apps for i in range(num_to_comp)])
+    # -------------------------
 
     # # print the complemented results
     # for algo_name, algo_data in all_data.items():
@@ -146,10 +245,16 @@ def main():
     #     print()
     #     print()
 
-    # draw CDF charts for every metric
-    for attr_name, metric_name in ATTR_TO_METRIC.items():
-        metric_data = make_cdf_data(all_data, attr_name)
-        draw_cdf(metric_data, metric_name)
+    print("draw cdf charts for all data")
+    draw_cdf_every_metric(all_data)
+
+    # draw cdf charts for every-priority data
+    for pri in range(MIN_PRI, MAX_PRI + 1):
+        this_pri_data = filter_data_with_priority(all_data, pri)
+        print(
+            "draw cdf charts for the data about applications with priority {}".
+            format(pri))
+        draw_cdf_non_pri_metric(this_pri_data)
 
 
 if __name__ == "__main__":
