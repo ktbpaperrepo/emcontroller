@@ -48,7 +48,7 @@ type Mcssga struct {
 
 	MaxReachableRtt       float64            // The biggest RTT between any 2 (or 1) reachable clouds, used to calculate fitness values. unit millisecond (ms)
 	ExpAppCompuTimeOneCpu float64            // the expected computation time of every application by one CPU core.  unit millisecond (ms)
-	FitnessDp             map[string]float64 // the record for dynamic programming in Fitness calculation, to reduce the scheduling time.
+	FitnessNonPriDp       map[string]float64 // the record for dynamic programming in Fitness calculation, to reduce the scheduling time.
 
 	// these 2 member variables record the best solution in all iteration as well as its fitness value
 	BestFitnessRecords []float64
@@ -447,7 +447,7 @@ func (m *Mcssga) selectionOperator(clouds map[string]asmodel.Cloud, apps map[str
 func (m *Mcssga) Fitness(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, chromosome asmodel.Solution) float64 {
 	var fitnessValue float64
 
-	m.FitnessDp = make(map[string]float64) // clear the dp record
+	m.FitnessNonPriDp = make(map[string]float64) // clear the dp record
 	for appName, _ := range apps {
 		fitnessValue += m.fitnessOneApp(clouds, apps, chromosome, appName)
 	}
@@ -457,19 +457,23 @@ func (m *Mcssga) Fitness(clouds map[string]asmodel.Cloud, apps map[string]asmode
 
 // calculate the fitness value contributed by an application
 func (m *Mcssga) fitnessOneApp(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, chromosome asmodel.Solution, thisAppName string) float64 {
+	thisPri := apps[thisAppName].Priority // the fitness values should be weighted by applications' priorities.
+	return m.fitnessOneAppNonPri(clouds, apps, chromosome, thisAppName) * float64(thisPri)
+}
+
+// calculate the fitness value contributed by an application without the consideration of its priority
+func (m *Mcssga) fitnessOneAppNonPri(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, chromosome asmodel.Solution, thisAppName string) float64 {
 
 	// dynamic programming to reduce the scheduling time
-	if recordedFitness, exist := m.FitnessDp[thisAppName]; exist {
-		return recordedFitness
+	if recordedFitnessNonPri, exist := m.FitnessNonPriDp[thisAppName]; exist {
+		return recordedFitnessNonPri
 	}
 
-	thisPri := apps[thisAppName].Priority // the fitness values should be weighted by applications' priorities.
-
-	var thisAppFitness float64 // result
+	var thisAppFitnessNonPri float64 // result
 
 	// if an application is rejected, it contributes a very big negative fitness value, this is to encourage higher priority-weighted acceptance rate
 	if !chromosome.AppsSolution[thisAppName].Accepted {
-		thisAppFitness = -(m.ExpAppCompuTimeOneCpu*enlargerScaleMaxCompuTime + m.MaxReachableRtt*enlargerScaleMaxRTT) * (float64(len(apps)) / 5.0) * float64(thisPri)
+		thisAppFitnessNonPri = -(m.ExpAppCompuTimeOneCpu*enlargerScaleMaxCompuTime + m.MaxReachableRtt*enlargerScaleMaxRTT) * (float64(len(apps)) / 5.0)
 	} else {
 
 		// if this app is accepted, all its dependent apps are also accepted, which is guaranteed by our dependency acceptable check
@@ -506,19 +510,19 @@ func (m *Mcssga) fitnessOneApp(clouds map[string]asmodel.Cloud, apps map[string]
 			netPart := m.MaxReachableRtt*enlargerScaleMaxRTT - thisRtt // because the minimum computation part is not 0, this minimum should also not be 0.
 
 			// calculate the dependent application's fitness value, including its computation part, network part, and dependent apps part.
-			depAppPart := m.fitnessOneApp(clouds, apps, chromosome, depAppName)
+			depAppPart := m.fitnessOneAppNonPri(clouds, apps, chromosome, depAppName)
 
 			// add the 2 parts of the fitness value of this dependency to the sum
-			thisDepFitness := netPart + depAppPart
-			sumAllDeps += thisDepFitness
+			thisDepFitnessNonPri := netPart + depAppPart
+			sumAllDeps += thisDepFitnessNonPri
 		}
 
 		// For an app without dependencies, sumAllDeps will be 0.
-		thisAppFitness = (thisAppPart + sumAllDeps) * float64(thisPri) // weighted by applications' priorities.
+		thisAppFitnessNonPri = thisAppPart + sumAllDeps
 	}
 
-	m.FitnessDp[thisAppName] = thisAppFitness
-	return thisAppFitness
+	m.FitnessNonPriDp[thisAppName] = thisAppFitnessNonPri
+	return thisAppFitnessNonPri
 }
 
 // draw m.BestFitnessEachIter and m.BestFitnessRecords on a line chart, to show the evolution trend
