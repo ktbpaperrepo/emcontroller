@@ -1564,6 +1564,108 @@ func appsForTest() []map[string]asmodel.Application {
 				},
 			},
 		},
+		map[string]asmodel.Application{ // index 10
+			"app1": asmodel.Application{
+				Name:     "app1",
+				Priority: 10,
+				Resources: asmodel.AppResources{
+					GenericResources: asmodel.GenericResources{
+						CpuCore: 3,
+						Memory:  1024,
+						Storage: 10,
+					},
+				},
+				Dependencies: []models.Dependency{
+					models.Dependency{
+						AppName: "app2",
+					},
+				},
+			},
+			"app2": asmodel.Application{
+				Name:     "app2",
+				Priority: 10,
+				Resources: asmodel.AppResources{
+					GenericResources: asmodel.GenericResources{
+						CpuCore: 2,
+						Memory:  990,
+						Storage: 15,
+					},
+				},
+				Dependencies: []models.Dependency{
+					models.Dependency{
+						AppName: "app4",
+					},
+					models.Dependency{
+						AppName: "app3",
+					},
+				},
+			},
+			"app3": asmodel.Application{
+				Name:     "app3",
+				Priority: 1,
+				Resources: asmodel.AppResources{
+					GenericResources: asmodel.GenericResources{
+						CpuCore: 2,
+						Memory:  990,
+						Storage: 15,
+					},
+				},
+			},
+			"app4": asmodel.Application{
+				Name:     "app4",
+				Priority: 10,
+				Resources: asmodel.AppResources{
+					GenericResources: asmodel.GenericResources{
+						CpuCore: 1,
+						Memory:  660,
+						Storage: 6,
+					},
+				},
+			},
+			"app5": asmodel.Application{
+				Name:     "app5",
+				Priority: 2,
+				Resources: asmodel.AppResources{
+					GenericResources: asmodel.GenericResources{
+						CpuCore: 13,
+						Memory:  990,
+						Storage: 15,
+					},
+				},
+				Dependencies: []models.Dependency{
+					models.Dependency{
+						AppName: "app7",
+					},
+				},
+			},
+			"app6": asmodel.Application{
+				Name:     "app6",
+				Priority: 5,
+				Resources: asmodel.AppResources{
+					GenericResources: asmodel.GenericResources{
+						CpuCore: 2,
+						Memory:  990,
+						Storage: 15,
+					},
+				},
+			},
+			"app7": asmodel.Application{
+				Name:     "app7",
+				Priority: 2,
+				Resources: asmodel.AppResources{
+					GenericResources: asmodel.GenericResources{
+						CpuCore: 4,
+						Memory:  540,
+						Storage: 35,
+					},
+				},
+				Dependencies: []models.Dependency{
+					models.Dependency{
+						AppName: "app4",
+					},
+				},
+			},
+		},
 	}
 }
 

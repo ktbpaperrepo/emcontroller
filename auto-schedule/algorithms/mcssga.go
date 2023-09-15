@@ -47,6 +47,7 @@ type Mcssga struct {
 	CurNoUpdateIteration  int // record how many iterations the best solution has not updated currently.
 
 	MaxReachableRtt       float64            // The biggest RTT between any 2 (or 1) reachable clouds, used to calculate fitness values. unit millisecond (ms)
+	AvgDepNum             float64            // Average dependent application number of all applications
 	ExpAppCompuTimeOneCpu float64            // the expected computation time of every application by one CPU core.  unit millisecond (ms)
 	FitnessNonPriDp       map[string]float64 // the record for dynamic programming in Fitness calculation, to reduce the scheduling time.
 
@@ -88,10 +89,21 @@ func (m *Mcssga) SetMaxReaRtt(clouds map[string]asmodel.Cloud) {
 	m.MaxReachableRtt = maxReaRtt
 }
 
+// Traverse all applications to find the average dependency number of all apps.
+func (m *Mcssga) SetAvgDepNum(apps map[string]asmodel.Application) {
+	var sumDepNum int = 0
+	for _, app := range apps {
+		sumDepNum += len(app.Dependencies)
+	}
+	m.AvgDepNum = float64(sumDepNum) / float64(len(apps))
+}
+
 func (m *Mcssga) Schedule(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string) (asmodel.Solution, error) {
 	beego.Info("Using scheduling algorithm:", McssgaName)
 	m.SetMaxReaRtt(clouds)
 	beego.Info("MaxReachableRtt:", m.MaxReachableRtt)
+	m.SetAvgDepNum(apps)
+	beego.Info("AvgDepNum:", m.AvgDepNum)
 
 	beego.Info("Clouds:")
 	for _, cloud := range clouds {
@@ -464,6 +476,60 @@ func (m *Mcssga) fitnessOneApp(clouds map[string]asmodel.Cloud, apps map[string]
 // calculate the fitness value contributed by an application without the consideration of its priority
 func (m *Mcssga) fitnessOneAppNonPri(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, chromosome asmodel.Solution, thisAppName string) float64 {
 
+	var thisAppFitnessNonPri float64 // result
+
+	// if an application is rejected, it contributes a very big negative fitness value, this is to encourage higher priority-weighted acceptance rate
+	if !chromosome.AppsSolution[thisAppName].Accepted {
+		thisAppFitnessNonPri = -(m.ExpAppCompuTimeOneCpu + m.MaxReachableRtt*m.AvgDepNum)
+	} else {
+
+		// if this app is accepted, all its dependent apps are also accepted, which is guaranteed by our dependency acceptable check
+
+		// calculate the computation part of this application
+		thisAlloCpu := chromosome.AppsSolution[thisAppName].AllocatedCpuCore
+
+		// the maximum possible computation part of fitness of an application without priority should be "m.ExpAppCompuTimeOneCpu"
+		thisAppPart := m.ExpAppCompuTimeOneCpu - m.ExpAppCompuTimeOneCpu/thisAlloCpu
+
+		/**
+		An application's fitness is only affected by its computation part and the network part to its dependent applications. We do not need to consider its dependent applications' computation parts, because that parts are already considered in the dependent applications' fitness values.
+		*/
+
+		netPart := m.MaxReachableRtt * m.AvgDepNum // the base network part of fitness.
+		for _, dep := range apps[thisAppName].Dependencies {
+			depAppName := dep.AppName
+
+			// calculate the network part of the fitness value of this dependency
+			thisCloudName := chromosome.AppsSolution[thisAppName].TargetCloudName
+			depCloudName := chromosome.AppsSolution[depAppName].TargetCloudName
+			thisNodeName := chromosome.AppsSolution[thisAppName].K8sNodeName
+			depNodeName := chromosome.AppsSolution[depAppName].K8sNodeName
+
+			var thisRtt float64 // RTT from this application to the dependent application
+
+			if thisNodeName == depNodeName { // We consider the RTT inside a same VM as 0.
+				thisRtt = 0
+			} else {
+				thisRtt = clouds[thisCloudName].NetState[depCloudName].Rtt
+			}
+
+			netPart -= thisRtt
+			/**
+			The network delay between this app and its dependent ones will reduce this fitness.
+			This fitness function tend to accept apps with fewer dependencies, this is an unfair point, but I cannot find a better way, and this way seems like the most fair one that I can find yet now.
+			*/
+		}
+
+		thisAppFitnessNonPri = thisAppPart + netPart
+	}
+
+	return thisAppFitnessNonPri
+}
+
+// Deprecated: this fitness function tend to accept the applications with more dependencies, which is wrong.
+// calculate the fitness value contributed by an application without the consideration of its priority
+func (m *Mcssga) oldFitnessOneAppNonPri(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, chromosome asmodel.Solution, thisAppName string) float64 {
+
 	// dynamic programming to reduce the scheduling time
 	if recordedFitnessNonPri, exist := m.FitnessNonPriDp[thisAppName]; exist {
 		return recordedFitnessNonPri
@@ -510,7 +576,7 @@ func (m *Mcssga) fitnessOneAppNonPri(clouds map[string]asmodel.Cloud, apps map[s
 			netPart := m.MaxReachableRtt*enlargerScaleMaxRTT - thisRtt // because the minimum computation part is not 0, this minimum should also not be 0.
 
 			// calculate the dependent application's fitness value, including its computation part, network part, and dependent apps part.
-			depAppPart := m.fitnessOneAppNonPri(clouds, apps, chromosome, depAppName)
+			depAppPart := m.oldFitnessOneAppNonPri(clouds, apps, chromosome, depAppName)
 
 			// add the 2 parts of the fitness value of this dependency to the sum
 			thisDepFitnessNonPri := netPart + depAppPart

@@ -188,6 +188,7 @@ func TestCreateAppsWait(t *testing.T) {
 }
 
 // This unit test can be used to delete some application with a specific name prefix conveniently.
+// go test /mnt/c/mine/code/gocode/src/emcontroller/models/ -v -count=1 -run TestDeleteBatchApps
 func TestDeleteBatchApps(t *testing.T) {
 	InitSomeThing()
 

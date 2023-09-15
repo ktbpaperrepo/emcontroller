@@ -82,6 +82,7 @@ func CreateAutoScheduleApps(apps []models.K8sApp, algoName string) ([]models.App
 
 	// If we did not use Mcssga to schedule apps, now its max rtt has not been set, so we should set it now to calculate the fitness value in the following log.
 	mcssgaInstance.SetMaxReaRtt(cloudsForScheduling)
+	mcssgaInstance.SetAvgDepNum(appsForScheduling)
 	beego.Info(fmt.Sprintf("The algorithm works out the solution: %s\nIts fitness value is %g.", models.JsonString(solution), mcssgaInstance.Fitness(cloudsForScheduling, appsForScheduling, solution)))
 
 	//// This part is for debug ----------------------------

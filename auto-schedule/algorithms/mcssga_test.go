@@ -38,6 +38,41 @@ func TestSetMaxReaRtt(t *testing.T) {
 	}
 }
 
+func TestSetAvgDepNum(t *testing.T) {
+	testCases := []struct {
+		name           string
+		m              *Mcssga
+		apps           map[string]asmodel.Application
+		expectedResult float64
+	}{
+		{
+			name:           "case1",
+			m:              NewMcssga(100, 5000, 0.7, 0.2, 200),
+			apps:           appsForTest()[8],
+			expectedResult: 0,
+		},
+		{
+			name:           "case2",
+			m:              NewMcssga(100, 5000, 0.7, 0.2, 200),
+			apps:           appsForTest()[9],
+			expectedResult: 0.875,
+		},
+		{
+			name:           "case3",
+			m:              NewMcssga(100, 5000, 0.7, 0.2, 200),
+			apps:           appsForTest()[10],
+			expectedResult: 5.0 / 7,
+		},
+	}
+
+	for i, testCase := range testCases {
+		t.Logf("test: %d, %s", i, testCase.name)
+		assert.InDelta(t, 0, testCase.m.AvgDepNum, testDelta, fmt.Sprintf("%s: result is not expected", testCase.name))
+		testCase.m.SetAvgDepNum(testCase.apps)
+		assert.InDelta(t, testCase.expectedResult, testCase.m.AvgDepNum, testDelta, fmt.Sprintf("%s: result is not expected", testCase.name))
+	}
+}
+
 func TestInnerGeneMutate(t *testing.T) {
 	testCases := []struct {
 		name   string
