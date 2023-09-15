@@ -224,16 +224,20 @@ def main():
             if all_data[algo_name][idx].resp_time == -1:
                 all_data[algo_name][
                     idx].resp_time = data_for_rej_apps.resp_time
-                all_data[algo_name][idx].pri_wei_resp_time = float(
-                    all_data[algo_name]
-                    [idx].priority) * all_data[algo_name][idx].resp_time
+                all_data[algo_name][
+                    idx].pri_wei_resp_time = data_for_rej_apps.pri_wei_resp_time
+                # all_data[algo_name][idx].pri_wei_resp_time = float(
+                #     all_data[algo_name]
+                #     [idx].priority) * all_data[algo_name][idx].resp_time
 
                 all_data[algo_name][
                     idx].resp_time_in_clouds = data_for_rej_apps.resp_time_in_clouds
                 all_data[algo_name][
-                    idx].pri_wei_resp_time_in_clouds = all_data[algo_name][
-                        idx].resp_time_in_clouds * float(
-                            all_data[algo_name][idx].priority)
+                    idx].pri_wei_resp_time_in_clouds = data_for_rej_apps.pri_wei_resp_time_in_clouds
+                # all_data[algo_name][
+                #     idx].pri_wei_resp_time_in_clouds = all_data[algo_name][
+                #         idx].resp_time_in_clouds * float(
+                #             all_data[algo_name][idx].priority)
 
     # -------------------------
 
