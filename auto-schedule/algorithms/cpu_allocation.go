@@ -345,5 +345,15 @@ func calcAppsSumWeight(apps map[string]asmodel.Application) float64 {
 
 // calculate the weight of an application for CPU allocation
 func calcAppWeight(app asmodel.Application) float64 {
-	return app.Resources.CpuCore * float64(app.Priority)
+	//return app.Resources.CpuCore * float64(app.Priority)
+	/**
+	The requested CPU (app.Resources.CpuCore) should only be the upper bound in CPU allocation, but not the weight.
+	For example,
+	app1 with priority 5 needs 8 CPU cores,
+	app2 with priority 10 needs 2 cpu cores,
+	we only have 3 CPU cores,
+	for the old weight app.Resources.CpuCore * float64(app.Priority), app1 will be allocated 2 cores and app2 1 core,
+	for the new weight float64(app.Priority), app1 will be allocated 1 core and app2 2 cores, which is better.
+	*/
+	return float64(app.Priority)
 }

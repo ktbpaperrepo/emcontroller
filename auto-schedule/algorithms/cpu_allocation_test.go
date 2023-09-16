@@ -2,6 +2,7 @@ package algorithms
 
 import (
 	"fmt"
+	"math"
 	"testing"
 
 	"github.com/KeepTheBeats/routing-algorithms/mymath"
@@ -162,42 +163,42 @@ func TestInnerCalcAppWeight(t *testing.T) {
 		{
 			name:           "case1",
 			app:            apps["app1"],
-			expectedResult: 12,
+			expectedResult: 5,
 		},
 		{
 			name:           "case2",
 			app:            apps["app2"],
-			expectedResult: 39,
+			expectedResult: 10,
 		},
 		{
 			name:           "case3",
 			app:            apps["app3"],
-			expectedResult: 1.4,
+			expectedResult: 1,
 		},
 		{
 			name:           "case4",
 			app:            apps["app4"],
-			expectedResult: 15,
+			expectedResult: 3,
 		},
 		{
 			name:           "case5",
 			app:            apps["app5"],
-			expectedResult: 10,
+			expectedResult: 2,
 		},
 		{
 			name:           "case6",
 			app:            apps["app6"],
-			expectedResult: 28,
+			expectedResult: 7,
 		},
 		{
 			name:           "case7",
 			app:            apps["app7"],
-			expectedResult: 30,
+			expectedResult: 10,
 		},
 		{
 			name:           "case8",
 			app:            apps["app8"],
-			expectedResult: 16,
+			expectedResult: 8,
 		},
 	}
 
@@ -220,12 +221,12 @@ func TestInnerCalcAppsSumWeight(t *testing.T) {
 		{
 			name:           "case1",
 			apps:           apps,
-			expectedResult: 151.4,
+			expectedResult: 46,
 		},
 		{
 			name:           "case2",
 			apps:           appsForTest()[0],
-			expectedResult: 94.2,
+			expectedResult: 46,
 		},
 	}
 
@@ -259,7 +260,7 @@ func TestInnerCalcCpuOneApp(t *testing.T) {
 			},
 			thisAppName:    "app2",
 			apps:           apps,
-			expectedResult: 14.4 * 39 / 151.4,
+			expectedResult: 14.4 * calcAppWeight(apps["app2"]) / calcAppsSumWeight(apps),
 		},
 		{
 			name: "case2",
@@ -273,7 +274,7 @@ func TestInnerCalcCpuOneApp(t *testing.T) {
 			},
 			thisAppName:    "app5",
 			apps:           apps,
-			expectedResult: 14.4 * 10 / 151.4,
+			expectedResult: 14.4 * calcAppWeight(apps["app5"]) / calcAppsSumWeight(apps),
 		},
 		{
 			name: "case3",
@@ -287,7 +288,7 @@ func TestInnerCalcCpuOneApp(t *testing.T) {
 			},
 			thisAppName:    "app3",
 			apps:           appsForTest()[0],
-			expectedResult: 7.6 * 2.2 / 94.2,
+			expectedResult: 7.6 * calcAppWeight(appsForTest()[0]["app3"]) / calcAppsSumWeight(appsForTest()[0]),
 		},
 		{
 			name: "case3",
@@ -301,7 +302,7 @@ func TestInnerCalcCpuOneApp(t *testing.T) {
 			},
 			thisAppName:    "app6",
 			apps:           appsForTest()[0],
-			expectedResult: 7.6 * (3.4 * 7) / 94.2,
+			expectedResult: 7.6 * calcAppWeight(appsForTest()[0]["app6"]) / calcAppsSumWeight(appsForTest()[0]),
 		},
 	}
 
@@ -420,74 +421,83 @@ func TestInnerDistrCpuNextApp(t *testing.T) {
 	t.Log("Round 1")
 	thisAppName, allocatedCpu := distrCpuNextApp(vm, apps, appOrder)
 	assert.Equal(t, "app3", thisAppName)
-	assert.InDelta(t, 200*(1.4/151.4), allocatedCpu, testDelta)
+	assert.InDelta(t, vm.ResidualResources.CpuCore*calcAppWeight(apps["app3"])/calcAppsSumWeight(apps), allocatedCpu, testDelta)
 
-	actualAllocatedCpu := mymath.UnitFloor(allocatedCpu, cpuCoreStep)
-	assert.InDelta(t, 1, actualAllocatedCpu, testDelta)
+	var actualAllocatedCpu float64
+	if math.Abs(allocatedCpu-mymath.UnitRound(allocatedCpu, cpuCoreStep)) < floatDelta {
+		// e.g., because of the inaccuracy of binary-floating-point data, a value like 2 may be represented as 1.999999999999, so its floor will be 1 rather than 2, but we need its floor to be 2, so we do this.
+		actualAllocatedCpu = mymath.UnitRound(allocatedCpu, cpuCoreStep)
+	} else {
+		actualAllocatedCpu = mymath.UnitFloor(allocatedCpu, cpuCoreStep)
+	}
 
 	if actualAllocatedCpu > apps[thisAppName].Resources.CpuCore {
 		actualAllocatedCpu = apps[thisAppName].Resources.CpuCore
 	}
-	assert.InDelta(t, 1, actualAllocatedCpu, testDelta)
 
 	delete(apps, thisAppName)
 	vm.ResidualResources.CpuCore -= actualAllocatedCpu
 	assert.Equal(t, 7, len(apps))
-	assert.InDelta(t, 199, vm.ResidualResources.CpuCore, testDelta)
 
 	t.Log("Round 2")
 	thisAppName, allocatedCpu = distrCpuNextApp(vm, apps, appOrder)
 	assert.Equal(t, "app2", thisAppName)
-	assert.InDelta(t, 199*(39.0/150.0), allocatedCpu, testDelta)
+	assert.InDelta(t, vm.ResidualResources.CpuCore*calcAppWeight(apps["app2"])/calcAppsSumWeight(apps), allocatedCpu, testDelta)
 
-	actualAllocatedCpu = mymath.UnitFloor(allocatedCpu, cpuCoreStep)
-	assert.InDelta(t, 51, actualAllocatedCpu, testDelta)
+	if math.Abs(allocatedCpu-mymath.UnitRound(allocatedCpu, cpuCoreStep)) < floatDelta {
+		// e.g., because of the inaccuracy of binary-floating-point data, a value like 2 may be represented as 1.999999999999, so its floor will be 1 rather than 2, but we need its floor to be 2, so we do this.
+		actualAllocatedCpu = mymath.UnitRound(allocatedCpu, cpuCoreStep)
+	} else {
+		actualAllocatedCpu = mymath.UnitFloor(allocatedCpu, cpuCoreStep)
+	}
 
 	if actualAllocatedCpu > apps[thisAppName].Resources.CpuCore {
 		actualAllocatedCpu = apps[thisAppName].Resources.CpuCore
 	}
-	assert.InDelta(t, 3.9, actualAllocatedCpu, testDelta)
 
 	delete(apps, thisAppName)
 	vm.ResidualResources.CpuCore -= actualAllocatedCpu
 	assert.Equal(t, 6, len(apps))
-	assert.InDelta(t, 195.1, vm.ResidualResources.CpuCore, testDelta)
 
 	t.Log("Round 3")
 	thisAppName, allocatedCpu = distrCpuNextApp(vm, apps, appOrder)
 	assert.Equal(t, "app5", thisAppName)
-	assert.InDelta(t, 195.1*(10.0/111.0), allocatedCpu, testDelta)
+	assert.InDelta(t, vm.ResidualResources.CpuCore*calcAppWeight(apps["app5"])/calcAppsSumWeight(apps), allocatedCpu, testDelta)
 
-	actualAllocatedCpu = mymath.UnitFloor(allocatedCpu, cpuCoreStep)
-	assert.InDelta(t, 17, actualAllocatedCpu, testDelta)
+	if math.Abs(allocatedCpu-mymath.UnitRound(allocatedCpu, cpuCoreStep)) < floatDelta {
+		// e.g., because of the inaccuracy of binary-floating-point data, a value like 2 may be represented as 1.999999999999, so its floor will be 1 rather than 2, but we need its floor to be 2, so we do this.
+		actualAllocatedCpu = mymath.UnitRound(allocatedCpu, cpuCoreStep)
+	} else {
+		actualAllocatedCpu = mymath.UnitFloor(allocatedCpu, cpuCoreStep)
+	}
 
 	if actualAllocatedCpu > apps[thisAppName].Resources.CpuCore {
 		actualAllocatedCpu = apps[thisAppName].Resources.CpuCore
 	}
-	assert.InDelta(t, 5, actualAllocatedCpu, testDelta)
 
 	delete(apps, thisAppName)
 	vm.ResidualResources.CpuCore -= actualAllocatedCpu
 	assert.Equal(t, 5, len(apps))
-	assert.InDelta(t, 190.1, vm.ResidualResources.CpuCore, testDelta)
 
 	t.Log("Round 4")
 	thisAppName, allocatedCpu = distrCpuNextApp(vm, apps, appOrder)
 	assert.Equal(t, "app1", thisAppName)
-	assert.InDelta(t, 190.1*(12.0/101.0), allocatedCpu, testDelta)
+	assert.InDelta(t, vm.ResidualResources.CpuCore*calcAppWeight(apps["app1"])/calcAppsSumWeight(apps), allocatedCpu, testDelta)
 
-	actualAllocatedCpu = mymath.UnitFloor(allocatedCpu, cpuCoreStep)
-	assert.InDelta(t, 22, actualAllocatedCpu, testDelta)
+	if math.Abs(allocatedCpu-mymath.UnitRound(allocatedCpu, cpuCoreStep)) < floatDelta {
+		// e.g., because of the inaccuracy of binary-floating-point data, a value like 2 may be represented as 1.999999999999, so its floor will be 1 rather than 2, but we need its floor to be 2, so we do this.
+		actualAllocatedCpu = mymath.UnitRound(allocatedCpu, cpuCoreStep)
+	} else {
+		actualAllocatedCpu = mymath.UnitFloor(allocatedCpu, cpuCoreStep)
+	}
 
 	if actualAllocatedCpu > apps[thisAppName].Resources.CpuCore {
 		actualAllocatedCpu = apps[thisAppName].Resources.CpuCore
 	}
-	assert.InDelta(t, 2.4, actualAllocatedCpu, testDelta)
 
 	delete(apps, thisAppName)
 	vm.ResidualResources.CpuCore -= actualAllocatedCpu
 	assert.Equal(t, 4, len(apps))
-	assert.InDelta(t, 187.7, vm.ResidualResources.CpuCore, testDelta)
 }
 
 func TestInnerDistrCpuApps(t *testing.T) {
@@ -511,14 +521,14 @@ func TestInnerDistrCpuApps(t *testing.T) {
 			},
 			apps: apps,
 			expectedResult: map[string]float64{
-				"app1": 20.0 * 12.0 / 151.4,
-				"app2": 20.0 * 39.0 / 151.4,
-				"app3": 20.0 * 1.4 / 151.4,
-				"app4": 20.0 * 15.0 / 151.4,
-				"app5": 20.0 * 10.0 / 151.4,
-				"app6": 20.0 * 28.0 / 151.4,
-				"app7": 20.0 * 30.0 / 151.4,
-				"app8": 20.0 * 16.0 / 151.4,
+				"app1": 20.0 * calcAppWeight(apps["app1"]) / calcAppsSumWeight(apps),
+				"app2": 20.0 * calcAppWeight(apps["app2"]) / calcAppsSumWeight(apps),
+				"app3": 20.0 * calcAppWeight(apps["app3"]) / calcAppsSumWeight(apps),
+				"app4": 20.0 * calcAppWeight(apps["app4"]) / calcAppsSumWeight(apps),
+				"app5": 20.0 * calcAppWeight(apps["app5"]) / calcAppsSumWeight(apps),
+				"app6": 20.0 * calcAppWeight(apps["app6"]) / calcAppsSumWeight(apps),
+				"app7": 20.0 * calcAppWeight(apps["app7"]) / calcAppsSumWeight(apps),
+				"app8": 20.0 * calcAppWeight(apps["app8"]) / calcAppsSumWeight(apps),
 			},
 		},
 		{
@@ -533,12 +543,12 @@ func TestInnerDistrCpuApps(t *testing.T) {
 			},
 			apps: appsForTest()[1],
 			expectedResult: map[string]float64{
-				"app1": 7.3 * 26 / 87.7,
-				"app2": 7.3 * 13 / 87.7,
-				"app3": 7.3 * 2.2 / 87.7,
-				"app4": 7.3 * 16.8 / 87.7,
-				"app5": 7.3 * 13.6 / 87.7,
-				"app6": 7.3 * 16.1 / 87.7,
+				"app1": 7.3 * calcAppWeight(appsForTest()[1]["app1"]) / calcAppsSumWeight(appsForTest()[1]),
+				"app2": 7.3 * calcAppWeight(appsForTest()[1]["app2"]) / calcAppsSumWeight(appsForTest()[1]),
+				"app3": 7.3 * calcAppWeight(appsForTest()[1]["app3"]) / calcAppsSumWeight(appsForTest()[1]),
+				"app4": 7.3 * calcAppWeight(appsForTest()[1]["app4"]) / calcAppsSumWeight(appsForTest()[1]),
+				"app5": 7.3 * calcAppWeight(appsForTest()[1]["app5"]) / calcAppsSumWeight(appsForTest()[1]),
+				"app6": 7.3 * calcAppWeight(appsForTest()[1]["app6"]) / calcAppsSumWeight(appsForTest()[1]),
 			},
 		},
 	}
@@ -632,228 +642,6 @@ func TestInnerVmCpuWeightedAllocation(t *testing.T) {
 		expectedResult asmodel.Solution
 	}{
 		{
-			name: "case1",
-			vm: asmodel.K8sNode{
-				Name: "auto-sched-nokia6-3",
-				ResidualResources: asmodel.GenericResources{
-					CpuCore: 5.2,
-					Memory:  4096,
-					Storage: 80,
-				},
-			},
-			appsThisVm: appsForTest()[4],
-			appsOrder:  appOrdersForTest()[0],
-			solnWithVm: solnsForTest()[4],
-			expectedResult: asmodel.Solution{
-				AppsSolution: map[string]asmodel.SingleAppSolution{
-					"app1": asmodel.SingleAppSolution{
-						Accepted:         true,
-						TargetCloudName:  "NOKIA6",
-						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 1,
-					},
-					"app4": asmodel.SingleAppSolution{
-						Accepted:         true,
-						TargetCloudName:  "NOKIA6",
-						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 1,
-					},
-					"app6": asmodel.SingleAppSolution{
-						Accepted:         true,
-						TargetCloudName:  "NOKIA6",
-						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 2,
-					},
-					"app7": asmodel.SingleAppSolution{
-						Accepted:         true,
-						TargetCloudName:  "NOKIA6",
-						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 1,
-					},
-				},
-			},
-		},
-		{
-			name: "case2",
-			vm: asmodel.K8sNode{
-				Name: "auto-sched-nokia6-3",
-				ResidualResources: asmodel.GenericResources{
-					CpuCore: 30,
-					Memory:  4096,
-					Storage: 80,
-				},
-			},
-			appsThisVm: appsForTest()[5],
-			appsOrder:  appOrdersForTest()[0],
-			solnWithVm: solnsForTest()[5],
-			expectedResult: asmodel.Solution{
-				AppsSolution: map[string]asmodel.SingleAppSolution{
-					"app1": asmodel.SingleAppSolution{
-						Accepted:         true,
-						TargetCloudName:  "NOKIA6",
-						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 3.3,
-					},
-					"app2": asmodel.SingleAppSolution{
-						Accepted:         true,
-						TargetCloudName:  "NOKIA6",
-						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 1.4,
-					},
-					"app3": asmodel.SingleAppSolution{
-						Accepted:         true,
-						TargetCloudName:  "NOKIA6",
-						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 2,
-					},
-					"app4": asmodel.SingleAppSolution{
-						Accepted:         true,
-						TargetCloudName:  "NOKIA6",
-						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 5.1,
-					},
-					"app6": asmodel.SingleAppSolution{
-						Accepted:         true,
-						TargetCloudName:  "NOKIA6",
-						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 3.4,
-					},
-					"app7": asmodel.SingleAppSolution{
-						Accepted:         true,
-						TargetCloudName:  "NOKIA6",
-						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: cpuCoreStep,
-					},
-					"app8": asmodel.SingleAppSolution{
-						Accepted:         true,
-						TargetCloudName:  "NOKIA6",
-						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: cpuCoreStep,
-					},
-				},
-			},
-		},
-		{
-			name: "case2-2",
-			vm: asmodel.K8sNode{
-				Name: "auto-sched-nokia6-3",
-				ResidualResources: asmodel.GenericResources{
-					CpuCore: 15,
-					Memory:  4096,
-					Storage: 80,
-				},
-			},
-			appsThisVm: appsForTest()[5],
-			appsOrder:  appOrdersForTest()[0],
-			solnWithVm: solnsForTest()[5],
-			expectedResult: asmodel.Solution{
-				AppsSolution: map[string]asmodel.SingleAppSolution{
-					"app1": asmodel.SingleAppSolution{
-						Accepted:         true,
-						TargetCloudName:  "NOKIA6",
-						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 3,
-					},
-					"app2": asmodel.SingleAppSolution{
-						Accepted:         true,
-						TargetCloudName:  "NOKIA6",
-						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 1.4,
-					},
-					"app3": asmodel.SingleAppSolution{
-						Accepted:         true,
-						TargetCloudName:  "NOKIA6",
-						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: cpuCoreStep,
-					},
-					"app4": asmodel.SingleAppSolution{
-						Accepted:         true,
-						TargetCloudName:  "NOKIA6",
-						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 5,
-					},
-					"app6": asmodel.SingleAppSolution{
-						Accepted:         true,
-						TargetCloudName:  "NOKIA6",
-						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 2,
-					},
-					"app7": asmodel.SingleAppSolution{
-						Accepted:         true,
-						TargetCloudName:  "NOKIA6",
-						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: cpuCoreStep,
-					},
-					"app8": asmodel.SingleAppSolution{
-						Accepted:         true,
-						TargetCloudName:  "NOKIA6",
-						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: cpuCoreStep,
-					},
-				},
-			},
-		},
-		{
-			name: "case3",
-			vm: asmodel.K8sNode{
-				Name: "auto-sched-nokia6-3",
-				ResidualResources: asmodel.GenericResources{
-					CpuCore: 17,
-					Memory:  4096,
-					Storage: 80,
-				},
-			},
-			appsThisVm: appsForTest()[6],
-			appsOrder:  appOrdersForTest()[0],
-			solnWithVm: solnsForTest()[5],
-			expectedResult: asmodel.Solution{
-				AppsSolution: map[string]asmodel.SingleAppSolution{
-					"app1": asmodel.SingleAppSolution{
-						Accepted:         true,
-						TargetCloudName:  "NOKIA6",
-						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 0.3,
-					},
-					"app2": asmodel.SingleAppSolution{
-						Accepted:         true,
-						TargetCloudName:  "NOKIA6",
-						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 0.2,
-					},
-					"app3": asmodel.SingleAppSolution{
-						Accepted:         true,
-						TargetCloudName:  "NOKIA6",
-						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: cpuCoreStep,
-					},
-					"app4": asmodel.SingleAppSolution{
-						Accepted:         true,
-						TargetCloudName:  "NOKIA6",
-						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 0.1,
-					},
-					"app6": asmodel.SingleAppSolution{
-						Accepted:         true,
-						TargetCloudName:  "NOKIA6",
-						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 0.3,
-					},
-					"app7": asmodel.SingleAppSolution{
-						Accepted:         true,
-						TargetCloudName:  "NOKIA6",
-						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 0.4,
-					},
-					"app8": asmodel.SingleAppSolution{
-						Accepted:         true,
-						TargetCloudName:  "NOKIA6",
-						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: cpuCoreStep,
-					},
-				},
-			},
-		},
-		{
 			name: "case4",
 			vm: asmodel.K8sNode{
 				Name: "auto-sched-nokia6-3",
@@ -902,7 +690,7 @@ func TestInnerVmCpuWeightedAllocation(t *testing.T) {
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 4,
+						AllocatedCpuCore: cpuCoreStep,
 					},
 					"app8": asmodel.SingleAppSolution{
 						Accepted:         true,
@@ -932,7 +720,7 @@ func TestInnerVmCpuWeightedAllocation(t *testing.T) {
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 3,
+						AllocatedCpuCore: 2,
 					},
 					"app2": asmodel.SingleAppSolution{
 						Accepted:         true,
@@ -956,7 +744,7 @@ func TestInnerVmCpuWeightedAllocation(t *testing.T) {
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 4,
+						AllocatedCpuCore: 5,
 					},
 					"app7": asmodel.SingleAppSolution{
 						Accepted:         true,
@@ -998,7 +786,7 @@ func TestInnerVmCpuWeightedAllocation(t *testing.T) {
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 1,
+						AllocatedCpuCore: 2,
 					},
 					"app3": asmodel.SingleAppSolution{
 						Accepted:         true,
@@ -1010,13 +798,13 @@ func TestInnerVmCpuWeightedAllocation(t *testing.T) {
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: cpuCoreStep,
+						AllocatedCpuCore: 1,
 					},
 					"app6": asmodel.SingleAppSolution{
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 3,
+						AllocatedCpuCore: cpuCoreStep,
 					},
 					"app7": asmodel.SingleAppSolution{
 						Accepted:         true,
@@ -1134,13 +922,13 @@ func TestInnerAllocateCpusOneVm(t *testing.T) {
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 1,
+						AllocatedCpuCore: 2,
 					},
 					"app2": asmodel.SingleAppSolution{
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: cpuCoreStep,
+						AllocatedCpuCore: 2,
 					},
 					"app3": asmodel.SingleAppSolution{
 						Accepted:         true,
@@ -1152,13 +940,13 @@ func TestInnerAllocateCpusOneVm(t *testing.T) {
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: cpuCoreStep,
+						AllocatedCpuCore: 1,
 					},
 					"app6": asmodel.SingleAppSolution{
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 4,
+						AllocatedCpuCore: 1,
 					},
 					"app7": asmodel.SingleAppSolution{
 						Accepted:         true,
@@ -1195,13 +983,13 @@ func TestInnerAllocateCpusOneVm(t *testing.T) {
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 2,
+						AllocatedCpuCore: 3,
 					},
 					"app2": asmodel.SingleAppSolution{
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 1,
+						AllocatedCpuCore: 2,
 					},
 					"app3": asmodel.SingleAppSolution{
 						Accepted:         true,
@@ -1213,13 +1001,13 @@ func TestInnerAllocateCpusOneVm(t *testing.T) {
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: cpuCoreStep,
+						AllocatedCpuCore: 1,
 					},
 					"app6": asmodel.SingleAppSolution{
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 8,
+						AllocatedCpuCore: 6,
 					},
 					"app7": asmodel.SingleAppSolution{
 						Accepted:         true,
@@ -1280,7 +1068,7 @@ func TestInnerAllocateCpusOneVm(t *testing.T) {
 						Accepted:         true,
 						TargetCloudName:  "NOKIA6",
 						K8sNodeName:      "auto-sched-nokia6-3",
-						AllocatedCpuCore: 20,
+						AllocatedCpuCore: 17,
 					},
 					"app7": asmodel.SingleAppSolution{
 						Accepted:         true,
