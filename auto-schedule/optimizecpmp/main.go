@@ -86,7 +86,7 @@ func main() {
 }
 
 func testParameters(crossoverProbability float64, mutationProbability float64) float64 {
-	mcssgaInstance := algorithms.NewMcssga(200, 5000, crossoverProbability, mutationProbability, 200)
+	mcssgaInstance := algorithms.NewMcssga(200, 5000, crossoverProbability, mutationProbability, 200, algorithms.DefaultExpAppCompuTimeOneCpu)
 	solution, err := mcssgaInstance.Schedule(clouds, apps, appsOrder)
 	if err != nil {
 		panic(fmt.Sprintf("mcssgaInstance.Schedule, crossoverProbability: %g, mutationProbability: %g, error: %s", crossoverProbability, mutationProbability, err.Error()))

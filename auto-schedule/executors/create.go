@@ -13,7 +13,7 @@ import (
 )
 
 // algoName is the name of the scheduling algorithm to use.
-func CreateAutoScheduleApps(apps []models.K8sApp, algoName string) ([]models.AppInfo, error, int) {
+func CreateAutoScheduleApps(apps []models.K8sApp, algoName string, exTimeOneCpu float64) ([]models.AppInfo, error, int) {
 
 	// we only accept the valid applications, or otherwise we will have too much unnecessary workload
 	if errs := ValidateAutoScheduleApps(apps); len(errs) != 0 {
@@ -53,7 +53,7 @@ func CreateAutoScheduleApps(apps []models.K8sApp, algoName string) ([]models.App
 	// call the Scheduling method according to the input parameter "algo"
 
 	// create algorithm instances, and put them in a map
-	mcssgaInstance := algorithms.NewMcssga(chromosomesCount, iterationCount, crossoverProbability, mutationProbability, stopNoUpdateIteration)
+	mcssgaInstance := algorithms.NewMcssga(chromosomesCount, iterationCount, crossoverProbability, mutationProbability, stopNoUpdateIteration, exTimeOneCpu)
 	var allAlgos map[string]algorithms.SchedulingAlgorithm = make(map[string]algorithms.SchedulingAlgorithm)
 	allAlgos[algorithms.McssgaName] = mcssgaInstance
 	allAlgos[algorithms.CompRandName] = algorithms.NewCompRand()

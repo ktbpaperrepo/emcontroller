@@ -225,7 +225,8 @@ func MakeExperimentApps(namePrefix string, count int, depDivisor float64, fastMo
 
 		// randomly generate a priority between the min and max values
 		outApps[i].Priority = random.RandomInt(asmodel.MinPriority, asmodel.MaxPriority)
-		workload := int(random.NormalRandomBM(55000, 1415000, 381475, 352936)) // measured from real applications
+		//workload := int(random.NormalRandomBM(55000, 1415000, 381475, 352936)) // measured from real applications
+		workload := 381475 // To avoid the interference, all applications should have a same amount of workload.
 
 		args := []string{fmt.Sprintf("%d", workload), fmt.Sprintf("%d", chosenApp.cpu), fmt.Sprintf("%d", chosenApp.memory), fmt.Sprintf("%d", chosenApp.storage)}
 		if fastMode { // fast mode is to test the functions. In this mode, the applications will not use time to occupy memory and storage.

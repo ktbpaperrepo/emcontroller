@@ -18,13 +18,13 @@ func TestSetMaxReaRtt(t *testing.T) {
 	}{
 		{
 			name:           "case1",
-			m:              NewMcssga(100, 5000, 0.7, 0.2, 200),
+			m:              NewMcssga(100, 5000, 0.7, 0.2, 200, DefaultExpAppCompuTimeOneCpu),
 			clouds:         cloudsWithNetForTest()[3],
 			expectedResult: 5.2,
 		},
 		{
 			name:           "case2",
-			m:              NewMcssga(100, 5000, 0.7, 0.2, 200),
+			m:              NewMcssga(100, 5000, 0.7, 0.2, 200, DefaultExpAppCompuTimeOneCpu),
 			clouds:         cloudsWithNetForTest()[2],
 			expectedResult: 0.753,
 		},
@@ -47,19 +47,19 @@ func TestSetAvgDepNum(t *testing.T) {
 	}{
 		{
 			name:           "case1",
-			m:              NewMcssga(100, 5000, 0.7, 0.2, 200),
+			m:              NewMcssga(100, 5000, 0.7, 0.2, 200, DefaultExpAppCompuTimeOneCpu),
 			apps:           appsForTest()[8],
 			expectedResult: 0,
 		},
 		{
 			name:           "case2",
-			m:              NewMcssga(100, 5000, 0.7, 0.2, 200),
+			m:              NewMcssga(100, 5000, 0.7, 0.2, 200, DefaultExpAppCompuTimeOneCpu),
 			apps:           appsForTest()[9],
 			expectedResult: 0.875,
 		},
 		{
 			name:           "case3",
-			m:              NewMcssga(100, 5000, 0.7, 0.2, 200),
+			m:              NewMcssga(100, 5000, 0.7, 0.2, 200, DefaultExpAppCompuTimeOneCpu),
 			apps:           appsForTest()[10],
 			expectedResult: 5.0 / 7,
 		},
@@ -82,7 +82,7 @@ func TestInnerGeneMutate(t *testing.T) {
 	}{
 		{
 			name:   "case1",
-			m:      NewMcssga(100, 5000, 0.7, 0.2, 200),
+			m:      NewMcssga(100, 5000, 0.7, 0.2, 200, DefaultExpAppCompuTimeOneCpu),
 			clouds: cloudsWithNetForTest()[3],
 			ori: asmodel.SingleAppSolution{
 				Accepted:        true,
@@ -91,7 +91,7 @@ func TestInnerGeneMutate(t *testing.T) {
 		},
 		{
 			name:   "case2",
-			m:      NewMcssga(100, 5000, 0.7, 0.2, 200),
+			m:      NewMcssga(100, 5000, 0.7, 0.2, 200, DefaultExpAppCompuTimeOneCpu),
 			clouds: cloudsWithNetForTest()[3],
 			ori: asmodel.SingleAppSolution{
 				Accepted:        true,
@@ -100,7 +100,7 @@ func TestInnerGeneMutate(t *testing.T) {
 		},
 		{
 			name:   "case3",
-			m:      NewMcssga(100, 5000, 0.7, 0.2, 200),
+			m:      NewMcssga(100, 5000, 0.7, 0.2, 200, DefaultExpAppCompuTimeOneCpu),
 			clouds: cloudsWithNetForTest()[3],
 			ori: asmodel.SingleAppSolution{
 				Accepted: false,
@@ -108,7 +108,7 @@ func TestInnerGeneMutate(t *testing.T) {
 		},
 		{
 			name:   "case4",
-			m:      NewMcssga(100, 5000, 0.7, 0.2, 200),
+			m:      NewMcssga(100, 5000, 0.7, 0.2, 200, DefaultExpAppCompuTimeOneCpu),
 			clouds: cloudsWithNetForTest()[3],
 			ori: asmodel.SingleAppSolution{
 				Accepted:        false,

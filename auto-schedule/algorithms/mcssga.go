@@ -28,8 +28,8 @@ const (
 	// possibility 1. be set by a dedicated user request;
 	// possibility 2. be set in the user request for auto-scheduling;
 	// possibility 3. be set for every application separately;
-	// expAppCompuTimeOneCpu float64 = 50
-	expAppCompuTimeOneCpu float64 = 35 // expected computation time by one CPU core, unit: ms
+	// DefaultExpAppCompuTimeOneCpu float64 = 50
+	DefaultExpAppCompuTimeOneCpu float64 = 35 // expected computation time by one CPU core, unit: ms
 
 	enlargerScaleMaxCompuTime float64 = 1    // minimum allocated CPU is 1, so the max computation time should enlarger 1 times.
 	enlargerScaleMaxRTT       float64 = 1.25 // because the minimum computation part is not 0, minimum RTT should also not be 0.
@@ -59,7 +59,7 @@ type Mcssga struct {
 	BestFitnessEachIter []float64
 }
 
-func NewMcssga(chromosomesCount int, iterationCount int, crossoverProbability float64, mutationProbability float64, stopNoUpdateIteration int) *Mcssga {
+func NewMcssga(chromosomesCount int, iterationCount int, crossoverProbability float64, mutationProbability float64, stopNoUpdateIteration int, exTimeOneCpu float64) *Mcssga {
 	return &Mcssga{
 		ChromosomesCount:      chromosomesCount,
 		IterationCount:        iterationCount,
@@ -68,7 +68,7 @@ func NewMcssga(chromosomesCount int, iterationCount int, crossoverProbability fl
 		StopNoUpdateIteration: stopNoUpdateIteration,
 		CurNoUpdateIteration:  0,
 		MaxReachableRtt:       0,
-		ExpAppCompuTimeOneCpu: expAppCompuTimeOneCpu,
+		ExpAppCompuTimeOneCpu: exTimeOneCpu,
 		BestFitnessRecords:    nil,
 		BestSolnRecords:       nil,
 		BestFitnessEachIter:   nil,
