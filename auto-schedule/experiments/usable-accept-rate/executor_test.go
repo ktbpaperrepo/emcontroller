@@ -13,6 +13,7 @@ import (
 
 	"emcontroller/auto-schedule/algorithms"
 	applicationsgenerator "emcontroller/auto-schedule/experiments/applications-generator"
+	asmodel "emcontroller/auto-schedule/model"
 	"emcontroller/models"
 )
 
@@ -28,26 +29,30 @@ type exptData struct {
 	totalAppCount         int
 	totalAcceptedAppCount int
 
+	appCountPerPri         map[int]int
+	acceptedAppCountPerPri map[int]int
+
 	totalAppPriority         int
 	totalAcceptedAppPriority int
 
 	solutionUsableRate                float64
 	appAcceptanceRate                 float64
 	appPriorityWeightedAcceptanceRate float64
+	appPerPriAcceptanceRate           map[int]float64
 }
 
 func TestExecute(t *testing.T) {
 	var appNamePrefix string = "expt-app"
 	var appCount int = 60
-	var repeatCount int = 5 // We repeat this experiment for 10 times to reduce the impact from random factors.
+	var repeatCount int = 2 // We repeat this experiment for 10 times to reduce the impact from random factors.
 
 	// all algorithms to be evaluated in experiment
 	var algoNames []string = []string{algorithms.CompRandName, algorithms.BERandName, algorithms.AmpgaName, algorithms.McssgaName}
 	var results []exptData = []exptData{ // used to save and output results
-		{algorithmName: algorithms.CompRandName},
-		{algorithmName: algorithms.BERandName},
-		{algorithmName: algorithms.AmpgaName},
-		{algorithmName: algorithms.McssgaName},
+		{algorithmName: algorithms.CompRandName, appCountPerPri: make(map[int]int), acceptedAppCountPerPri: make(map[int]int), appPerPriAcceptanceRate: make(map[int]float64)},
+		{algorithmName: algorithms.BERandName, appCountPerPri: make(map[int]int), acceptedAppCountPerPri: make(map[int]int), appPerPriAcceptanceRate: make(map[int]float64)},
+		{algorithmName: algorithms.AmpgaName, appCountPerPri: make(map[int]int), acceptedAppCountPerPri: make(map[int]int), appPerPriAcceptanceRate: make(map[int]float64)},
+		{algorithmName: algorithms.McssgaName, appCountPerPri: make(map[int]int), acceptedAppCountPerPri: make(map[int]int), appPerPriAcceptanceRate: make(map[int]float64)},
 	}
 
 	// We repeat experiment to reduce the impact from random factors. In every repeat, we generate different applications.
@@ -70,11 +75,20 @@ func TestExecute(t *testing.T) {
 			for _, app := range apps {
 				results[j].totalAppPriority += app.Priority
 			}
+			appCountPerPri := getPerPriAppCount(apps)
+			for pri := asmodel.MinPriority; pri <= asmodel.MaxPriority; pri++ {
+				results[j].appCountPerPri[pri] += appCountPerPri[pri]
+			}
+
 			if usable {
 				results[j].usableSolutionCount++
 				results[j].totalAcceptedAppCount += len(acceptedApps)
 				for _, acceptedApp := range acceptedApps {
 					results[j].totalAcceptedAppPriority += acceptedApp.Priority
+				}
+				acceptedAppCountPerPri := getPerPriAcceptedAppCount(acceptedApps)
+				for pri := asmodel.MinPriority; pri <= asmodel.MaxPriority; pri++ {
+					results[j].acceptedAppCountPerPri[pri] += acceptedAppCountPerPri[pri]
 				}
 			}
 		}
@@ -85,6 +99,9 @@ func TestExecute(t *testing.T) {
 		results[i].solutionUsableRate = float64(results[i].usableSolutionCount) / float64(results[i].schedulingRequestCount)
 		results[i].appAcceptanceRate = float64(results[i].totalAcceptedAppCount) / float64(results[i].totalAppCount)
 		results[i].appPriorityWeightedAcceptanceRate = float64(results[i].totalAcceptedAppPriority) / float64(results[i].totalAppPriority)
+		for pri := asmodel.MinPriority; pri <= asmodel.MaxPriority; pri++ {
+			results[i].appPerPriAcceptanceRate[pri] = float64(results[i].acceptedAppCountPerPri[pri]) / float64(results[i].appCountPerPri[pri])
+		}
 	}
 
 	if err := writeCsvResults(results); err != nil {
@@ -109,6 +126,7 @@ func schedulingRequest(algoName string, apps []models.K8sApp) ([]models.AppInfo,
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Mcm-Scheduling-Algorithm", algoName)
+	req.Header.Set("Expected-Time-One-Cpu", "35")
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -135,11 +153,34 @@ func schedulingRequest(algoName string, apps []models.K8sApp) ([]models.AppInfo,
 	return acceptedApps, true, nil // return of usable solution
 }
 
+// get the number of applications with each priority
+func getPerPriAppCount(apps []models.K8sApp) map[int]int {
+	var perPriAppCount map[int]int = make(map[int]int)
+
+	for _, app := range apps {
+		perPriAppCount[app.Priority]++
+	}
+
+	return perPriAppCount
+}
+
+// get the number of accepted applications with each priority
+func getPerPriAcceptedAppCount(acceptedApps []models.AppInfo) map[int]int {
+	var perPriAcceptedAppCount map[int]int = make(map[int]int)
+
+	for _, acceptedApp := range acceptedApps {
+		perPriAcceptedAppCount[acceptedApp.Priority]++
+	}
+
+	return perPriAcceptedAppCount
+}
+
 // function to write data into a csv file.
 func writeCsvResults(results []exptData) error {
 
 	var csvContent [][]string
-	csvContent = append(csvContent, []string{
+
+	var header []string = []string{
 		"Algorithm Name",
 		"Scheduling Request Count",
 		"Usable Solution Count",
@@ -150,10 +191,14 @@ func writeCsvResults(results []exptData) error {
 		"Solution Usable Rate",
 		"App Acceptance Rate",
 		"App Priority Weighted Acceptance Rate",
-	})
+	}
+	for pri := asmodel.MinPriority; pri <= asmodel.MaxPriority; pri++ {
+		header = append(header, fmt.Sprintf("Priority-%d App Acceptance Rate", pri))
+	}
+	csvContent = append(csvContent, header)
 
 	for _, result := range results {
-		csvContent = append(csvContent, []string{
+		var line []string = []string{
 			result.algorithmName,
 			fmt.Sprintf("%d", result.schedulingRequestCount),
 			fmt.Sprintf("%d", result.usableSolutionCount),
@@ -164,7 +209,11 @@ func writeCsvResults(results []exptData) error {
 			fmt.Sprintf("%g", result.solutionUsableRate),
 			fmt.Sprintf("%g", result.appAcceptanceRate),
 			fmt.Sprintf("%g", result.appPriorityWeightedAcceptanceRate),
-		})
+		}
+		for pri := asmodel.MinPriority; pri <= asmodel.MaxPriority; pri++ {
+			line = append(line, fmt.Sprintf("%g", result.appPerPriAcceptanceRate[pri]))
+		}
+		csvContent = append(csvContent, line)
 	}
 
 	return writeCsvFile(dataFileName, csvContent)

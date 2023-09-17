@@ -73,15 +73,12 @@ func (c *AppGroupController) DoNewAppGroupJson() {
 	exTimeOneCpuStr := c.Ctx.Request.Header.Get(ExTimeOneCpuKey)
 	exTimeOneCpu, err := strconv.ParseFloat(exTimeOneCpuStr, 64)
 	if err != nil {
-		outErr := fmt.Errorf("parse %s to float64 error: %s", exTimeOneCpuStr, err.Error())
+		exTimeOneCpu = algorithms.DefaultExpAppCompuTimeOneCpu
+		outErr := fmt.Errorf("parse HTTP header key [%s] value [%s] to float64 error: %s, we set it to the default value [%g]", ExTimeOneCpuKey, exTimeOneCpuStr, err.Error(), exTimeOneCpu)
 		beego.Error(outErr)
-		c.Ctx.ResponseWriter.WriteHeader(http.StatusBadRequest)
-		if result, err := c.Ctx.ResponseWriter.Write([]byte(outErr.Error())); err != nil {
-			beego.Error(fmt.Sprintf("Write Error to response, error: %s, result: %d", err.Error(), result))
-		}
-		return
+	} else {
+		beego.Info(fmt.Sprintf("Parse header %s to float [%g]", ExTimeOneCpuKey, exTimeOneCpu))
 	}
-	beego.Info(fmt.Sprintf("Parse header %s to float [%g]", ExTimeOneCpuKey, exTimeOneCpu))
 
 	outApps, err, statusCode := executors.CreateAutoScheduleApps(apps, schedAlgorithm, exTimeOneCpu)
 	if err != nil {

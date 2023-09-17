@@ -15,3 +15,8 @@ For example, if the `<Project Root Directory>` is `/mnt/c/mine/code/gocode/src/e
 go test /mnt/c/mine/code/gocode/src/emcontroller/auto-schedule/experiments/usable-accept-rate/ -timeout 99999s -v -count=1 -run TestExecute
 ```
 Then, the data file `usable_acceptance_rate.csv` will be generated in this folder.
+
+Then, we can draw a bar chart to compare the application acceptance rate of every algorithm for each priority. In a computer with GUI, in this folder, run:
+```
+python -u drawer.py
+```
