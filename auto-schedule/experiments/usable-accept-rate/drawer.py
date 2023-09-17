@@ -3,11 +3,11 @@ import numpy as np
 import csv
 
 ALGO_NAMES = [
-    "CompRand", "BERand", "Ampga", "Mcssga"
+    "CompRand", "BERand", "Amaga", "Ampga", "Mcssga"
 ]  # the names of all algorithms to be evaluated in this experiment
 
 ALGO_NAMES_TO_DRAW = [
-    "BERand", "Ampga", "Mcssga"
+    "BERand", "Amaga", "Ampga", "Mcssga"
 ]  # the names of all algorithms to draw. We do not draw "CompRand", because it may get unusable scheduling schemes.
 
 #  the minimum and maximum possible priorities
@@ -58,7 +58,10 @@ def main():
         print(ALGO_NAMES_TO_DRAW[i], one_pri_data)
     print()
 
-    bar_width = 0.2  # width of each bar
+    # width of each bar
+    bar_inner_width = 0.15
+    bar_outer_width = 0.20
+
     x_pos = np.arange(MAX_PRI - MIN_PRI +
                       1)  # generate the position of each group of bars
 
@@ -66,19 +69,25 @@ def main():
     bar_count = len(data_for_drawing)
     first_bar_offset: float = 0
     if bar_count % 2 == 0:
-        first_bar_offset = -bar_width / 2 - bar_width * (bar_count / 2 - 1)
+        first_bar_offset = -bar_outer_width / 2 - bar_outer_width * (
+            bar_count / 2 - 1)
     else:
-        first_bar_offset = -bar_width - bar_width * ((bar_count - 1) / 2 - 1)
+        first_bar_offset = -bar_outer_width - bar_outer_width * (
+            (bar_count - 1) / 2 - 1)
 
     # draw bars
     hatches = [
         '///', '\\\\\\', '...', '---', 'xxx', '|||', '+++', 'ooo', '))O', '***'
     ]
 
+    plt.rcParams["font.family"] = "Times New Roman"
+    plt.rcParams['font.size'] = 15
+
     for i, one_pri_data in enumerate(data_for_drawing):
-        plt.bar(x_pos + first_bar_offset + i * bar_width,
+        plt.bar(x_pos + first_bar_offset + i * bar_outer_width,
                 data_for_drawing[i],
-                bar_width,
+                bar_inner_width,
+                edgecolor='black',
                 label=ALGO_NAMES_TO_DRAW[i],
                 hatch=hatches[i])
 

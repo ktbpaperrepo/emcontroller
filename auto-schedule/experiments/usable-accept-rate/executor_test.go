@@ -47,12 +47,13 @@ func TestExecute(t *testing.T) {
 	var repeatCount int = 2 // We repeat this experiment for 10 times to reduce the impact from random factors.
 
 	// all algorithms to be evaluated in experiment
-	var algoNames []string = []string{algorithms.CompRandName, algorithms.BERandName, algorithms.AmpgaName, algorithms.McssgaName}
-	var results []exptData = []exptData{ // used to save and output results
-		{algorithmName: algorithms.CompRandName, appCountPerPri: make(map[int]int), acceptedAppCountPerPri: make(map[int]int), appPerPriAcceptanceRate: make(map[int]float64)},
-		{algorithmName: algorithms.BERandName, appCountPerPri: make(map[int]int), acceptedAppCountPerPri: make(map[int]int), appPerPriAcceptanceRate: make(map[int]float64)},
-		{algorithmName: algorithms.AmpgaName, appCountPerPri: make(map[int]int), acceptedAppCountPerPri: make(map[int]int), appPerPriAcceptanceRate: make(map[int]float64)},
-		{algorithmName: algorithms.McssgaName, appCountPerPri: make(map[int]int), acceptedAppCountPerPri: make(map[int]int), appPerPriAcceptanceRate: make(map[int]float64)},
+	var algoNames []string = []string{algorithms.CompRandName, algorithms.BERandName, algorithms.AmagaName, algorithms.AmpgaName, algorithms.McssgaName}
+
+	var results []exptData // used to save and output results
+	for _, algoName := range algoNames {
+		results = append(results, exptData{
+			algorithmName: algoName, appCountPerPri: make(map[int]int), acceptedAppCountPerPri: make(map[int]int), appPerPriAcceptanceRate: make(map[int]float64),
+		})
 	}
 
 	// We repeat experiment to reduce the impact from random factors. In every repeat, we generate different applications.
