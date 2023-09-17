@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"github.com/KeepTheBeats/routing-algorithms/mymath"
+	"github.com/KeepTheBeats/routing-algorithms/random"
 
 	asmodel "emcontroller/auto-schedule/model"
 	apiv1 "k8s.io/api/core/v1"
@@ -187,11 +188,60 @@ func cmpAllocateCpusOneCloud(cloud asmodel.Cloud, apps map[string]asmodel.Applic
 // allocate CPUs to the applications on a VM in the algorithms for comparison.
 func cmpAllocateCpusOneVm(vm asmodel.K8sNode, apps map[string]asmodel.Application, appsOrder []string, appNamesThisVm []string, solnWithVm asmodel.Solution) asmodel.Solution {
 	appsThisVm := filterAppsByNames(appNamesThisVm, apps) // get the applications scheduled to this VM
-	return cmpVmCpuAllocation(vm, appsThisVm, appsOrder, solnWithVm)
+	return cmpVmCpuAllocation(vm, appsThisVm, appNamesThisVm, appsOrder, solnWithVm)
 }
 
+// allocate the CPUs of a VM to the applications scheduled to it, in a completely random way.
+func cmpVmCpuAllocation(vm asmodel.K8sNode, appsThisVm map[string]asmodel.Application, appNamesThisVm []string, appsOrder []string, solnWithVm asmodel.Solution) asmodel.Solution {
+	var solnWithCpuThisVm asmodel.Solution = asmodel.GenEmptySoln()
+	for appName, _ := range appsThisVm { // the result should only include the solutions for the applications to handle
+		solnWithCpuThisVm.AppsSolution[appName] = asmodel.SasCopy(solnWithVm.AppsSolution[appName])
+	}
+
+	// copy and avoid changing the original variable.
+	vmCopy := asmodel.K8sNodeCopy(vm)
+
+	// firstly, we allocate one CPU core to every application to meet the minimum requirement
+	for appName, _ := range appsThisVm {
+		if vmCopy.ResidualResources.CpuCore >= cpuCoreStep { // if this VM has residual CPUs, we allocate more CPUs to this app.
+			thisAppSoln := solnWithCpuThisVm.AppsSolution[appName]
+			thisAppSoln.AllocatedCpuCore += cpuCoreStep
+			solnWithCpuThisVm.AppsSolution[appName] = thisAppSoln
+			vmCopy.ResidualResources.CpuCore -= cpuCoreStep
+		}
+	}
+
+	// Then randomly allocate CPU cores to applications until all CPU cores are allocated
+	for vmCopy.ResidualResources.CpuCore > floatDelta {
+		// randomly pick an app to allocate CPU
+		randAppName := appNamesThisVm[random.RandomInt(0, len(appNamesThisVm)-1)]
+		// randomly choose CPU to allocate
+		randCpu := float64(random.RandomInt(1, int(mymath.UnitRound(vmCopy.ResidualResources.CpuCore, 1))))
+
+		thisAppSoln := solnWithCpuThisVm.AppsSolution[randAppName]
+		thisAppSoln.AllocatedCpuCore += randCpu
+		solnWithCpuThisVm.AppsSolution[randAppName] = thisAppSoln
+		vmCopy.ResidualResources.CpuCore -= randCpu
+
+	}
+
+	// fix the inaccuracy of float
+	for appName, _ := range appsThisVm {
+		thisAppSoln := solnWithCpuThisVm.AppsSolution[appName]
+		if math.Abs(thisAppSoln.AllocatedCpuCore-mymath.UnitRound(thisAppSoln.AllocatedCpuCore, cpuCoreStep)) < floatDelta {
+			thisAppSoln.AllocatedCpuCore = mymath.UnitRound(thisAppSoln.AllocatedCpuCore, cpuCoreStep)
+		} else {
+			thisAppSoln.AllocatedCpuCore = mymath.UnitFloor(thisAppSoln.AllocatedCpuCore, cpuCoreStep)
+		}
+		solnWithCpuThisVm.AppsSolution[appName] = thisAppSoln
+	}
+
+	return solnWithCpuThisVm
+}
+
+// Deprecated: this method allocates CPU cores averagely, which is good for some scenarios but bad for some others, so we should not use this, and we should do it completely randomly.
 // allocate the CPUs of a VM to the applications scheduled to it, in an average way.
-func cmpVmCpuAllocation(vm asmodel.K8sNode, appsThisVm map[string]asmodel.Application, appsOrder []string, solnWithVm asmodel.Solution) asmodel.Solution {
+func oldCmpVmCpuAllocation2(vm asmodel.K8sNode, appsThisVm map[string]asmodel.Application, appsOrder []string, solnWithVm asmodel.Solution) asmodel.Solution {
 	var solnWithCpuThisVm asmodel.Solution = asmodel.GenEmptySoln()
 	for appName, _ := range appsThisVm { // the result should only include the solutions for the applications to handle
 		solnWithCpuThisVm.AppsSolution[appName] = asmodel.SasCopy(solnWithVm.AppsSolution[appName])
