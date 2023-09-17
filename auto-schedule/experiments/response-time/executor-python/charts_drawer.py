@@ -13,6 +13,7 @@ REQ_COUNT_PER_APP = 5  # In every repeat, on every device, we access every appli
 ALGO_NAMES = [
     "BERand", "Ampga", "Mcssga"
 ]  # the names of all algorithms to be evaluated in this experiment
+OUR_ALGO_NAME = "Mcssga"
 
 #  the minimum and maximum possible priorities
 MIN_PRI = 1
@@ -20,18 +21,18 @@ MAX_PRI = 10
 
 ATTR_TO_METRIC: dict[str, str] = {
     "resp_time":
-    "response time (ms)",
+    "Response time (ms)",
     "resp_time_in_clouds":
-    "response time in clouds (ms)",
+    "Response time in clouds (ms)",
     "pri_wei_resp_time":
-    "priority-weighted response time (ms)",
+    "Priority-weighted response time (ms)",
     "pri_wei_resp_time_in_clouds":
-    "priority-weighted response time in clouds (ms)",
+    "Priority-weighted response time in clouds (ms)",
 }
 
 NON_PRI_ATTR_TO_METRIC: dict[str, str] = {
-    "resp_time": "response time (ms)",
-    "resp_time_in_clouds": "response time in clouds (ms)",
+    "resp_time": "Response time (ms)",
+    "resp_time_in_clouds": "Response time in clouds (ms)",
 }
 
 
@@ -91,12 +92,23 @@ def make_cdf_data(all_data: dict[str, list[data_types.ResultData]],
     return metric_data
 
 
-def draw_cdf(cdf_data: dict[str, list[float]], metric_name: str,
-             mark_every: int):
+def draw_cdf(cdf_data: dict[str, list[float]],
+             metric_name: str,
+             mark_every: int,
+             title: str = ""):
     markers = ["*", "v", "+", "x", "d", "1"]
     marker_idx = 0
 
     plt.figure()
+
+    # # trigger core fonts for PDF backend
+    # plt.rcParams["pdf.use14corefonts"] = True
+    # # trigger core fonts for PS backend
+    # plt.rcParams["ps.useafm"] = True
+
+    plt.rcParams["font.family"] = "Times New Roman"
+    plt.rcParams['font.size'] = 15
+
     for algo_name, algo_data in cdf_data.items():
         sorted_data = np.sort(algo_data)
         cumulative_prob = np.arange(1, len(algo_data) + 1) / len(algo_data)
@@ -109,27 +121,31 @@ def draw_cdf(cdf_data: dict[str, list[float]], metric_name: str,
         if marker_idx >= len(markers):
             marker_idx = 0
     plt.title('Cumulative Distribution Function (CDF)')
+    if len(title) > 0:
+        plt.title(title)
     plt.xlabel(metric_name)
     plt.ylabel('Cumulative Probability')
     plt.grid(True)
     plt.legend()
+
     plt.show()
 
 
 # draw CDF charts for every metric
-def draw_cdf_every_metric(data_to_draw: dict[str,
-                                             list[data_types.ResultData]]):
+def draw_cdf_every_metric(data_to_draw: dict[str, list[data_types.ResultData]],
+                          title: str = ""):
     for attr_name, metric_name in ATTR_TO_METRIC.items():
         metric_data = make_cdf_data(data_to_draw, attr_name)
-        draw_cdf(metric_data, metric_name, 20)
+        draw_cdf(metric_data, metric_name, 20, title)
 
 
 # draw CDF charts for metrics not weighted by priorities
 def draw_cdf_non_pri_metric(data_to_draw: dict[str,
-                                               list[data_types.ResultData]]):
+                                               list[data_types.ResultData]],
+                            title: str = ""):
     for attr_name, metric_name in NON_PRI_ATTR_TO_METRIC.items():
         metric_data = make_cdf_data(data_to_draw, attr_name)
-        draw_cdf(metric_data, metric_name, 1)
+        draw_cdf(metric_data, metric_name, 1, title)
 
 
 # filter the data about the applications with the specified priority
@@ -143,6 +159,48 @@ def filter_data_with_priority(
             if one_data.priority == priority:
                 out_data[algo_name].append(one_data)
     return out_data
+
+
+# filter the applications accepted by all algorithms
+def filter_app_data_all_accepted(
+    data_this_repeat: dict[str, dict[str, list[data_types.ResultData]]],
+    app_name_to_pri: dict[str, int], algo_names_to_compare: list[str]
+) -> dict[str, list[data_types.ResultData]]:
+
+    all_accepted_app_data: dict[str, list[data_types.ResultData]] = dict()
+    for _, algo_name in enumerate(
+            algo_names_to_compare):  # initialize the dict
+        all_accepted_app_data[algo_name] = []
+
+    for app_name, _ in app_name_to_pri.items():
+        rejected = False
+        for _, algo_name in enumerate(algo_names_to_compare):
+            if len(data_this_repeat[algo_name][app_name]) == 0:
+                rejected = True
+        if not rejected:
+            for _, algo_name in enumerate(algo_names_to_compare):
+                all_accepted_app_data[algo_name].extend(
+                    data_this_repeat[algo_name][app_name])
+
+    return all_accepted_app_data
+
+
+# draw charts for one repeat
+def draw_cdf_one_repeat(
+        data_this_repeat: dict[str, dict[str, list[data_types.ResultData]]],
+        app_name_to_pri: dict[str, int]):
+
+    # compare every 2 algorithms
+    for i, _ in enumerate(ALGO_NAMES):
+        for j in range(i + 1, len(ALGO_NAMES)):
+            algos_to_cmp = [ALGO_NAMES[i], ALGO_NAMES[j]]
+            # only draw charts for the applications accepted by both of the selected algorithms
+            app_data_all_accepted = filter_app_data_all_accepted(
+                data_this_repeat, app_name_to_pri, algos_to_cmp)
+            draw_cdf_every_metric(
+                app_data_all_accepted,
+                "Applications accepted by both {} and {}".format(
+                    ALGO_NAMES[i], ALGO_NAMES[j]))
 
 
 def main():
@@ -162,6 +220,15 @@ def main():
             for _, app_req in enumerate(app_reqs):
                 app_name_to_pri[app_req["name"]] = app_req["priority"]
 
+        # to draw the chart for this repeat
+        all_data_this_repeat: dict[str,
+                                   dict[str,
+                                        list[data_types.ResultData]]] = dict()
+        for _, algo_name in enumerate(ALGO_NAMES):  # initialize the dict
+            all_data_this_repeat[algo_name] = dict()
+            for app_name, _ in app_name_to_pri.items():
+                all_data_this_repeat[algo_name][app_name] = []
+
         # read the data from csv files
         for algo_name in ALGO_NAMES:
             # use glob to get the paths of all csv files in this folder
@@ -172,6 +239,11 @@ def main():
             for _, file_name in enumerate(csv_file_names):
                 data_in_file = csv_operation.read_csv(file_name)
                 all_data[algo_name].extend(data_in_file)
+
+                # to draw the chart for this repeat
+                for _, one_item in enumerate(data_in_file):
+                    all_data_this_repeat[algo_name][one_item.app_name].append(
+                        one_item)
 
                 # For this file, complement the data for rejected applications
                 app_name_to_pri_this_file: dict[str, int] = dict()
@@ -199,6 +271,10 @@ def main():
                                               resp_time_in_clouds=-1,
                                               pri_wei_resp_time=-1,
                                               pri_wei_resp_time_in_clouds=-1))
+
+        # to draw the chart for this repeat
+        print("draw cdf charts for repeat {}".format(i + 1))
+        draw_cdf_one_repeat(all_data_this_repeat, app_name_to_pri)
 
     # ----------------------------
     # complement the data for rejected applications
@@ -250,7 +326,7 @@ def main():
     #     print()
 
     print("draw cdf charts for all data")
-    draw_cdf_every_metric(all_data)
+    draw_cdf_every_metric(all_data, "Applications with all priorities")
 
     # draw cdf charts for every-priority data
     for pri in range(MIN_PRI, MAX_PRI + 1):
@@ -258,7 +334,8 @@ def main():
         print(
             "draw cdf charts for the data about applications with priority {}".
             format(pri))
-        draw_cdf_non_pri_metric(this_pri_data)
+        draw_cdf_non_pri_metric(this_pri_data,
+                                "Applications with priority {}".format(pri))
 
 
 if __name__ == "__main__":
