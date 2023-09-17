@@ -478,9 +478,9 @@ func (m *Mcssga) fitnessOneAppNonPri(clouds map[string]asmodel.Cloud, apps map[s
 
 	var thisAppFitnessNonPri float64 // result
 
-	// if an application is rejected, it contributes a very big negative fitness value, this is to encourage higher priority-weighted acceptance rate
+	// if an application is rejected, it contributes a big negative fitness value, this is to encourage higher priority-weighted acceptance rate
 	if !chromosome.AppsSolution[thisAppName].Accepted {
-		thisAppFitnessNonPri = -(m.ExpAppCompuTimeOneCpu + m.MaxReachableRtt*m.AvgDepNum)
+		thisAppFitnessNonPri = -(m.ExpAppCompuTimeOneCpu + m.MaxReachableRtt*m.AvgDepNum) / 2
 	} else {
 
 		// if this app is accepted, all its dependent apps are also accepted, which is guaranteed by our dependency acceptable check
@@ -518,6 +518,11 @@ func (m *Mcssga) fitnessOneAppNonPri(clouds map[string]asmodel.Cloud, apps map[s
 			The network delay between this app and its dependent ones will reduce this fitness.
 			This fitness function tend to accept apps with fewer dependencies, this is an unfair point, but I cannot find a better way, and this way seems like the most fair one that I can find yet now.
 			*/
+		}
+
+		// For an application with many dependencies, after the above calculation netPart may become a negative value, so we should set it to 0 in this condition, because otherwise accepting an application may be worse than rejecting it.
+		if netPart < 0 {
+			netPart = 0
 		}
 
 		thisAppFitnessNonPri = thisAppPart + netPart
