@@ -201,6 +201,59 @@ func cmpVmCpuAllocation(vm asmodel.K8sNode, appsThisVm map[string]asmodel.Applic
 	// copy and avoid changing the original variable.
 	vmCopy := asmodel.K8sNodeCopy(vm)
 
+	// First round, we allocate one CPU core to every application to meet the minimum requirement
+	for appName, _ := range appsThisVm {
+		if vmCopy.ResidualResources.CpuCore >= cpuCoreStep { // if this VM has residual CPUs, we allocate more CPUs to this app.
+			thisAppSoln := solnWithCpuThisVm.AppsSolution[appName]
+			thisAppSoln.AllocatedCpuCore += cpuCoreStep
+			solnWithCpuThisVm.AppsSolution[appName] = thisAppSoln
+			vmCopy.ResidualResources.CpuCore -= cpuCoreStep
+		}
+	}
+
+	// Second round, we allocate a random number of CPU cores to every application. The application order is also random.
+	appNamesCopy := make([]string, len(appNamesThisVm)) // copy to avoid changing the original variable.
+	copy(appNamesCopy, appNamesThisVm)
+	for len(appNamesCopy) > 0 && vmCopy.ResidualResources.CpuCore > floatDelta { // when the CPU cores are used up, we stop this allocation
+		randIdx := random.RandomInt(0, len(appNamesCopy)-1)
+		randAppName := appNamesCopy[randIdx]
+		appNamesCopy = append(appNamesCopy[:randIdx], appNamesCopy[randIdx+1:]...)
+
+		// randomly choose CPU to allocate
+		randCpu := float64(random.RandomInt(1, int(mymath.UnitRound(vmCopy.ResidualResources.CpuCore, 1))))
+
+		thisAppSoln := solnWithCpuThisVm.AppsSolution[randAppName]
+		thisAppSoln.AllocatedCpuCore += randCpu
+		solnWithCpuThisVm.AppsSolution[randAppName] = thisAppSoln
+		vmCopy.ResidualResources.CpuCore -= randCpu
+
+	}
+
+	// fix the inaccuracy of float
+	for appName, _ := range appsThisVm {
+		thisAppSoln := solnWithCpuThisVm.AppsSolution[appName]
+		if math.Abs(thisAppSoln.AllocatedCpuCore-mymath.UnitRound(thisAppSoln.AllocatedCpuCore, cpuCoreStep)) < floatDelta {
+			thisAppSoln.AllocatedCpuCore = mymath.UnitRound(thisAppSoln.AllocatedCpuCore, cpuCoreStep)
+		} else {
+			thisAppSoln.AllocatedCpuCore = mymath.UnitFloor(thisAppSoln.AllocatedCpuCore, cpuCoreStep)
+		}
+		solnWithCpuThisVm.AppsSolution[appName] = thisAppSoln
+	}
+
+	return solnWithCpuThisVm
+}
+
+// Deprecated: this method uses up all CPUs of a VM, but it should still retain some CPUs for the possible future applications.
+// allocate the CPUs of a VM to the applications scheduled to it, in a completely random way.
+func oldCmpVmCpuAllocation3(vm asmodel.K8sNode, appsThisVm map[string]asmodel.Application, appNamesThisVm []string, appsOrder []string, solnWithVm asmodel.Solution) asmodel.Solution {
+	var solnWithCpuThisVm asmodel.Solution = asmodel.GenEmptySoln()
+	for appName, _ := range appsThisVm { // the result should only include the solutions for the applications to handle
+		solnWithCpuThisVm.AppsSolution[appName] = asmodel.SasCopy(solnWithVm.AppsSolution[appName])
+	}
+
+	// copy and avoid changing the original variable.
+	vmCopy := asmodel.K8sNodeCopy(vm)
+
 	// firstly, we allocate one CPU core to every application to meet the minimum requirement
 	for appName, _ := range appsThisVm {
 		if vmCopy.ResidualResources.CpuCore >= cpuCoreStep { // if this VM has residual CPUs, we allocate more CPUs to this app.
