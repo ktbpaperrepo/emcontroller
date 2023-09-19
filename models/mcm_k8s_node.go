@@ -110,10 +110,15 @@ func ListK8sNodes() []K8sNodeInfo {
 		var found bool = false
 		for _, vm := range allVms {
 			// find the VM of this Kubernetes node
-			if len(vm.IPs) == 0 {
-				continue
-			}
-			if vm.IPs[0] == thisOutNode.IP && vm.Name == thisOutNode.Name {
+
+			// Proxmox has a problem: sometimes the qemu agent service stop by itself.
+			// the qemu agent is stopped, multi-cloud manager cannot get the IP of the VM, so here we cannot check the IP.
+			// In our design, VM name should be unique and the same with Kubernetes node name, so only checking the name is enough.
+			//if len(vm.IPs) == 0 {
+			//	continue
+			//}
+			//if vm.IPs[0] == thisOutNode.IP && vm.Name == thisOutNode.Name {
+			if vm.Name == thisOutNode.Name {
 				found = true
 				availRes.CpuCore = CalcVmAvailVcpu(vm.VCpu)
 				availRes.Memory = CalcVmAvailRamMiB(vm.Ram)
