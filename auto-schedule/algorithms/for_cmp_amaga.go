@@ -6,6 +6,7 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/KeepTheBeats/routing-algorithms/random"
 	"github.com/astaxie/beego"
@@ -98,9 +99,22 @@ func (a *Amaga) selectionOperator(clouds map[string]asmodel.Cloud, apps map[stri
 
 	// calculate the fitness of every chromosome in the current (old) population
 	fitnesses := make([]float64, len(population))
+
+	var fitMu sync.Mutex  // the slice in golang is not safe for concurrent read/write
+	var wg sync.WaitGroup // calculate the fitness of every chromosome in parallel
 	for i := 0; i < len(population); i++ {
-		fitnesses[i] = a.Fitness(clouds, apps, population[i])
+		wg.Add(1)
+		go func(chromIdx int) {
+			defer wg.Done()
+
+			thisFitness := a.Fitness(clouds, apps, population[chromIdx])
+
+			fitMu.Lock()
+			fitnesses[chromIdx] = thisFitness
+			fitMu.Unlock()
+		}(i)
 	}
+	wg.Wait()
 
 	beego.Info("fitness values this iteration:", fitnesses)
 
@@ -258,34 +272,44 @@ func (a *Amaga) crossoverOperator(clouds map[string]asmodel.Cloud, apps map[stri
 func (a *Amaga) mutationOperator(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string, population []asmodel.Solution) []asmodel.Solution {
 	var mutatedPopulation []asmodel.Solution = make([]asmodel.Solution, len(population))
 
+	var popuMu sync.Mutex // the slice in golang is not safe for concurrent read/write
+	var wg sync.WaitGroup // mutate every chromosome in parallel
+
 	for i := 0; i < len(population); i++ { // a chromosome
+		wg.Add(1)
 
-		for { // We repeat mutating a chromosome until the mutated new one is acceptable.
-			mutatedChromosome := asmodel.GenEmptySoln()
+		go func(chromIdx int) {
+			defer wg.Done()
 
-			// gene-based mutation
-			for appName, oriGene := range population[i].AppsSolution {
-				// every gene has the probability "m.MutationProbability" to mutate
-				if random.RandomFloat64(0, 1) < a.MutationProbability {
-					mutatedChromosome.AppsSolution[appName] = a.geneMutate(clouds, oriGene) // mutate
-				} else {
-					mutatedChromosome.AppsSolution[appName] = asmodel.SasCopy(oriGene) // do not mutate
+			for { // We repeat mutating a chromosome until the mutated new one is acceptable.
+				mutatedChromosome := asmodel.GenEmptySoln()
+
+				// gene-based mutation
+				for appName, oriGene := range population[chromIdx].AppsSolution {
+					// every gene has the probability "m.MutationProbability" to mutate
+					if random.RandomFloat64(0, 1) < a.MutationProbability {
+						mutatedChromosome.AppsSolution[appName] = a.geneMutate(clouds, oriGene) // mutate
+					} else {
+						mutatedChromosome.AppsSolution[appName] = asmodel.SasCopy(oriGene) // do not mutate
+					}
+				}
+
+				// refine the mutated chromosome and check whether it is acceptable
+				mutatedChromosome, acceptable := CmpRefineSoln(clouds, apps, appsOrder, mutatedChromosome)
+				if acceptable {
+					popuMu.Lock()
+					mutatedPopulation[chromIdx] = mutatedChromosome
+					popuMu.Unlock()
+					break
 				}
 			}
 
-			// refine the mutated chromosome and check whether it is acceptable
-			mutatedChromosome, acceptable := CmpRefineSoln(clouds, apps, appsOrder, mutatedChromosome)
-			if acceptable {
-				mutatedPopulation[i] = mutatedChromosome
-				break
-			}
-		}
-
-		/**
-		In the above loop, we do not need to save the unacceptable solutions/chromosomes, because the mutated solutions/chromosomes are generated randomly and it is almost impossible to exclude the tried solutions from the following random attempts, so even if we save the unacceptable solutions/chromosomes, it can only save some time to run the function RefineSoln, but cannot reduce the number of random attempts, which I think is not worthy enough.
-		*/
-
+			/**
+			In the above loop, we do not need to save the unacceptable solutions/chromosomes, because the mutated solutions/chromosomes are generated randomly and it is almost impossible to exclude the tried solutions from the following random attempts, so even if we save the unacceptable solutions/chromosomes, it can only save some time to run the function RefineSoln, but cannot reduce the number of random attempts, which I think is not worthy enough.
+			*/
+		}(i)
 	}
+	wg.Wait()
 
 	return mutatedPopulation
 }

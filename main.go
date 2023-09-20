@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"runtime"
 	"strconv"
 	"time"
 
@@ -35,6 +36,10 @@ func main() {
 	}
 
 	models.InitSomeThing()
+
+	numCpuToUse := runtime.NumCPU()
+	beego.Info(fmt.Sprintf("Using %d CPU cores for goroutines.", numCpuToUse))
+	runtime.GOMAXPROCS(numCpuToUse)
 
 	if netTestOn, err := beego.AppConfig.Bool("TurnOnNetTest"); err == nil && netTestOn {
 		beego.Info("Network performance test function is on.")
