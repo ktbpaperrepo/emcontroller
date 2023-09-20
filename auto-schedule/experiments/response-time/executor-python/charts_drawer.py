@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import data_types
 import csv_operation
 
-REPEAT_COUNT = 1  # We repeat the experiments for REPEAT_COUNT times.
+REPEAT_COUNT = 2  # We repeat the experiments for REPEAT_COUNT times.
 DEVICE_COUNT = 1  # we use DEVICE_COUNT devices to send requests.
 APP_COUNT = 60  # In every repeat, we deploy APP_COUNT applications.
 REQ_COUNT_PER_APP = 5  # In every repeat, on every device, we access every application REQ_COUNT_PER_APP times.
@@ -115,6 +115,7 @@ def draw_cdf(cdf_data: dict[str, list[float]],
         plt.plot(sorted_data,
                  cumulative_prob,
                  marker=markers[marker_idx],
+                 markersize=6,
                  markevery=mark_every,
                  label=algo_name)
         marker_idx += 1
@@ -133,19 +134,21 @@ def draw_cdf(cdf_data: dict[str, list[float]],
 
 # draw CDF charts for every metric
 def draw_cdf_every_metric(data_to_draw: dict[str, list[data_types.ResultData]],
+                          mark_every: int,
                           title: str = ""):
     for attr_name, metric_name in ATTR_TO_METRIC.items():
         metric_data = make_cdf_data(data_to_draw, attr_name)
-        draw_cdf(metric_data, metric_name, 20, title)
+        draw_cdf(metric_data, metric_name, mark_every, title)
 
 
 # draw CDF charts for metrics not weighted by priorities
 def draw_cdf_non_pri_metric(data_to_draw: dict[str,
                                                list[data_types.ResultData]],
+                            mark_every: int,
                             title: str = ""):
     for attr_name, metric_name in NON_PRI_ATTR_TO_METRIC.items():
         metric_data = make_cdf_data(data_to_draw, attr_name)
-        draw_cdf(metric_data, metric_name, 1, title)
+        draw_cdf(metric_data, metric_name, mark_every, title)
 
 
 # filter the data about the applications with the specified priority
@@ -188,7 +191,7 @@ def filter_app_data_all_accepted(
 # draw charts for one repeat
 def draw_cdf_one_repeat(
         data_this_repeat: dict[str, dict[str, list[data_types.ResultData]]],
-        app_name_to_pri: dict[str, int]):
+        app_name_to_pri: dict[str, int], repeat_idx: int):
 
     # compare every 2 algorithms
     for i, _ in enumerate(ALGO_NAMES):
@@ -198,9 +201,9 @@ def draw_cdf_one_repeat(
             app_data_all_accepted = filter_app_data_all_accepted(
                 data_this_repeat, app_name_to_pri, algos_to_cmp)
             draw_cdf_every_metric(
-                app_data_all_accepted,
-                "Applications accepted by both {} and {}".format(
-                    ALGO_NAMES[i], ALGO_NAMES[j]))
+                app_data_all_accepted, 3,
+                "Repeat {}. Apps accepted by both {} and {}".format(
+                    repeat_idx, ALGO_NAMES[i], ALGO_NAMES[j]))
 
 
 def main():
@@ -274,7 +277,7 @@ def main():
 
         # to draw the chart for this repeat
         print("draw cdf charts for repeat {}".format(i + 1))
-        draw_cdf_one_repeat(all_data_this_repeat, app_name_to_pri)
+        draw_cdf_one_repeat(all_data_this_repeat, app_name_to_pri, i + 1)
 
     # ----------------------------
     # complement the data for rejected applications
@@ -326,7 +329,7 @@ def main():
     #     print()
 
     print("draw cdf charts for all data")
-    draw_cdf_every_metric(all_data, "Applications with all priorities")
+    draw_cdf_every_metric(all_data, 20, "Applications with all priorities")
 
     # draw cdf charts for every-priority data
     for pri in range(MIN_PRI, MAX_PRI + 1):
@@ -334,7 +337,7 @@ def main():
         print(
             "draw cdf charts for the data about applications with priority {}".
             format(pri))
-        draw_cdf_non_pri_metric(this_pri_data,
+        draw_cdf_non_pri_metric(this_pri_data, 1,
                                 "Applications with priority {}".format(pri))
 
 
