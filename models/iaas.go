@@ -199,7 +199,15 @@ func CreateVms(vms []IaasVm) ([]IaasVm, error) {
 			// in every vm group (every cloud), we create the VMs serially
 			for _, v := range vg {
 				beego.Info(fmt.Sprintf("Start to create vm Name [%s] Cloud [%s], vcpu cores [%f], ram [%f MiB], storage [%f GiB].", v.Name, v.Cloud, v.VCpu, v.Ram, v.Storage))
-				createdVM, err := Clouds[v.Cloud].CreateVM(v.Name, int(v.VCpu), int(v.Ram), int(v.Storage))
+				cloud, exist := Clouds[v.Cloud]
+				if !exist {
+					outErr := fmt.Errorf("Create vm %s error: cloud name [%s] not found.", v.Name, v.Cloud)
+					beego.Error(outErr)
+					errsMu.Lock()
+					errs = append(errs, outErr)
+					errsMu.Unlock()
+				}
+				createdVM, err := cloud.CreateVM(v.Name, int(v.VCpu), int(v.Ram), int(v.Storage))
 				if err != nil {
 					outErr := fmt.Errorf("Create vm %s error %w.", v.Name, err)
 					beego.Error(outErr)
