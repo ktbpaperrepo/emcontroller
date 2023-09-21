@@ -217,6 +217,10 @@ func (a *Amaga) crossoverOperator(clouds map[string]asmodel.Cloud, apps map[stri
 
 	// randomly choose chromosome pairs to do crossover
 	var whetherCrossover []bool = make([]bool, len(population))
+
+	var crpoMu sync.Mutex // the slice in golang is not safe for concurrent read/write
+	var wg sync.WaitGroup // calculate the fitness of every chromosome in parallel
+
 	for len(idxNeedCrossover) > 1 { // we can only do crossover when we have at list 2 chromosomes
 
 		/**
@@ -250,11 +254,18 @@ func (a *Amaga) crossoverOperator(clouds map[string]asmodel.Cloud, apps map[stri
 		firstChromosome := asmodel.SolutionCopy(population[firstIndex])
 		secondChromosome := asmodel.SolutionCopy(population[secondIndex])
 
-		newFirstChromosome, newSecondChromosome := AllPossTwoPointCrossover(firstChromosome, secondChromosome, clouds, apps, appsOrder)
-
-		// append the two new chromosomes in crossoveredPopulation
-		crossoveredPopulation = append(crossoveredPopulation, newFirstChromosome, newSecondChromosome)
+		// this AllPossTwoPointCrossover has big workload, and it can be concurrent so we do it concurrently.
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			newFirstChromosome, newSecondChromosome := AllPossTwoPointCrossover(firstChromosome, secondChromosome, clouds, apps, appsOrder)
+			// append the two new chromosomes in crossoveredPopulation
+			crpoMu.Lock()
+			crossoveredPopulation = append(crossoveredPopulation, newFirstChromosome, newSecondChromosome)
+			crpoMu.Unlock()
+		}()
 	}
+	wg.Wait()
 
 	//beego.Info("whetherCrossover:", whetherCrossover) // for debug
 

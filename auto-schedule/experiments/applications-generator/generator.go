@@ -121,13 +121,16 @@ var appsToChoose []appRes = []appRes{
 	appRes{name: "existingPaperApp3", cpu: 4, memory: 2048, storage: 3},
 	appRes{name: "existingPaperApp4", cpu: 2, memory: 1024, storage: 2},
 	appRes{name: "existingPaperMySQL", cpu: 1, memory: 500, storage: 0},
-	appRes{name: "actualNginxController", cpu: 8, memory: 8192, storage: 255},
+	appRes{name: "actualNginxController", cpu: 8, memory: 8192, storage: 155},
 	appRes{name: "actualRedis", cpu: 4, memory: 15360, storage: 30},
 	appRes{name: "actualPostgres", cpu: 2, memory: 2048, storage: 1},
 	appRes{name: "actualRabbitmq", cpu: 1, memory: 256, storage: 6},
 	appRes{name: "actualConsul", cpu: 4, memory: 16384, storage: 100},
-	appRes{name: "actualRedmine", cpu: 4, memory: 2048, storage: 20},
+	appRes{name: "actualRedmine", cpu: 4, memory: 4096, storage: 20},
 	appRes{name: "actualMiRFleet", cpu: 2, memory: 8192, storage: 128},
+	appRes{name: "actualApacheStorm", cpu: 12, memory: 24576, storage: 0},
+	appRes{name: "actualMiRKafka", cpu: 4, memory: 8192, storage: 500},
+	appRes{name: "actualMiRZookeeper", cpu: 2, memory: 2048, storage: 80},
 }
 
 const (
