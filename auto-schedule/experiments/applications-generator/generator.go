@@ -129,8 +129,8 @@ var appsToChoose []appRes = []appRes{
 	appRes{name: "actualRedmine", cpu: 4, memory: 4096, storage: 20},
 	appRes{name: "actualMiRFleet", cpu: 2, memory: 8192, storage: 128},
 	appRes{name: "actualApacheStorm", cpu: 12, memory: 24576, storage: 0},
-	appRes{name: "actualMiRKafka", cpu: 4, memory: 8192, storage: 500},
-	appRes{name: "actualMiRZookeeper", cpu: 2, memory: 2048, storage: 80},
+	appRes{name: "actualApacheKafka", cpu: 4, memory: 8192, storage: 500},
+	appRes{name: "actualApacheZookeeper", cpu: 2, memory: 2048, storage: 80},
 }
 
 const (
