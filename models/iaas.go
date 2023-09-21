@@ -206,6 +206,7 @@ func CreateVms(vms []IaasVm) ([]IaasVm, error) {
 					errsMu.Lock()
 					errs = append(errs, outErr)
 					errsMu.Unlock()
+					return
 				}
 				createdVM, err := cloud.CreateVM(v.Name, int(v.VCpu), int(v.Ram), int(v.Storage))
 				if err != nil {
