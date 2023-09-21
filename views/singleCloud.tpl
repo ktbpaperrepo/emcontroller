@@ -96,7 +96,11 @@
             {{$statusID := printf "vmStatus%s" $vm.ID}}
             <tr>
                 <td><button type="button" onclick="deleteVM('{{$vm.Cloud}}', '{{$vm.ID}}', '{{$statusID}}')">Delete</button></td>
-                <td>{{$vm.McmCreate}}</td>
+                {{$colorMcmCreated := "red"}}
+                {{if $vm.McmCreate}}
+                {{$colorMcmCreated = "green"}}
+                {{end}}
+                <td style="color:{{$colorMcmCreated}}">{{$vm.McmCreate}}</td>
                 <td>{{$vm.Name}}</td>
                 <td>{{$vm.ID}}</td>
                 <td>
