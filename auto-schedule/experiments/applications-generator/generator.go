@@ -192,7 +192,8 @@ func getAllApps(mcmEp string) ([]models.AppInfo, error) {
 }
 
 // make applications for experiments
-func MakeExperimentApps(namePrefix string, count int, depDivisor float64, fastMode bool) ([]models.K8sApp, error) {
+func MakeExperimentApps(namePrefix string, count int, fastMode bool) ([]models.K8sApp, error) {
+	depDivisor := float64(count) / 10.0
 	outApps := make([]models.K8sApp, count)
 
 	occNodePorts, err := getOccupiedNodePorts(mcmEndpoint)

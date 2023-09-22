@@ -55,9 +55,9 @@ func TestMakeAppsForTest(t *testing.T) {
 
 func TestMakeExperimentApps(t *testing.T) {
 	var namePrefix string = "expt-app"
-	var count int = 60
+	var count int = 100
 
-	_, err := MakeExperimentApps(namePrefix, count, 6, false)
+	_, err := MakeExperimentApps(namePrefix, count, false)
 	if err != nil {
 		t.Errorf("MakeExperimentApps error: %s", err.Error())
 	}
@@ -65,9 +65,9 @@ func TestMakeExperimentApps(t *testing.T) {
 
 func TestMakeFastExperimentApps(t *testing.T) {
 	var namePrefix string = "expt-app"
-	var count int = 60
+	var count int = 100
 
-	_, err := MakeExperimentApps(namePrefix, count, 6, true)
+	_, err := MakeExperimentApps(namePrefix, count, true)
 	if err != nil {
 		t.Errorf("MakeExperimentApps error: %s", err.Error())
 	}

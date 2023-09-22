@@ -43,7 +43,7 @@ type exptData struct {
 
 func TestExecute(t *testing.T) {
 	var appNamePrefix string = "expt-app"
-	var appCount int = 60
+	var appCount int = 100
 	var repeatCount int = 2 // We repeat this experiment for 10 times to reduce the impact from random factors.
 
 	// all algorithms to be evaluated in experiment
@@ -58,7 +58,7 @@ func TestExecute(t *testing.T) {
 
 	// We repeat experiment to reduce the impact from random factors. In every repeat, we generate different applications.
 	for i := 0; i < repeatCount; i++ {
-		apps, err := applicationsgenerator.MakeExperimentApps(appNamePrefix, appCount, 6, false)
+		apps, err := applicationsgenerator.MakeExperimentApps(appNamePrefix, appCount, false)
 		if err != nil {
 			t.Errorf("MakeExperimentApps error: %s", err.Error())
 		}
