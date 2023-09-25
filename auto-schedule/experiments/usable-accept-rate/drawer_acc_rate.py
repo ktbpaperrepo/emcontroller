@@ -31,7 +31,7 @@ def main():
         for row in csv_reader:  # read each row
             algo_name = row[0]
             pri = MIN_PRI
-            col_idx = 10  # this column is the start of priority-separated data
+            col_idx = 11  # this column is the start of priority-separated data
 
             while pri <= MAX_PRI:
                 all_pri_data[pri - 1][algo_name] = float(row[col_idx])
@@ -54,13 +54,13 @@ def main():
 
     # draw the bar chart to compare the app acceptance rate of every priority
     print("data for drawing:")
-    for i, one_pri_data in enumerate(data_for_drawing):
-        print(ALGO_NAMES_TO_DRAW[i], one_pri_data)
+    for i, one_algo_data in enumerate(data_for_drawing):
+        print(ALGO_NAMES_TO_DRAW[i], one_algo_data)
     print()
 
     # width of each bar
-    bar_inner_width = 0.15
-    bar_outer_width = 0.20
+    bar_inner_width = 0.12
+    bar_outer_width = 0.17
 
     x_pos = np.arange(MAX_PRI - MIN_PRI +
                       1)  # generate the position of each group of bars
@@ -83,7 +83,7 @@ def main():
     plt.rcParams["font.family"] = "Times New Roman"
     plt.rcParams['font.size'] = 15
 
-    for i, one_pri_data in enumerate(data_for_drawing):
+    for i, one_algo_data in enumerate(data_for_drawing):
         plt.bar(x_pos + first_bar_offset + i * bar_outer_width,
                 data_for_drawing[i],
                 bar_inner_width,

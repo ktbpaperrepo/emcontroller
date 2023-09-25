@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"emcontroller/auto-schedule/algorithms"
 	applicationsgenerator "emcontroller/auto-schedule/experiments/applications-generator"
@@ -22,6 +23,8 @@ const dataFileName string = "usable_acceptance_rate.csv"
 // the data structure that will be collected in this experiment
 type exptData struct {
 	algorithmName string
+
+	maxSchedTime float64 // the maximum scheduling time in all repeats, unit second
 
 	schedulingRequestCount int
 	usableSolutionCount    int
@@ -52,7 +55,7 @@ func TestExecute(t *testing.T) {
 	var results []exptData // used to save and output results
 	for _, algoName := range algoNames {
 		results = append(results, exptData{
-			algorithmName: algoName, appCountPerPri: make(map[int]int), acceptedAppCountPerPri: make(map[int]int), appPerPriAcceptanceRate: make(map[int]float64),
+			algorithmName: algoName, maxSchedTime: 0, appCountPerPri: make(map[int]int), acceptedAppCountPerPri: make(map[int]int), appPerPriAcceptanceRate: make(map[int]float64),
 		})
 	}
 
@@ -65,12 +68,16 @@ func TestExecute(t *testing.T) {
 		for j, algoName := range algoNames { // in one repeat, we use the same apps for all algorithm for comparison.
 			t.Logf("Repeat %d, algorithm No. %d [%s]", i, j, algoName)
 
-			acceptedApps, usable, err := schedulingRequest(algoName, apps)
+			acceptedApps, usable, schedTimeSec, err := schedulingRequest(algoName, apps)
 			if err != nil {
 				t.Errorf("schedulingRequest error: %s", err.Error())
 			}
 
 			// record results
+			if results[j].maxSchedTime < schedTimeSec {
+				results[j].maxSchedTime = schedTimeSec
+			}
+
 			results[j].schedulingRequestCount++
 			results[j].totalAppCount += len(apps)
 			for _, app := range apps {
@@ -111,47 +118,51 @@ func TestExecute(t *testing.T) {
 
 }
 
-func schedulingRequest(algoName string, apps []models.K8sApp) ([]models.AppInfo, bool, error) {
+func schedulingRequest(algoName string, apps []models.K8sApp) ([]models.AppInfo, bool, float64, error) {
 	url := "http://localhost:20000/doNewAppGroup"
 
 	reqBodyJson, err := json.Marshal(apps)
 	if err != nil {
 		outErr := fmt.Errorf("json.Marshal: %+v, error: %w", apps, err)
-		return []models.AppInfo{}, false, outErr
+		return []models.AppInfo{}, false, 0, outErr
 	}
 
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(reqBodyJson))
 	if err != nil {
-		return []models.AppInfo{}, false, fmt.Errorf("url: %s, make request error: %w", url, err)
+		return []models.AppInfo{}, false, 0, fmt.Errorf("url: %s, make request error: %w", url, err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Mcm-Scheduling-Algorithm", algoName)
 	req.Header.Set("Expected-Time-One-Cpu", "35")
 
+	timeBefore := time.Now()
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return []models.AppInfo{}, false, fmt.Errorf("url: %s, do request error: %w", url, err)
+		return []models.AppInfo{}, false, 0, fmt.Errorf("url: %s, do request error: %w", url, err)
 	}
 	defer res.Body.Close()
+	timeAfter := time.Now()
+	schedTimeSec := timeAfter.Sub(timeBefore).Seconds()
+
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		return []models.AppInfo{}, false, fmt.Errorf("url: %s, res.statusCode is %d, read res.Body error: %w", url, res.StatusCode, err)
+		return []models.AppInfo{}, false, schedTimeSec, fmt.Errorf("url: %s, res.statusCode is %d, read res.Body error: %w", url, res.StatusCode, err)
 	}
 
 	if res.StatusCode < 200 || res.StatusCode > 299 {
 		if strings.Contains(string(body), "unusable solution") { // the scheduling scheme is unusable
-			return []models.AppInfo{}, false, nil // return of unusable solution
+			return []models.AppInfo{}, false, schedTimeSec, nil // return of unusable solution
 		}
-		return []models.AppInfo{}, false, fmt.Errorf("url: %s, res.statusCode is %d, res.Body is %s", url, res.StatusCode, string(body))
+		return []models.AppInfo{}, false, schedTimeSec, fmt.Errorf("url: %s, res.statusCode is %d, res.Body is %s", url, res.StatusCode, string(body))
 	}
 
 	var acceptedApps []models.AppInfo
 	if err := json.Unmarshal(body, &acceptedApps); err != nil {
-		return []models.AppInfo{}, true, fmt.Errorf("url: %s, res.statusCode is %d, res.Body is %s, Unmarshal body error: %s", url, res.StatusCode, string(body), err.Error())
+		return []models.AppInfo{}, true, schedTimeSec, fmt.Errorf("url: %s, res.statusCode is %d, res.Body is %s, Unmarshal body error: %s", url, res.StatusCode, string(body), err.Error())
 	}
 
-	return acceptedApps, true, nil // return of usable solution
+	return acceptedApps, true, schedTimeSec, nil // return of usable solution
 }
 
 // get the number of applications with each priority
@@ -183,6 +194,7 @@ func writeCsvResults(results []exptData) error {
 
 	var header []string = []string{
 		"Algorithm Name",
+		"Maximum Scheduling Time (s)",
 		"Scheduling Request Count",
 		"Usable Solution Count",
 		"Total App Count",
@@ -201,6 +213,7 @@ func writeCsvResults(results []exptData) error {
 	for _, result := range results {
 		var line []string = []string{
 			result.algorithmName,
+			fmt.Sprintf("%g", result.maxSchedTime),
 			fmt.Sprintf("%d", result.schedulingRequestCount),
 			fmt.Sprintf("%d", result.usableSolutionCount),
 			fmt.Sprintf("%d", result.totalAppCount),

@@ -16,7 +16,19 @@ go test /mnt/c/mine/code/gocode/src/emcontroller/auto-schedule/experiments/usabl
 ```
 Then, the data file `usable_acceptance_rate.csv` will be generated in this folder.
 
-Then, we can draw a bar chart to compare the application acceptance rate of every algorithm for each priority. In a computer with GUI, in this folder, run:
+Then, we can:
+- use the file `usable_acceptance_rate.csv`, draw a bar chart to compare the application acceptance rate of every algorithm for each priority. In a computer with GUI, in this folder, run:
 ```
-python -u drawer.py
+python -u drawer_acc_rate.py
+```
+
+We can also do the above step several times **with different numbers of applications** and rename the generated `.csv` files to `usable_acceptance_rate_<number of applications>.csv`, if there are `70` applications in a request, we should rename the file `usable_acceptance_rate.csv` to `usable_acceptance_rate_70.csv`. Then, we can change the value of the constant `APP_COUNTS` in `drawer_sched_time.py` and `drawer_total_acc_rate.py`, according to the different numbers of applications.
+Then, we can:
+- draw a bar chart to compare the application acceptance rate of every algorithm with different numbers of applications. In a computer with GUI, in this folder, run:
+```
+python -u drawer_total_acc_rate.py
+```
+- draw a bar chart to compare the maximum scheduling time used by every algorithm with different numbers of applications. In a computer with GUI, in this folder, run:
+```
+python -u drawer_sched_time.py
 ```
