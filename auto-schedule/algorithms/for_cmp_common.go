@@ -1,10 +1,12 @@
 package algorithms
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/KeepTheBeats/routing-algorithms/mymath"
 	"github.com/KeepTheBeats/routing-algorithms/random"
+	"github.com/astaxie/beego"
 
 	asmodel "emcontroller/auto-schedule/model"
 	apiv1 "k8s.io/api/core/v1"
@@ -428,4 +430,79 @@ func oldCmpVmCpuAllocation(vm asmodel.K8sNode, appsThisVm map[string]asmodel.App
 	}
 
 	return solnWithCpuThisVm
+}
+
+// for comparison
+// Randomly explore all possibilities of 2-point crossover, to try to get an acceptable solution. If this function cannot find an acceptable solution after trying all possibilities, it will return the original 2 chromosomes without doing crossover. The only difference with AllPossTwoPointCrossover is that this function use CmpRefineSoln instead of RefineSoln.
+func CmpAllPossTwoPointCrossover(firstChromosome asmodel.Solution, secondChromosome asmodel.Solution, clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string) (asmodel.Solution, asmodel.Solution) {
+	// in our unit tests, we will set both the input cloud and apps as nil
+	var testMode bool = clouds == nil && apps == nil
+
+	if len(firstChromosome.AppsSolution) != len(secondChromosome.AppsSolution) || len(firstChromosome.AppsSolution) != len(appsOrder) {
+		panic(fmt.Sprintf("len(firstChromosome.AppsSolution) is %d; len(secondChromosome.AppsSolution) is %d; len(appsOrder) is %d. They should be equal.", len(firstChromosome.AppsSolution), len(secondChromosome.AppsSolution), len(appsOrder)))
+	}
+
+	// the number of genes in a chromosome, also the number of applications to schedule.
+	geneNumber := len(firstChromosome.AppsSolution)
+
+	/**
+	We exchange the genes of the 2 chromosomes in the closed interval [point1, point2]. The width of this closed interval ranges from 1 to geneNumber-1.
+	The following loop randomly traverse all possibility of different width and point1 which determine point2.
+	*/
+
+	// build an array to help select point widths randomly
+	var possiblePointWidths []int
+	for pointWidth := 1; pointWidth <= geneNumber-1; pointWidth++ {
+		possiblePointWidths = append(possiblePointWidths, pointWidth)
+	}
+	for len(possiblePointWidths) > 0 {
+		// randomly select a possible point width, and then remove it from the array, in order not to select it again.
+		widthIdx := random.RandomInt(0, len(possiblePointWidths)-1)
+		pointWidth := possiblePointWidths[widthIdx]
+		possiblePointWidths = append(possiblePointWidths[:widthIdx], possiblePointWidths[widthIdx+1:]...)
+		if testMode {
+			beego.Info("pointWidth is:", pointWidth) // for debug
+		}
+
+		// build an array to help select point1 randomly
+		var possiblePoint1 []int
+		for point1 := 0; calcPoint2(point1, pointWidth) < geneNumber; point1++ {
+			possiblePoint1 = append(possiblePoint1, point1)
+		}
+		for len(possiblePoint1) > 0 {
+			// randomly select a possible point1, and then remove it from the array, in order not to select it again.
+			pointIdx := random.RandomInt(0, len(possiblePoint1)-1)
+			point1 := possiblePoint1[pointIdx]
+			possiblePoint1 = append(possiblePoint1[:pointIdx], possiblePoint1[pointIdx+1:]...)
+
+			// calculate point 2 by point 1
+			point2 := calcPoint2(point1, pointWidth)
+
+			if testMode {
+				beego.Info("point1, point2:", point1, point2) // for debug
+			} else {
+
+				/**
+				Then we do crossover with the randomly selected point1 and point2.
+				We set the tryFunc here, because with this the unit tests will be easier to make.
+				*/
+
+				// if in this possibility the 2 crossovered chromosomes are acceptable, return them.
+				crossoveredChromosome1, crossoveredChromosome2 := twoPointCrossover(firstChromosome, secondChromosome, appsOrder, point1, point2)
+
+				// refine the 2 crossovered chromosomes and check whether they are acceptable. If both of them are acceptable, we return them as the result.
+				if crossoveredChromosome1, acceptable1 := CmpRefineSoln(clouds, apps, appsOrder, crossoveredChromosome1); acceptable1 {
+					if crossoveredChromosome2, acceptable2 := CmpRefineSoln(clouds, apps, appsOrder, crossoveredChromosome2); acceptable2 {
+						return crossoveredChromosome1, crossoveredChromosome2
+					}
+				}
+			}
+
+		}
+		if testMode {
+			fmt.Println() // for debug
+		}
+	}
+
+	return firstChromosome, secondChromosome
 }

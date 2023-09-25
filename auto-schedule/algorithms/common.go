@@ -26,6 +26,7 @@ const (
 	BERandName   string = "BERand"
 	AmagaName    string = "Amaga"
 	AmpgaName    string = "Ampga"
+	DiktyogaName string = "Diktyoga"
 )
 
 var (

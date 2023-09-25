@@ -493,7 +493,7 @@ func (m *Mcssga) selectionOperator(clouds map[string]asmodel.Cloud, apps map[str
 func (m *Mcssga) Fitness(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, chromosome asmodel.Solution) float64 {
 	var fitnessValue float64
 
-	m.FitnessNonPriDp = make(map[string]float64) // clear the dp record
+	//m.FitnessNonPriDp = make(map[string]float64) // clear the dp record
 	for appName, _ := range apps {
 		fitnessValue += m.fitnessOneApp(clouds, apps, chromosome, appName)
 	}

@@ -258,7 +258,7 @@ func (a *Ampga) crossoverOperator(clouds map[string]asmodel.Cloud, apps map[stri
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			newFirstChromosome, newSecondChromosome := AllPossTwoPointCrossover(firstChromosome, secondChromosome, clouds, apps, appsOrder)
+			newFirstChromosome, newSecondChromosome := CmpAllPossTwoPointCrossover(firstChromosome, secondChromosome, clouds, apps, appsOrder)
 			// append the two new chromosomes in crossoveredPopulation
 			crpoMu.Lock()
 			crossoveredPopulation = append(crossoveredPopulation, newFirstChromosome, newSecondChromosome)

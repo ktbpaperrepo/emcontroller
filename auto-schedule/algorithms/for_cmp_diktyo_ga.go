@@ -16,12 +16,12 @@ import (
 )
 
 /**
-An algorithm for comparison, with name "Accept More Application Genetic Algorithm (AMAGA)". This algorithm only aim at accepting as more applications as possible, and it is a genetic algorithm.
+An algorithm for comparison, with name "Diktyo-GA". The paper "Diktyo: Network-Aware Scheduling in Container-based Clouds" proposes a Mixed-Integer Linear Programming (MILP) algorithm with the objective to reduce the network latencies among applications. I do not have enough time to implement an MILP algorithm in multi-cloud manager, and maybe an MILP algorithm will use too long scheduling time, so I customize the algorithm to suit my model and change it to a Genetic Algorithm (GA). I name this algorithm as "Diktyo-GA".
 In the experiment, we will compare MCSSGA with this algorithm.
 */
 
-// Accept More Application Genetic Algorithm (AMAGA)
-type Amaga struct {
+// Diktyo-GA
+type Diktyoga struct {
 	ChromosomesCount     int // One chromosome is a solution
 	IterationCount       int // In each iteration, a population will be generated. One population consists of some solutions.
 	CrossoverProbability float64
@@ -31,6 +31,9 @@ type Amaga struct {
 	StopNoUpdateIteration int
 	CurNoUpdateIteration  int // record how many iterations the best solution has not updated currently.
 
+	MaxReachableRtt float64 // The biggest RTT between any 2 (or 1) reachable clouds, used to calculate fitness values. unit millisecond (ms)
+	AvgDepNum       float64 // Average dependent application number of all applications
+
 	// these 2 member variables record the best solution in all iteration as well as its fitness value
 	BestFitnessRecords []float64
 	BestSolnRecords    []asmodel.Solution
@@ -39,54 +42,82 @@ type Amaga struct {
 	BestFitnessEachIter []float64
 }
 
-func NewAmaga(chromosomesCount int, iterationCount int, crossoverProbability float64, mutationProbability float64, stopNoUpdateIteration int) *Amaga {
-	return &Amaga{
+func NewDiktyoga(chromosomesCount int, iterationCount int, crossoverProbability float64, mutationProbability float64, stopNoUpdateIteration int) *Diktyoga {
+	return &Diktyoga{
 		ChromosomesCount:      chromosomesCount,
 		IterationCount:        iterationCount,
 		CrossoverProbability:  crossoverProbability,
 		MutationProbability:   mutationProbability,
 		StopNoUpdateIteration: stopNoUpdateIteration,
 		CurNoUpdateIteration:  0,
+		MaxReachableRtt:       0,
 		BestFitnessRecords:    nil,
 		BestSolnRecords:       nil,
 		BestFitnessEachIter:   nil,
 	}
 }
 
-func (a *Amaga) Schedule(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string) (asmodel.Solution, error) {
-	beego.Info("Using scheduling algorithm:", AmagaName)
+// Traverse all clouds to find the max RTT between any 2 (or 1) reachable clouds, and set it as the MaxReachableRtt of Diktyoga.
+func (d *Diktyoga) SetMaxReaRtt(clouds map[string]asmodel.Cloud) {
+	var maxReaRtt float64 = 0
+	for _, srcCloud := range clouds {
+		for _, ns := range srcCloud.NetState {
+			if ns.Rtt > maxReaRtt && ns.Rtt < maxAccRttMs {
+				maxReaRtt = ns.Rtt
+			}
+		}
+	}
+
+	d.MaxReachableRtt = maxReaRtt
+}
+
+// Traverse all applications to find the average dependency number of all apps.
+func (d *Diktyoga) SetAvgDepNum(apps map[string]asmodel.Application) {
+	var sumDepNum int = 0
+	for _, app := range apps {
+		sumDepNum += len(app.Dependencies)
+	}
+	d.AvgDepNum = float64(sumDepNum) / float64(len(apps))
+}
+
+func (d *Diktyoga) Schedule(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string) (asmodel.Solution, error) {
+	beego.Info("Using scheduling algorithm:", DiktyogaName)
+	d.SetMaxReaRtt(clouds)
+	beego.Info("MaxReachableRtt:", d.MaxReachableRtt)
+	d.SetAvgDepNum(apps)
+	beego.Info("AvgDepNum:", d.AvgDepNum)
 
 	// randomly generate the init population
-	var initPopulation []asmodel.Solution = a.initialize(clouds, apps, appsOrder)
+	var initPopulation []asmodel.Solution = d.initialize(clouds, apps, appsOrder)
 
 	// there are IterationCount+1 iterations in total, this is the No. 0 iteration
-	currentPopulation := a.selectionOperator(clouds, apps, initPopulation) // Iteration No. 0
+	currentPopulation := d.selectionOperator(clouds, apps, initPopulation) // Iteration No. 0
 
 	// No. 1 iteration to No. m.IterationCount iteration
-	for iteration := 1; iteration <= a.IterationCount; iteration++ {
+	for iteration := 1; iteration <= d.IterationCount; iteration++ {
 
-		currentPopulation = a.crossoverOperator(clouds, apps, appsOrder, currentPopulation)
+		currentPopulation = d.crossoverOperator(clouds, apps, appsOrder, currentPopulation)
 
-		currentPopulation = a.mutationOperator(clouds, apps, appsOrder, currentPopulation)
+		currentPopulation = d.mutationOperator(clouds, apps, appsOrder, currentPopulation)
 
-		currentPopulation = a.selectionOperator(clouds, apps, currentPopulation)
+		currentPopulation = d.selectionOperator(clouds, apps, currentPopulation)
 
 		// If we did not find better solutions in the past some iterations, we stop the algorithm and return the result.
-		if a.CurNoUpdateIteration > a.StopNoUpdateIteration {
+		if d.CurNoUpdateIteration > d.StopNoUpdateIteration {
 			break
 		}
 	}
 
-	beego.Info("Best fitness in each iteration:", a.BestFitnessEachIter)
-	beego.Info("Final BestFitnessRecords:", a.BestFitnessRecords)
-	beego.Info("Total iteration number (the following 2 should be equal): ", len(a.BestFitnessRecords), len(a.BestSolnRecords))
-	return a.BestSolnRecords[len(a.BestSolnRecords)-1], nil
+	beego.Info("Best fitness in each iteration:", d.BestFitnessEachIter)
+	beego.Info("Final BestFitnessRecords:", d.BestFitnessRecords)
+	beego.Info("Total iteration number (the following 2 should be equal): ", len(d.BestFitnessRecords), len(d.BestSolnRecords))
+	return d.BestSolnRecords[len(d.BestSolnRecords)-1], nil
 }
 
 // use "best effort random" method to generate some solutions as the init population
-func (a *Amaga) initialize(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string) []asmodel.Solution {
+func (d *Diktyoga) initialize(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string) []asmodel.Solution {
 	var initPopulation []asmodel.Solution
-	for i := 0; i < a.ChromosomesCount; i++ {
+	for i := 0; i < d.ChromosomesCount; i++ {
 		var oneSolution asmodel.Solution = CmpRandomAcceptMostSolution(clouds, apps, appsOrder)
 		initPopulation = append(initPopulation, oneSolution)
 	}
@@ -95,7 +126,7 @@ func (a *Amaga) initialize(clouds map[string]asmodel.Cloud, apps map[string]asmo
 }
 
 // the selection operator of Genetic Algorithm
-func (a *Amaga) selectionOperator(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, population []asmodel.Solution) []asmodel.Solution {
+func (d *Diktyoga) selectionOperator(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, population []asmodel.Solution) []asmodel.Solution {
 
 	// calculate the fitness of every chromosome in the current (old) population
 	fitnesses := make([]float64, len(population))
@@ -107,7 +138,7 @@ func (a *Amaga) selectionOperator(clouds map[string]asmodel.Cloud, apps map[stri
 		go func(chromIdx int) {
 			defer wg.Done()
 
-			thisFitness := a.Fitness(clouds, apps, population[chromIdx])
+			thisFitness := d.Fitness(clouds, apps, population[chromIdx])
 
 			fitMu.Lock()
 			fitnesses[chromIdx] = thisFitness
@@ -127,7 +158,7 @@ func (a *Amaga) selectionOperator(clouds map[string]asmodel.Cloud, apps map[stri
 	var bestFitThisIterIdx int = 0                 // the index of the solution with the highest fitness value in the old population
 
 	// in every population, there should be m.ChromosomesCount chromosomes
-	for i := 0; i < a.ChromosomesCount; i++ {
+	for i := 0; i < d.ChromosomesCount; i++ {
 		var selChrIdx int // selected chromosome index in the input population
 
 		// binary tournament selection
@@ -154,50 +185,95 @@ func (a *Amaga) selectionOperator(clouds map[string]asmodel.Cloud, apps map[stri
 	var bestFitAllIter float64
 	var bestSolnAllIter asmodel.Solution
 
-	if len(a.BestFitnessRecords) != len(a.BestSolnRecords) { // the 2 lengths should be equal, this check is for safety.
-		panic(fmt.Sprintf("len(m.BestFitnessRecords) [%d] is not equal to len(m.BestSolnRecords) [%d]", len(a.BestFitnessRecords), len(a.BestSolnRecords)))
+	if len(d.BestFitnessRecords) != len(d.BestSolnRecords) { // the 2 lengths should be equal, this check is for safety.
+		panic(fmt.Sprintf("len(m.BestFitnessRecords) [%d] is not equal to len(m.BestSolnRecords) [%d]", len(d.BestFitnessRecords), len(d.BestSolnRecords)))
 	}
 
 	// We only record the best solutions until the current iteration.
-	if len(a.BestFitnessRecords) == 0 { // In the 1st iteration, m.BestFitnessRecords and m.BestSolnRecords are nil.
+	if len(d.BestFitnessRecords) == 0 { // In the 1st iteration, m.BestFitnessRecords and m.BestSolnRecords are nil.
 		bestFitAllIter = bestFitThisIter
 		bestSolnAllIter = population[bestFitThisIterIdx]
-		a.CurNoUpdateIteration = 0
+		d.CurNoUpdateIteration = 0
 	} else {
-		bestFitAllIter = a.BestFitnessRecords[len(a.BestFitnessRecords)-1]
-		bestSolnAllIter = a.BestSolnRecords[len(a.BestSolnRecords)-1]
+		bestFitAllIter = d.BestFitnessRecords[len(d.BestFitnessRecords)-1]
+		bestSolnAllIter = d.BestSolnRecords[len(d.BestSolnRecords)-1]
 		if bestFitThisIter > bestFitAllIter {
 			bestFitAllIter = bestFitThisIter
 			bestSolnAllIter = population[bestFitThisIterIdx]
-			a.CurNoUpdateIteration = 0
+			d.CurNoUpdateIteration = 0
 		} else {
-			a.CurNoUpdateIteration++
+			d.CurNoUpdateIteration++
 		}
 	}
 
 	// record them
-	a.BestFitnessEachIter = append(a.BestFitnessEachIter, bestFitThisIter)
-	a.BestFitnessRecords = append(a.BestFitnessRecords, bestFitAllIter)
-	a.BestSolnRecords = append(a.BestSolnRecords, asmodel.SolutionCopy(bestSolnAllIter))
+	d.BestFitnessEachIter = append(d.BestFitnessEachIter, bestFitThisIter)
+	d.BestFitnessRecords = append(d.BestFitnessRecords, bestFitAllIter)
+	d.BestSolnRecords = append(d.BestSolnRecords, asmodel.SolutionCopy(bestSolnAllIter))
 
 	return newPopulation
 }
 
 // the fitness function of this algorithm
-func (a *Amaga) Fitness(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, chromosome asmodel.Solution) float64 {
+func (d *Diktyoga) Fitness(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, chromosome asmodel.Solution) float64 {
 	var fitnessValue float64
 
 	for appName, _ := range apps {
-		if chromosome.AppsSolution[appName].Accepted { // This algorithm only aim at accepting as more applications as possible.
-			fitnessValue += 1.0
-		}
+		fitnessValue += d.fitnessOneApp(clouds, apps, chromosome, appName)
 	}
 
 	return fitnessValue
 }
 
+// calculate the fitness value contributed by an application. According to the paper Diktyo, this fitness function only considers acceptance rate and network latency.
+func (d *Diktyoga) fitnessOneApp(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, chromosome asmodel.Solution, thisAppName string) float64 {
+	var thisAppFitness float64 // result
+
+	// if an application is rejected, it contributes a big negative fitness value, this is to encourage higher priority-weighted acceptance rate
+	if !chromosome.AppsSolution[thisAppName].Accepted {
+		thisAppFitness = -(d.MaxReachableRtt * d.AvgDepNum) / 2
+	} else {
+
+		// if this app is accepted, all its dependent apps are also accepted, which is guaranteed by our dependency acceptable check
+
+		netPart := d.MaxReachableRtt * d.AvgDepNum // the base network part of fitness.
+		for _, dep := range apps[thisAppName].Dependencies {
+			depAppName := dep.AppName
+
+			// calculate the network part of the fitness value of this dependency
+			thisCloudName := chromosome.AppsSolution[thisAppName].TargetCloudName
+			depCloudName := chromosome.AppsSolution[depAppName].TargetCloudName
+			thisNodeName := chromosome.AppsSolution[thisAppName].K8sNodeName
+			depNodeName := chromosome.AppsSolution[depAppName].K8sNodeName
+
+			var thisRtt float64 // RTT from this application to the dependent application
+
+			if thisNodeName == depNodeName { // We consider the RTT inside a same VM as 0.
+				thisRtt = 0
+			} else {
+				thisRtt = clouds[thisCloudName].NetState[depCloudName].Rtt
+			}
+
+			netPart -= thisRtt
+			/**
+			The network delay between this app and its dependent ones will reduce this fitness.
+			This fitness function tend to accept apps with fewer dependencies, this is an unfair point, but I cannot find a better way, and this way seems like the most fair one that I can find yet now.
+			*/
+		}
+
+		// For an application with many dependencies, after the above calculation netPart may become a negative value, so we should set it to 0 in this condition, because otherwise accepting an application may be worse than rejecting it.
+		if netPart < 0 {
+			netPart = 0
+		}
+
+		thisAppFitness = netPart
+	}
+
+	return thisAppFitness
+}
+
 // the crossover operator of Genetic Algorithm.
-func (a *Amaga) crossoverOperator(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string, population []asmodel.Solution) []asmodel.Solution {
+func (d *Diktyoga) crossoverOperator(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string, population []asmodel.Solution) []asmodel.Solution {
 	// If a chromosome has less than 2 genes, we cannot do crossover.
 	if len(apps) <= 1 {
 		return population
@@ -206,7 +282,7 @@ func (a *Amaga) crossoverOperator(clouds map[string]asmodel.Cloud, apps map[stri
 	// randomly choose the chromosomes that need crossover. We save their indexes.
 	var idxNeedCrossover []int
 	for i := 0; i < len(population); i++ {
-		if random.RandomFloat64(0, 1) < a.CrossoverProbability {
+		if random.RandomFloat64(0, 1) < d.CrossoverProbability {
 			idxNeedCrossover = append(idxNeedCrossover, i)
 		}
 	}
@@ -280,7 +356,7 @@ func (a *Amaga) crossoverOperator(clouds map[string]asmodel.Cloud, apps map[stri
 }
 
 // the mutation operator of Genetic Algorithm
-func (a *Amaga) mutationOperator(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string, population []asmodel.Solution) []asmodel.Solution {
+func (d *Diktyoga) mutationOperator(clouds map[string]asmodel.Cloud, apps map[string]asmodel.Application, appsOrder []string, population []asmodel.Solution) []asmodel.Solution {
 	var mutatedPopulation []asmodel.Solution = make([]asmodel.Solution, len(population))
 
 	var popuMu sync.Mutex // the slice in golang is not safe for concurrent read/write
@@ -298,8 +374,8 @@ func (a *Amaga) mutationOperator(clouds map[string]asmodel.Cloud, apps map[strin
 				// gene-based mutation
 				for appName, oriGene := range population[chromIdx].AppsSolution {
 					// every gene has the probability "m.MutationProbability" to mutate
-					if random.RandomFloat64(0, 1) < a.MutationProbability {
-						mutatedChromosome.AppsSolution[appName] = a.geneMutate(clouds, oriGene) // mutate
+					if random.RandomFloat64(0, 1) < d.MutationProbability {
+						mutatedChromosome.AppsSolution[appName] = d.geneMutate(clouds, oriGene) // mutate
 					} else {
 						mutatedChromosome.AppsSolution[appName] = asmodel.SasCopy(oriGene) // do not mutate
 					}
@@ -326,7 +402,7 @@ func (a *Amaga) mutationOperator(clouds map[string]asmodel.Cloud, apps map[strin
 }
 
 // The function to mutate a gene. After the mutation, a gene should become a different one, unless it is not accepted originally.
-func (a *Amaga) geneMutate(clouds map[string]asmodel.Cloud, ori asmodel.SingleAppSolution) asmodel.SingleAppSolution {
+func (d *Diktyoga) geneMutate(clouds map[string]asmodel.Cloud, ori asmodel.SingleAppSolution) asmodel.SingleAppSolution {
 	var mutated asmodel.SingleAppSolution = asmodel.SasCopy(asmodel.RejSoln)
 
 	cloudsToPick := asmodel.CloudMapCopy(clouds)
@@ -342,11 +418,11 @@ func (a *Amaga) geneMutate(clouds map[string]asmodel.Cloud, ori asmodel.SingleAp
 	return mutated
 }
 
-// draw a.BestFitnessEachIter and a.BestFitnessRecords on a line chart, to show the evolution trend
-func (a *Amaga) DrawEvoChart() {
+// draw d.BestFitnessEachIter and d.BestFitnessRecords on a line chart, to show the evolution trend
+func (d *Diktyoga) DrawEvoChart() {
 	var drawChartFunc func(http.ResponseWriter, *http.Request) = func(res http.ResponseWriter, r *http.Request) {
 		var xValuesAllBest []float64
-		for i, _ := range a.BestFitnessRecords {
+		for i, _ := range d.BestFitnessRecords {
 			xValuesAllBest = append(xValuesAllBest, float64(i))
 		}
 
@@ -382,12 +458,12 @@ func (a *Amaga) DrawEvoChart() {
 				chart.ContinuousSeries{
 					Name:    "Best Fitness in all iteration",
 					XValues: xValuesAllBest,
-					YValues: a.BestFitnessRecords,
+					YValues: d.BestFitnessRecords,
 				},
 				chart.ContinuousSeries{
 					Name:    "Best Fitness in each iterations",
 					XValues: xValuesAllBest,
-					YValues: a.BestFitnessEachIter,
+					YValues: d.BestFitnessEachIter,
 					Style: chart.Style{
 						Show:            true,
 						StrokeDashArray: []float64{5.0, 3.0, 2.0, 3.0},
