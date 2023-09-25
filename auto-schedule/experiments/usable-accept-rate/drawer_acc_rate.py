@@ -3,11 +3,11 @@ import numpy as np
 import csv
 
 ALGO_NAMES = [
-    "CompRand", "BERand", "Amaga", "Ampga", "Mcssga"
+    "CompRand", "BERand", "Amaga", "Ampga", "Diktyoga", "Mcssga"
 ]  # the names of all algorithms to be evaluated in this experiment
 
 ALGO_NAMES_TO_DRAW = [
-    "BERand", "Amaga", "Ampga", "Mcssga"
+    "BERand", "Amaga", "Ampga", "Diktyoga", "Mcssga"
 ]  # the names of all algorithms to draw. We do not draw "CompRand", because it may get unusable scheduling schemes.
 
 #  the minimum and maximum possible priorities

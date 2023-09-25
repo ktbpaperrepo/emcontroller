@@ -3,7 +3,7 @@ import numpy as np
 import csv
 
 ALGO_NAMES = [
-    "BERand", "Amaga", "Ampga", "Mcssga"
+    "BERand", "Amaga", "Ampga", "Diktyoga", "Mcssga"
 ]  # the names of all algorithms to draw. We do not draw "CompRand", because it may get unusable scheduling schemes.
 
 APP_COUNTS = [70, 85, 100, 115, 130]

@@ -3,7 +3,7 @@ import numpy as np
 import csv
 
 ALGO_NAMES = [
-    "CompRand", "BERand", "Amaga", "Ampga", "Mcssga"
+    "CompRand", "BERand", "Amaga", "Ampga", "Diktyoga", "Mcssga"
 ]  # the names of all algorithms to be evaluated in this experiment
 
 APP_COUNTS = [70, 85, 100, 115, 130]

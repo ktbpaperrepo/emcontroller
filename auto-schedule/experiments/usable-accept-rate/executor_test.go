@@ -50,7 +50,7 @@ func TestExecute(t *testing.T) {
 	var repeatCount int = 2 // We repeat this experiment for 10 times to reduce the impact from random factors.
 
 	// all algorithms to be evaluated in experiment
-	var algoNames []string = []string{algorithms.CompRandName, algorithms.BERandName, algorithms.AmagaName, algorithms.AmpgaName, algorithms.McssgaName}
+	var algoNames []string = []string{algorithms.CompRandName, algorithms.BERandName, algorithms.AmagaName, algorithms.AmpgaName, algorithms.DiktyogaName, algorithms.McssgaName}
 
 	var results []exptData // used to save and output results
 	for _, algoName := range algoNames {
