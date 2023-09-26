@@ -46,7 +46,7 @@ func CreateAutoScheduleApps(apps []models.K8sApp, algoName string, exTimeOneCpu 
 	// the parameters for genetic algorithms
 	var chromosomesCount int = 200
 	var iterationCount int = 5000
-	var crossoverProbability float64 = 0.3
+	var crossoverProbability float64 = 0.7
 	var mutationProbability float64 = 0.019
 	var stopNoUpdateIteration int = 200
 
