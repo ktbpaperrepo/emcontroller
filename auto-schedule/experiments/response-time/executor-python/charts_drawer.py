@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import data_types
 import csv_operation
 
-REPEAT_COUNT = 2  # We repeat the experiments for REPEAT_COUNT times.
+REPEAT_COUNT = 3  # We repeat the experiments for REPEAT_COUNT times.
 DEVICE_COUNT = 1  # we use DEVICE_COUNT devices to send requests.
 APP_COUNT = 100  # In every repeat, we deploy APP_COUNT applications.
 REQ_COUNT_PER_APP = 5  # In every repeat, on every device, we access every application REQ_COUNT_PER_APP times.
@@ -190,8 +190,15 @@ def filter_app_data_all_accepted(
 
 # draw charts for one repeat
 def draw_cdf_one_repeat(
-        data_this_repeat: dict[str, dict[str, list[data_types.ResultData]]],
-        app_name_to_pri: dict[str, int], repeat_idx: int):
+    data_this_repeat: dict[str, dict[str, list[data_types.ResultData]]],
+    app_name_to_pri: dict[str, int], repeat_idx: int
+) -> dict[str, dict[str, dict[str, list[data_types.ResultData]]]]:
+
+    # return the algorithm names and the data to merge the data and draw them in one chart
+    algos_to_both_acc_data: dict[str, dict[str, dict[
+        str, list[data_types.ResultData]]]] = dict()
+    for i, _ in enumerate(ALGO_NAMES):
+        algos_to_both_acc_data[ALGO_NAMES[i]] = dict()
 
     # compare every 2 algorithms
     for i, _ in enumerate(ALGO_NAMES):
@@ -200,16 +207,35 @@ def draw_cdf_one_repeat(
             # only draw charts for the applications accepted by both of the selected algorithms
             app_data_all_accepted = filter_app_data_all_accepted(
                 data_this_repeat, app_name_to_pri, algos_to_cmp)
-            draw_cdf_every_metric(
-                app_data_all_accepted, 3,
-                "Repeat {}. Apps accepted by both {} and {}".format(
-                    repeat_idx, ALGO_NAMES[i], ALGO_NAMES[j]))
+            # # draw
+            # draw_cdf_every_metric(
+            #     app_data_all_accepted, 3,
+            #     "Repeat {}. Apps accepted by both {} and {}".format(
+            #         repeat_idx, ALGO_NAMES[i], ALGO_NAMES[j]))
+            # save data
+            algos_to_both_acc_data[ALGO_NAMES[i]][
+                ALGO_NAMES[j]] = app_data_all_accepted
+
+    return algos_to_both_acc_data
 
 
 def main():
     all_data: dict[str, list[data_types.ResultData]] = dict()
     for _, algo_name in enumerate(ALGO_NAMES):  # initialize the dict
         all_data[algo_name] = []
+
+    # initializa this variable to save data to merge the applications accepted by both of every 2 algorithms
+    all_repeats_data_acc_both_algos: dict[str, dict[str, dict[
+        str, list[data_types.ResultData]]]] = dict()
+    for i, _ in enumerate(ALGO_NAMES):
+        all_repeats_data_acc_both_algos[ALGO_NAMES[i]] = dict()
+        for j in range(i + 1, len(ALGO_NAMES)):
+            all_repeats_data_acc_both_algos[ALGO_NAMES[i]][
+                ALGO_NAMES[j]] = dict()
+            all_repeats_data_acc_both_algos[ALGO_NAMES[i]][ALGO_NAMES[j]][
+                ALGO_NAMES[i]] = []
+            all_repeats_data_acc_both_algos[ALGO_NAMES[i]][ALGO_NAMES[j]][
+                ALGO_NAMES[j]] = []
 
     # load all data
     for i in range(REPEAT_COUNT):
@@ -277,7 +303,32 @@ def main():
 
         # to draw the chart for this repeat
         print("draw cdf charts for repeat {}".format(i + 1))
-        draw_cdf_one_repeat(all_data_this_repeat, app_name_to_pri, i + 1)
+        this_repeat_algos_to_both_acc_data = draw_cdf_one_repeat(
+            all_data_this_repeat, app_name_to_pri, i + 1)
+
+        # merge data of all repeats
+        for j, _ in enumerate(ALGO_NAMES):
+            for k in range(j + 1, len(ALGO_NAMES)):
+                all_repeats_data_acc_both_algos[ALGO_NAMES[j]][ALGO_NAMES[k]][
+                    ALGO_NAMES[j]].extend(this_repeat_algos_to_both_acc_data[
+                        ALGO_NAMES[j]][ALGO_NAMES[k]][ALGO_NAMES[j]])
+                all_repeats_data_acc_both_algos[ALGO_NAMES[j]][ALGO_NAMES[k]][
+                    ALGO_NAMES[k]].extend(this_repeat_algos_to_both_acc_data[
+                        ALGO_NAMES[j]][ALGO_NAMES[k]][ALGO_NAMES[k]])
+
+    print(
+        "draw charts for the applications accepted by both of every 2 algorithms in all repeats"
+    )
+    for i, _ in enumerate(ALGO_NAMES):
+        for j in range(i + 1, len(ALGO_NAMES)):
+            if ALGO_NAMES[i] != OUR_ALGO_NAME and ALGO_NAMES[
+                    j] != OUR_ALGO_NAME:
+                continue
+            # draw
+            draw_cdf_every_metric(
+                all_repeats_data_acc_both_algos[ALGO_NAMES[i]][ALGO_NAMES[j]],
+                3, "Applications accepted by both {} and {}".format(
+                    ALGO_NAMES[i], ALGO_NAMES[j]))
 
     # ----------------------------
     # complement the data for rejected applications
