@@ -6,12 +6,12 @@ import matplotlib.pyplot as plt
 import data_types
 import csv_operation
 
-REPEAT_COUNT = 1  # We repeat the experiments for REPEAT_COUNT times.
+REPEAT_COUNT = 2  # We repeat the experiments for REPEAT_COUNT times.
 DEVICE_COUNT = 1  # we use DEVICE_COUNT devices to send requests.
 APP_COUNT = 100  # In every repeat, we deploy APP_COUNT applications.
 REQ_COUNT_PER_APP = 5  # In every repeat, on every device, we access every application REQ_COUNT_PER_APP times.
 ALGO_NAMES = [
-    "BERand", "Amaga", "Ampga", "Mcssga"
+    "BERand", "Amaga", "Ampga", "Diktyoga", "Mcssga"
 ]  # the names of all algorithms to be evaluated in this experiment
 OUR_ALGO_NAME = "Mcssga"
 
