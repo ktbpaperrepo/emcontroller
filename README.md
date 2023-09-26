@@ -1,6 +1,6 @@
-# README #
+# Multi-Cloud Manager #
 
-Edge and Multi-Cloud Manager.
+I use the Go version `go1.20.2 linux/amd64`.
 
 ### How to build Multi-cloud Manager and clean the built files? ###
 

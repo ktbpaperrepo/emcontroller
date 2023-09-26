@@ -1,4 +1,4 @@
-package usable_accept_rate
+package main
 
 import (
 	"bytes"
@@ -6,10 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strings"
-	"testing"
 	"time"
 
 	"emcontroller/auto-schedule/algorithms"
@@ -18,7 +18,7 @@ import (
 	"emcontroller/models"
 )
 
-const dataFileName string = "usable_acceptance_rate.csv"
+const dataFileNameFmt string = "usable_acceptance_rate_%d.csv"
 
 // the data structure that will be collected in this experiment
 type exptData struct {
@@ -44,10 +44,20 @@ type exptData struct {
 	appPerPriAcceptanceRate           map[int]float64
 }
 
-func TestExecute(t *testing.T) {
+func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
+	var appCounts []int = []int{60, 80, 100, 120, 140}
+	var repeatCount int = 50 // We repeat this experiment 50 times to reduce the impact from random factors, because the paper of Diktyo repeat one of their experiments 50 times.
+
+	for _, appCount := range appCounts {
+		Execute(appCount, repeatCount)
+	}
+
+}
+
+func Execute(appCount, repeatCount int) {
 	var appNamePrefix string = "expt-app"
-	var appCount int = 100
-	var repeatCount int = 2 // We repeat this experiment for 10 times to reduce the impact from random factors.
 
 	// all algorithms to be evaluated in experiment
 	var algoNames []string = []string{algorithms.CompRandName, algorithms.BERandName, algorithms.AmagaName, algorithms.AmpgaName, algorithms.DiktyogaName, algorithms.McssgaName}
@@ -63,14 +73,14 @@ func TestExecute(t *testing.T) {
 	for i := 0; i < repeatCount; i++ {
 		apps, err := applicationsgenerator.MakeExperimentApps(appNamePrefix, appCount, false)
 		if err != nil {
-			t.Errorf("MakeExperimentApps error: %s", err.Error())
+			log.Panicf("MakeExperimentApps error: %s", err.Error())
 		}
 		for j, algoName := range algoNames { // in one repeat, we use the same apps for all algorithm for comparison.
-			t.Logf("Repeat %d, algorithm No. %d [%s]", i, j, algoName)
+			log.Printf("Schedule %d applications, Repeat %d, algorithm No. %d [%s]", appCount, i, j, algoName)
 
 			acceptedApps, usable, schedTimeSec, err := schedulingRequest(algoName, apps)
 			if err != nil {
-				t.Errorf("schedulingRequest error: %s", err.Error())
+				log.Panicf("schedulingRequest error: %s", err.Error())
 			}
 
 			// record results
@@ -112,8 +122,8 @@ func TestExecute(t *testing.T) {
 		}
 	}
 
-	if err := writeCsvResults(results); err != nil {
-		t.Errorf("writeCsvResults error: %s", err.Error())
+	if err := writeCsvResults(results, appCount); err != nil {
+		log.Panicf("writeCsvResults error: %s", err.Error())
 	}
 
 }
@@ -188,7 +198,7 @@ func getPerPriAcceptedAppCount(acceptedApps []models.AppInfo) map[int]int {
 }
 
 // function to write data into a csv file.
-func writeCsvResults(results []exptData) error {
+func writeCsvResults(results []exptData, appCount int) error {
 
 	var csvContent [][]string
 
@@ -230,7 +240,7 @@ func writeCsvResults(results []exptData) error {
 		csvContent = append(csvContent, line)
 	}
 
-	return writeCsvFile(dataFileName, csvContent)
+	return writeCsvFile(fmt.Sprintf(dataFileNameFmt, appCount), csvContent)
 }
 
 func writeCsvFile(fileName string, csvContent [][]string) error {

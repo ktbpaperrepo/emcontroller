@@ -2,23 +2,21 @@ import matplotlib.pyplot as plt
 import numpy as np
 import csv
 
+import common
+
 ALGO_NAMES = [
     "BERand", "Amaga", "Ampga", "Diktyoga", "Mcssga"
 ]  # the names of all algorithms to draw. We do not draw "CompRand", because it may get unusable scheduling schemes.
-
-APP_COUNTS = [70, 85, 100, 115, 130]
-
-DATA_FILE_NAME_FMT = "usable_acceptance_rate_{app_count}.csv"
 
 
 def main():
     # create the variable to store data
     # inner: app counts, outer: algorithms
-    all_data: list[list[float]] = [[0] * (len(APP_COUNTS))
+    all_data: list[list[float]] = [[0] * (len(common.APP_COUNTS))
                                    for _ in range(0, len(ALGO_NAMES))]
 
-    for app_idx, app_count in enumerate(APP_COUNTS):
-        with open(DATA_FILE_NAME_FMT.format(app_count=app_count),
+    for app_count_idx, app_count in enumerate(common.APP_COUNTS):
+        with open(common.DATA_FILE_NAME_FMT.format(app_count=app_count),
                   'r') as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=",")
 
@@ -26,7 +24,7 @@ def main():
             next(csv_reader)  # skip the row of algorithm "CompRand"
             algo_idx = 0
             for row in csv_reader:  # read total accepance rate of all priorities each row
-                all_data[algo_idx][app_idx] = float(row[9])
+                all_data[algo_idx][app_count_idx] = float(row[9])
                 algo_idx += 1
 
     print("data read from file:")
@@ -38,8 +36,8 @@ def main():
     bar_inner_width = 0.1
     bar_outer_width = 0.15
 
-    x_pos = np.arange(
-        len(APP_COUNTS))  # generate the position of each group of bars
+    x_pos = np.arange(len(
+        common.APP_COUNTS))  # generate the position of each group of bars
 
     # calculate the offsets of all bars
     bar_count = len(all_data)
@@ -52,12 +50,11 @@ def main():
             (bar_count - 1) / 2 - 1)
 
     # draw bars
-    hatches = [
-        '///', '\\\\\\', '...', '---', 'xxx', '|||', '+++', 'ooo', '))O', '***'
-    ]
+    hatches = common.HATCHES
 
-    plt.rcParams["font.family"] = "Times New Roman"
-    plt.rcParams['font.size'] = 15
+    plt.figure(figsize=common.FIG_SIZE)
+    plt.rcParams["font.family"] = common.FONT_FAMILY
+    plt.rcParams['font.size'] = common.FONT_SIZE
 
     for i, one_algo_data in enumerate(all_data):
         plt.bar(x_pos + first_bar_offset + i * bar_outer_width,
@@ -70,7 +67,7 @@ def main():
     plt.xlabel("Number of applications")
     plt.ylabel("Acceptance rate")
     plt.title("Acceptance rate of applications with all priorities")
-    plt.xticks(x_pos, APP_COUNTS)
+    plt.xticks(x_pos, common.APP_COUNTS)
     plt.legend()
     plt.grid(True, axis='y')
     plt.show()
