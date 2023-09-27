@@ -14,9 +14,27 @@ type K8sNodeController struct {
 	beego.Controller
 }
 
+// Get all Kubernetes nodes
+// test command:
+// curl -i -X GET -H Accept:application/json http://localhost:20000/k8sNode
 func (c *K8sNodeController) Get() {
-	c.Data["k8sNodeList"] = models.ListK8sNodes()
-	c.TplName = "k8sNode.tpl"
+	acceptType := c.Ctx.Request.Header.Get("Accept")
+	beego.Info(fmt.Sprintf("The header \"Accept\" is [%s]", acceptType))
+
+	acceptJson := strings.Contains(strings.ToLower(acceptType), JsonContentType)
+
+	k8sNodes := models.ListK8sNodes()
+
+	switch {
+	case acceptJson:
+		beego.Info(fmt.Sprintf("The output should be json"))
+		c.Data["json"] = k8sNodes
+		c.ServeJSON()
+	default:
+		beego.Info(fmt.Sprintf("The output should be web"))
+		c.Data["k8sNodeList"] = k8sNodes
+		c.TplName = "k8sNode.tpl"
+	}
 }
 
 // delete a node from the Kubernetes cluster

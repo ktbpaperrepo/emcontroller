@@ -114,19 +114,38 @@ func (c *VmController) CreateVM() {
 }
 
 // List VMs in all clouds
+// test command:
+// curl -i -X GET -H Accept:application/json http://localhost:20000/vm
 func (c *VmController) ListVMsAllClouds() {
+	acceptType := c.Ctx.Request.Header.Get("Accept")
+	beego.Info(fmt.Sprintf("The header \"Accept\" is [%s]", acceptType))
+
+	acceptJson := strings.Contains(strings.ToLower(acceptType), JsonContentType)
+
 	allVms, errs := models.ListVMsAllClouds()
 	if len(errs) != 0 {
 		sumErr := models.HandleErrSlice(errs)
 		beego.Error(fmt.Sprintf("List VMs in all clouds, Error: %s", sumErr.Error()))
-		c.Ctx.ResponseWriter.Header().Set("Content-Type", "text/plain")
-		c.Data["errorMessage"] = sumErr.Error()
-		c.TplName = "error.tpl"
+		switch {
+		case acceptJson:
+		default:
+			c.Ctx.ResponseWriter.Header().Set("Content-Type", "text/plain")
+			c.Data["errorMessage"] = sumErr.Error()
+			c.TplName = "error.tpl"
+		}
 		return
 	}
 
-	c.Data["allVms"] = allVms
-	c.TplName = "vm.tpl"
+	switch {
+	case acceptJson:
+		beego.Info(fmt.Sprintf("The output should be json"))
+		c.Data["json"] = allVms
+		c.ServeJSON()
+	default:
+		beego.Info(fmt.Sprintf("The output should be web"))
+		c.Data["allVms"] = allVms
+		c.TplName = "vm.tpl"
+	}
 }
 
 func (c *VmController) NewVms() {
