@@ -20,7 +20,7 @@ In each of the `repeatX` folders, we should create:
 #### device count, app count, request count per app
 `app count` is the number of applications in the deployment/scheduling request. When we use `auto-schedule/experiments/applications-generator` to generate deployment requests, we should set this value.
 
-`device count` and `request count per app`: In every repeat, we can use multiple devices to request the applications to simulate the real production, and each devices can access each app several times to reduce the impact of random factors.
+`device count` and `request count per app`: In every repeat, we can use multiple devices to request the applications to simulate the real production, and each device can access each app several times to reduce the impact of random factors.
 
 ### Step: Generate applications deployment request json body
 Use `auto-schedule/experiments/applications-generator` to generate deployment requests. If `repeat count` is 3, we should generate 3 json bodies and put them in `data/repeatX/request_applications.json`.
