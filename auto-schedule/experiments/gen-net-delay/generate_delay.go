@@ -40,6 +40,13 @@ func GenCloudsDelay(delays map[string]string) error {
 	}
 	wg.Wait()
 
+	if len(errs) != 0 {
+		sumErr := models.HandleErrSlice(errs)
+		outErr := fmt.Errorf("Generate clouds network delay, Error: %w", sumErr)
+		beego.Error(outErr)
+		return outErr
+	}
+
 	return nil
 }
 
@@ -54,6 +61,10 @@ func ClearAllDelay() error {
 	var wg sync.WaitGroup
 
 	for cloudName, _ := range models.Clouds {
+		if _, ok := models.Clouds[cloudName].(*models.Proxmox); !ok {
+			beego.Info(fmt.Sprintf("ClearAllDelay Skip cloud %s, because its type is not %s.", cloudName, models.ProxmoxIaas))
+			continue
+		}
 		wg.Add(1)
 		go func(cn string) {
 			defer wg.Done()
@@ -70,6 +81,13 @@ func ClearAllDelay() error {
 		}(cloudName)
 	}
 	wg.Wait()
+
+	if len(errs) != 0 {
+		sumErr := models.HandleErrSlice(errs)
+		outErr := fmt.Errorf("Clear all clouds network delay, Error: %w", sumErr)
+		beego.Error(outErr)
+		return outErr
+	}
 
 	return nil
 }
