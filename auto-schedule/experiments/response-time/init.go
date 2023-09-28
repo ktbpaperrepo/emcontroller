@@ -42,26 +42,26 @@ func main() {
 			if err := os.MkdirAll(algoPath, fs.ModePerm); err != nil {
 				log.Panicf("create path %s, error: %s", algoPath, err.Error())
 			}
-
-			// create the json file to save the request body to deploy applications
-			apps, err := applicationsgenerator.MakeExperimentApps(appNamePrefix, appCount, true)
-			if err != nil {
-				log.Panicf("MakeExperimentApps error: %s", err.Error())
-			}
-
-			func() { // to make the "defer" effective, we use this anonymous function
-				jsonFilePath := filepath.Join(repeatPath, jsonFileName)
-				log.Printf("write app deploy request body json in to file %s", jsonFilePath)
-				jsonFile, err := os.Create(jsonFilePath)
-				defer jsonFile.Close()
-				if err != nil {
-					log.Panicf("create file %s, error: %s", jsonFilePath, err.Error())
-				}
-				if _, err := jsonFile.WriteString(models.JsonString(apps)); err != nil {
-					log.Panicf("Write json to file %s, error: %s", jsonFilePath, err.Error())
-				}
-			}()
 		}
+
+		// create the json file to save the request body to deploy applications
+		apps, err := applicationsgenerator.MakeExperimentApps(appNamePrefix, appCount, true)
+		if err != nil {
+			log.Panicf("MakeExperimentApps error: %s", err.Error())
+		}
+
+		func() { // to make the "defer" effective, we use this anonymous function
+			jsonFilePath := filepath.Join(repeatPath, jsonFileName)
+			log.Printf("write app deploy request body json in to file %s", jsonFilePath)
+			jsonFile, err := os.Create(jsonFilePath)
+			defer jsonFile.Close()
+			if err != nil {
+				log.Panicf("create file %s, error: %s", jsonFilePath, err.Error())
+			}
+			if _, err := jsonFile.WriteString(models.JsonString(apps)); err != nil {
+				log.Panicf("Write json to file %s, error: %s", jsonFilePath, err.Error())
+			}
+		}()
 	}
 
 }
