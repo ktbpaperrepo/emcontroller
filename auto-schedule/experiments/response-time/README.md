@@ -26,7 +26,7 @@ At this folder, run `go run init.go`.
 ### Step: Deploy applications and call applications for the repeats set by us
 At the folder `executor-python`, run `bash auto_deploy_call.sh`.
 
-This step can be executed on a VM.
+This step can be executed on a VM in the background `nohup bash auto_deploy_call.sh 2>&1 &`
 
 ### Step: Draw charts
 On a system wich GUI, at the folder `executor-python`,
