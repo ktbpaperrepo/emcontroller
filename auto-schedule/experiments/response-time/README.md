@@ -6,7 +6,7 @@ Automatic experiments of response time.
 
 Currently, if we want the experiments automatic, `device count` should be `1`. 
 
-After deciding them, we should set them in the related files including `auto_deploy_call.sh`, `caller.py`, `deleter.py`, `charts_drawer.py`, `http_api.py`.
+After deciding them, we should set them in the related files including `init.go`, `auto_deploy_call.sh`, `caller.py`, `deleter.py`, `charts_drawer.py`, `http_api.py`.
 
 #### repeat count
 We should repeat the experiment multiple times to reduce the impact of random factors.
@@ -26,5 +26,9 @@ At this folder, run `go run init.go`.
 ### Step: Deploy applications and call applications for the repeats set by us
 At the folder `executor-python`, run `bash auto_deploy_call.sh`.
 
+This step can be executed on a VM.
+
 ### Step: Draw charts
-On a system wich GUI, at the folder `executor-python`, run `python -u charts_drawer.py` to draw charts.
+On a system wich GUI, at the folder `executor-python`,
+- run `python -u charts_drawer.py` to draw cdf charts.
+- run `python -u charts_drawer_no_cdf.py` to draw dot charts.

@@ -34,4 +34,6 @@ After applications are deployed and become running, we run `python3.11 -u caller
 Then we move all the generated `csv` files to the corresponding folders `data/repeatX/{algorithm name}`.
 
 ### Step: Draw charts
-On a system wich GUI, run `python -u charts_drawer.py` to draw charts.
+On a system wich GUI,
+- run `python -u charts_drawer.py` to draw cdf charts.
+- run `python -u charts_drawer_no_cdf.py` to draw dot charts.
