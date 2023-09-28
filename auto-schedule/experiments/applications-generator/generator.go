@@ -232,7 +232,7 @@ func MakeExperimentApps(namePrefix string, count int, fastMode bool) ([]models.K
 
 		// measured from real applications.
 		// We do not need to use the same amount of workload, because in the comparison of response time, I only compare the applications accepted by both my algorithm and another algorithm.
-		workload := int(random.NormalRandomBM(55000, 1415000, 381475, 352936))
+		workload := int(random.NormalRandomBM(55000, 1415000, 466267, 370555))
 		// workload := 381475 // To avoid the interference, all applications should have a same amount of workload.
 
 		args := []string{fmt.Sprintf("%d", workload), fmt.Sprintf("%d", chosenApp.cpu), fmt.Sprintf("%d", chosenApp.memory), fmt.Sprintf("%d", chosenApp.storage)}
