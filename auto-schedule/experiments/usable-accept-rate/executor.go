@@ -144,7 +144,7 @@ func schedulingRequest(algoName string, apps []models.K8sApp) ([]models.AppInfo,
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Mcm-Scheduling-Algorithm", algoName)
-	req.Header.Set("Expected-Time-One-Cpu", "35")
+	req.Header.Set("Expected-Time-One-Cpu", "42.629")
 
 	timeBefore := time.Now()
 	res, err := http.DefaultClient.Do(req)

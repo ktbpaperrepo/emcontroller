@@ -9,10 +9,10 @@ PY_CMD_FILE="python3.11" # In the caller.py, there are multiprocessing and concu
 
 MCM_EP="172.27.15.31:20000" # endpoint of multi-cloud manager
 
-#declare -i REPEAT_COUNT=2 # use declare to define an integer
-#ALGO_NAMES=("BERand" "Amaga" "Ampga" "Diktyoga" "Mcssga")
-declare -i REPEAT_COUNT=1 # use declare to define an integer
-ALGO_NAMES=("BERand")
+declare -i REPEAT_COUNT=50 # use declare to define an integer
+ALGO_NAMES=("BERand" "Amaga" "Ampga" "Diktyoga" "Mcssga")
+#declare -i REPEAT_COUNT=1 # use declare to define an integer
+#ALGO_NAMES=("BERand")
 declare -i REQ_COUNT_PER_APP=10
 
 DATA_PATH="${CURRENT_DIR}/data"
@@ -39,7 +39,7 @@ do
     algo_path="${repeat_path}/${algo_name}"
     print_log "algorithm path is: ${algo_path}"
 
-    curl_cmd="curl -i -X POST -H Content-Type:application/json -H Mcm-Scheduling-Algorithm:${algo_name} -H Expected-Time-One-Cpu:35 -d @${json_file_path} http://${MCM_EP}/doNewAppGroup"
+    curl_cmd="curl -i -X POST -H Content-Type:application/json -H Mcm-Scheduling-Algorithm:${algo_name} -H Expected-Time-One-Cpu:42.629 -d @${json_file_path} http://${MCM_EP}/doNewAppGroup"
 
      # execute the curl command to deploy applications
     print_log "Execute command: ${curl_cmd}"
