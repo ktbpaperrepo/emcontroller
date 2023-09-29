@@ -1,6 +1,6 @@
 import glob
 import json
-import numpy as np
+import math
 import matplotlib.pyplot as plt
 
 import data_types
@@ -209,10 +209,10 @@ def draw_dots_chart(algo_to_data: dict[str, list[data_types.ResultData]],
 
     # the 2 horizontal lines to show which algorithm has a shorter response time
 
-    # draw the 0 line to avoid confusion
-    plt.axhline(y=0, color='black', linestyle='-', linewidth=1.3, zorder=1)
-    y_bottom_lim = -plt.ylim()[1] * 0.3
-    algo_hline_pos = [-plt.ylim()[1] * 0.1, -(plt.ylim()[1] * 0.2)]
+    # draw the 0 line to avoid confusion. As we use logarithmic scale on y axis, the 0 line is -1 because 10^-1=0.1, very clost to 0.
+    plt.axhline(y=-1, color='black', linestyle='-', linewidth=1.5, zorder=1)
+    y_bottom_lim = -1 - plt.ylim()[1] * 0.3
+    algo_hline_pos = [-1 - plt.ylim()[1] * 0.1, -1 - plt.ylim()[1] * 0.2]
     plt.axhline(y=algo_hline_pos[0],
                 color='black',
                 linestyle='--',
@@ -286,14 +286,20 @@ def draw_dots_chart(algo_to_data: dict[str, list[data_types.ResultData]],
     # adjust the ticks after finishing the size, before using plt.ylim(), because ticks will change plt.ylim()
 
     plt.xticks([])
-    # remove the negative values from the y_ticks
-    existing_y_ticks, _ = plt.yticks()
-    first_positive_idx = 0
-    for idx, tick in enumerate(existing_y_ticks):
-        if tick >= 0:
-            first_positive_idx = idx
-            break
-    plt.yticks(existing_y_ticks[first_positive_idx:])
+
+    # # remove the negative values from the y_ticks
+    # existing_y_ticks, _ = plt.yticks()
+    # first_positive_idx = 0
+    # for idx, tick in enumerate(existing_y_ticks):
+    #     if tick >= 0:
+    #         first_positive_idx = idx
+    #         break
+    # plt.yticks(existing_y_ticks[first_positive_idx:])
+
+    # we use logarithmic scale on y axis, so the above code is commented
+    y_ticks = [-1, 0, 1, 2, 3, 4]
+    y_tick_labels = [10**x for x in y_ticks]  # [0.1, 1, 10, 100, 1000, 10000]
+    plt.yticks(ticks=y_ticks, labels=y_tick_labels)
 
     plt.ylabel(metric_name, loc="top")
     plt.xlabel('Applications accepted by both {} and {}'.format(
@@ -345,6 +351,7 @@ def draw_dots_chart(algo_to_data: dict[str, list[data_types.ResultData]],
              "Application priorities",
              ha='center')
 
+    plt.grid(True, axis="y")
     plt.legend()
     plt.show()
 
@@ -358,10 +365,15 @@ def draw_dots(algo_name: str, algo_data: list[data_types.ResultData],
         y_values.append(getattr(
             one_data, attr_name))  # get the attribute by the attr name
 
+    # we use logarithmic scale on y axis, the base is 10
+    log_y_values: list[float] = []
+    for _, one_y in enumerate(y_values):
+        log_y_values.append(math.log(one_y, 10))
+
     # we do not need x values, so x_values are the indexes of y_values
     x_values = range(len(y_values))
     plt.scatter(x_values,
-                y_values,
+                log_y_values,
                 marker=marker,
                 color=color,
                 s=size,
