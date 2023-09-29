@@ -47,7 +47,7 @@ type exptData struct {
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	var appCounts []int = []int{60, 80, 100, 120, 140}
+	var appCounts []int = []int{60, 100, 140}
 	var repeatCount int = 50 // We repeat this experiment 50 times to reduce the impact from random factors, because the paper of Diktyo repeat one of their experiments 50 times.
 
 	for _, appCount := range appCounts {
