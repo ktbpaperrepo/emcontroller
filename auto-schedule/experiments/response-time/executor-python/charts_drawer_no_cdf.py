@@ -246,14 +246,14 @@ def draw_dots_chart(algo_to_data: dict[str, list[data_types.ResultData]],
                         algo_hline_pos[0],
                         marker=marker1,
                         color=color1,
-                        s=dot_size)
+                        s=dot_size / 2)
         elif y1 > y2:
             algo_better_nums[1] += 1
             plt.scatter(x,
                         algo_hline_pos[1],
                         marker=marker2,
                         color=color2,
-                        s=dot_size)
+                        s=dot_size / 2)
 
     # write text to explain the horizontal lines
     plt.text(plt.xlim()[0] - (plt.xlim()[1] - plt.xlim()[0]) * 0.003,

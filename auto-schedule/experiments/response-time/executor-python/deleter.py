@@ -29,7 +29,7 @@ def check_as_vms_deleted():
     all_vms = http_api.get_all_vms()
     for idx, vm in enumerate(all_vms):
         if vm.name.startswith(AUTO_SCHED_VM_NAME_PREFIX):
-            print("Virtual Machine {} has node been deleted.".format(vm.name))
+            print("Virtual Machine {} has not been deleted.".format(vm.name))
             return False, ""
     return True, ""
 
@@ -39,7 +39,7 @@ def check_as_nodes_deleted():
     all_k8s_nodes = http_api.get_k8s_nodes()
     for idx, node in enumerate(all_k8s_nodes):
         if node.name.startswith(AUTO_SCHED_VM_NAME_PREFIX):
-            print("Kubernetes nodes {} has node been deleted.".format(
+            print("Kubernetes nodes {} has not been deleted.".format(
                 node.name))
             return False, ""
     return True, ""
