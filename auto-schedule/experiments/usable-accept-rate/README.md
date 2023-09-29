@@ -7,8 +7,8 @@ The experiment about:
 
 ## How to use this program?
 1. Set the value of variables `appCounts` and `repeatCount` in file `executor.go`. Also, set the same application count value to constant `APP_COUNTS` in file `common.py`.
-2. Uncomment the debug code in the function `CreateAutoScheduleApps`, but the `draw evolution chart` code should still be commented.
-3. Change the `mcmEndpoint` to `localhost:20000` to avoid the dependency on another multi-cloud manager.
+2. In file `auto-schedule/executors/create.go`, uncomment the debug code in the function `CreateAutoScheduleApps`, but the `draw evolution chart` code should still be commented.
+3. In file `auto-schedule/experiments/applications-generator/generator.go`, change the `mcmEndpoint` to `localhost:20000` to avoid the dependency on another multi-cloud manager.
 4. Run multi-cloud manager at `localhost:20000` (This is to execute `go run main.go` at the root directory of this project) (it will be in the `debug` mode due to last step). The network state database should be running **either** with *this* multi-cloud manager **or** *another* multi-cloud manager.
 5. At this folder, run:
 ```
