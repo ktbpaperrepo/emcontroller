@@ -26,7 +26,11 @@ def poll(maxCheckCount: int, checkIntervalSecond: int, checkFunc):
 
 # check whether Auto-scheduling Virtual Machines are already cleaned by the garbage collection of multi-cloud manager
 def check_as_vms_deleted():
-    all_vms = http_api.get_all_vms()
+    try:
+        all_vms = http_api.get_all_vms()
+    except Exception as e:
+        print("error when get_all_vms: {}".format(e))
+        return False, ""
     for idx, vm in enumerate(all_vms):
         if vm.name.startswith(AUTO_SCHED_VM_NAME_PREFIX):
             print("Virtual Machine {} has not been deleted.".format(vm.name))
@@ -36,7 +40,11 @@ def check_as_vms_deleted():
 
 # check whether Auto-scheduling Kubernetes nodes are already cleaned by the garbage collection of multi-cloud manager
 def check_as_nodes_deleted():
-    all_k8s_nodes = http_api.get_k8s_nodes()
+    try:
+        all_k8s_nodes = http_api.get_k8s_nodes()
+    except Exception as e:
+        print("error when get_k8s_nodes: {}".format(e))
+        return False, ""
     for idx, node in enumerate(all_k8s_nodes):
         if node.name.startswith(AUTO_SCHED_VM_NAME_PREFIX):
             print("Kubernetes nodes {} has not been deleted.".format(
