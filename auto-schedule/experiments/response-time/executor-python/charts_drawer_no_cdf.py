@@ -173,14 +173,14 @@ def draw_charts_no_pri_metrics(
 def draw_dots_chart(algo_to_data: dict[str, list[data_types.ResultData]],
                     attr_name: str, metric_name: str):
 
-    markers = ["*", "v", "+", "x", "d", "1"]
+    markers = ["+", "v", "*", "x", "d", "1"]
     colors = [
         '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b',
         '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'
     ]
     marker_color_idx = 0
 
-    dot_size = 22
+    dot_size = 20
 
     plt.figure(figsize=(10, 6))
 
@@ -215,14 +215,14 @@ def draw_dots_chart(algo_to_data: dict[str, list[data_types.ResultData]],
     algo_hline_pos = [-1 - plt.ylim()[1] * 0.1, -1 - plt.ylim()[1] * 0.2]
     plt.axhline(y=algo_hline_pos[0],
                 color='black',
-                linestyle='--',
-                linewidth=1,
+                linestyle='-',
+                linewidth=0.3,
                 zorder=1)
 
     plt.axhline(y=algo_hline_pos[1],
                 color='black',
-                linestyle='--',
-                linewidth=1,
+                linestyle='-',
+                linewidth=0.3,
                 zorder=1)
 
     plt.ylim(bottom=y_bottom_lim)
