@@ -600,47 +600,51 @@ func UninstallNode(name string) error {
 		return outErr
 	}
 	nodeIp := GetNodeInternalIp(*node)
-	sshClient, err := SshClientWithPem(sshPrivateKey, sshUser, nodeIp, sshPort)
-	if err != nil {
-		outErr := fmt.Errorf("Create ssh client with SSH key fail: error: %w", err)
-		beego.Error(outErr)
-		return outErr
-	}
-	defer sshClient.Close()
 
-	// create the folder at the destination VM
-	if _, err := SshOneCommand(sshClient, fmt.Sprintf("mkdir -p /root/.kube")); err != nil {
-		outErr := fmt.Errorf("ssh error: %w", err)
-		beego.Error(outErr)
-		return outErr
-	}
+	// we try to do these behaviors, if not successful, we continue to do the following behaviors, to enable deleting node with problems
+	func() {
+		sshClient, err := SshClientWithPem(sshPrivateKey, sshUser, nodeIp, sshPort)
+		if err != nil {
+			outErr := fmt.Errorf("Create ssh client with SSH key fail: error: %w", err)
+			beego.Error(outErr)
+			return
+		}
+		defer sshClient.Close()
 
-	// put the kubeConfig into the folder of the destination VM
-	var kubeConfigPath string
-	if KubeConfigPath == "" {
-		kubeConfigPath = defaultKubeConfigPath
-	} else {
-		kubeConfigPath = KubeConfigPath
-	}
-	if err := SftpCopyFile(kubeConfigPath, defaultKubeConfigPath, sshClient); err != nil {
-		outErr := fmt.Errorf("SFTP error: %w", err)
-		beego.Error(outErr)
-		return outErr
-	}
+		// create the folder at the destination VM
+		if _, err := SshOneCommand(sshClient, fmt.Sprintf("mkdir -p /root/.kube")); err != nil {
+			outErr := fmt.Errorf("ssh error: %w", err)
+			beego.Error(outErr)
+			return
+		}
 
-	// // kubeadm reset the destination VM
-	if _, err := SshOneCommand(sshClient, fmt.Sprintf("kubeadm reset -f")); err != nil {
-		outErr := fmt.Errorf("ssh error: %w", err)
-		beego.Error(outErr)
-		return outErr
-	}
+		// put the kubeConfig into the folder of the destination VM
+		var kubeConfigPath string
+		if KubeConfigPath == "" {
+			kubeConfigPath = defaultKubeConfigPath
+		} else {
+			kubeConfigPath = KubeConfigPath
+		}
+		if err := SftpCopyFile(kubeConfigPath, defaultKubeConfigPath, sshClient); err != nil {
+			outErr := fmt.Errorf("SFTP error: %w", err)
+			beego.Error(outErr)
+			return
+		}
 
-	// // Delete the folder /root/.kube
-	if _, err := SshOneCommand(sshClient, fmt.Sprintf("rm -rf /root/.kube")); err != nil {
-		outErr := fmt.Errorf("ssh error: %w", err)
-		beego.Error(outErr)
-		return outErr
-	}
+		// // kubeadm reset the destination VM
+		if _, err := SshOneCommand(sshClient, fmt.Sprintf("kubeadm reset -f")); err != nil {
+			outErr := fmt.Errorf("ssh error: %w", err)
+			beego.Error(outErr)
+			return
+		}
+
+		// // Delete the folder /root/.kube
+		if _, err := SshOneCommand(sshClient, fmt.Sprintf("rm -rf /root/.kube")); err != nil {
+			outErr := fmt.Errorf("ssh error: %w", err)
+			beego.Error(outErr)
+			return
+		}
+	}()
 
 	// // delete the node from the Kubernetes Cluster
 	beego.Info(fmt.Sprintf("Use client-go API to delete node %s in Kubernetes cluster", name))
