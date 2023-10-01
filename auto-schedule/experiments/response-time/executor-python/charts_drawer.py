@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import data_types
 import csv_operation
 
-REPEAT_COUNT = 50  # We repeat the experiments for REPEAT_COUNT times.
+REPEAT_COUNT = 30  # We repeat the experiments for REPEAT_COUNT times.
 DEVICE_COUNT = 1  # we use DEVICE_COUNT devices to send requests.
 APP_COUNT = 100  # In every repeat, we deploy APP_COUNT applications.
 REQ_COUNT_PER_APP = 10  # In every repeat, on every device, we access every application REQ_COUNT_PER_APP times.

@@ -16,7 +16,7 @@ var (
 	appCount      int    = 100
 
 	algorithms  []string = []string{"BERand", "Amaga", "Ampga", "Diktyoga", "Mcssga"}
-	repeatCount int      = 50
+	repeatCount int      = 30
 
 	dataPath     string = "executor-python/data"
 	jsonFileName string = "request_applications.json"
