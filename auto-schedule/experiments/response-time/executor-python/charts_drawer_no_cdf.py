@@ -2,6 +2,7 @@ import glob
 import json
 import math
 import matplotlib.pyplot as plt
+from scipy.stats import linregress
 
 import data_types
 import csv_operation
@@ -175,9 +176,14 @@ def draw_dots_chart(algo_to_data: dict[str, list[data_types.ResultData]],
 
     markers = ["+", "v", "*", "x", "d", "1"]
     colors = [
-        '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b',
-        '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'
+        'hotpink', '#f2c743', '#1f77b4', '#bcbd22', '#ff7f0e', '#2ca02c',
+        '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#17becf'
     ]
+    linestypes = [
+        'solid', 'dashed', 'dotted', 'dashdot', 'loosely dotted', 'dotted',
+        'densely dotted', 'long dash with offset'
+    ]
+    linescolors = ['tab:blue', 'black', 'r', 'lime']
     marker_color_idx = 0
 
     dot_size = 20
@@ -197,11 +203,10 @@ def draw_dots_chart(algo_to_data: dict[str, list[data_types.ResultData]],
     x_values = []  # for the following plotting
     algo_y_values = []  # for the following plotting
     for algo_name, algo_data in algo_to_data.items():
-        this_x_values, this_y_values = draw_dots(algo_name, algo_data,
-                                                 attr_name,
-                                                 markers[marker_color_idx],
-                                                 colors[marker_color_idx],
-                                                 dot_size)
+        this_x_values, this_y_values = draw_dots(
+            algo_name, algo_data, attr_name, markers[marker_color_idx],
+            colors[marker_color_idx], dot_size, linestypes[marker_color_idx],
+            linescolors[marker_color_idx])
         marker_color_idx += 1
         algo_names.append(algo_name)
         x_values = this_x_values
@@ -358,7 +363,8 @@ def draw_dots_chart(algo_to_data: dict[str, list[data_types.ResultData]],
 
 # draw dots for one group of data
 def draw_dots(algo_name: str, algo_data: list[data_types.ResultData],
-              attr_name: str, marker: str, color: str, size: int):
+              attr_name: str, marker: str, color: str, size: int,
+              linestype: str, linecolor: str):
     # generate the values to plot
     y_values: list[float] = []
     for _, one_data in enumerate(algo_data):
@@ -379,6 +385,17 @@ def draw_dots(algo_name: str, algo_data: list[data_types.ResultData],
                 s=size,
                 zorder=5,
                 label=algo_name)
+
+    # To compare the data better, we draw the regression lines of data
+    slope, intercept, r_value, p_value, std_err = linregress(
+        x_values, log_y_values)
+    y_regression_line = slope * x_values + intercept
+    plt.plot(x_values,
+             y_regression_line,
+             linestyle=linestype,
+             color=linecolor,
+             zorder=6,
+             label='{} regression line'.format(algo_name))
 
     return x_values, y_values,
 
