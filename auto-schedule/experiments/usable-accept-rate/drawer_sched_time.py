@@ -64,7 +64,7 @@ def main():
                 hatch=hatches[i])
 
     plt.xlabel("Number of applications")
-    plt.ylabel("Scheduling time (s)")
+    plt.ylabel("Maximum scheduling time (s)")
     plt.title("Time of scheduling different numbers of applications")
     plt.xticks(x_pos, common.APP_COUNTS)
     plt.legend()
