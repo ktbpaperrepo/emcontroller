@@ -10,8 +10,11 @@ import charts_drawer
 
 AVG_NON_PRI_ATTR_TO_METRIC: dict[str, str] = {
     "resp_time": "Average response time (ms)",
-    "resp_time_in_clouds": "Average response time in clouds (ms)",
+    "resp_time_in_clouds": "Average response\ntime in clouds (ms)",
 }
+
+SMALL_FONT_SIZE = 28
+BIG_FONT_SIZE = 28
 
 
 # sort the input 2 mapped lists by priority
@@ -186,7 +189,7 @@ def draw_dots_chart(algo_to_data: dict[str, list[data_types.ResultData]],
     linescolors = ['tab:blue', 'black', 'r', 'lime']
     marker_color_idx = 0
 
-    dot_size = 20
+    dot_size = 28
 
     plt.figure(figsize=(10, 6))
 
@@ -196,7 +199,7 @@ def draw_dots_chart(algo_to_data: dict[str, list[data_types.ResultData]],
     # plt.rcParams["ps.useafm"] = True
 
     plt.rcParams["font.family"] = "Times New Roman"
-    plt.rcParams['font.size'] = 17
+    plt.rcParams['font.size'] = BIG_FONT_SIZE
 
     # draw dots
     algo_names = []
@@ -251,42 +254,42 @@ def draw_dots_chart(algo_to_data: dict[str, list[data_types.ResultData]],
                         algo_hline_pos[0],
                         marker=marker1,
                         color=color1,
-                        s=dot_size / 2)
+                        s=dot_size / 4)
         elif y1 > y2:
             algo_better_nums[1] += 1
             plt.scatter(x,
                         algo_hline_pos[1],
                         marker=marker2,
                         color=color2,
-                        s=dot_size / 2)
+                        s=dot_size / 4)
 
     # write text to explain the horizontal lines
     plt.text(plt.xlim()[0] - (plt.xlim()[1] - plt.xlim()[0]) * 0.003,
-             algo_hline_pos[0],
+             -1 - (-1 - algo_hline_pos[0]) * 0.4,
              "{} faster".format(algo_names[0]),
              ha='right',
              va='top',
-             size=15,
-             rotation=45)
+             size=SMALL_FONT_SIZE,
+             rotation=35)
     plt.text(plt.xlim()[1] + (plt.xlim()[1] - plt.xlim()[0]) * 0.005,
-             algo_hline_pos[0],
+             -1 - (-1 - algo_hline_pos[0]) * 0.8,
              "{} apps".format(algo_better_nums[0]),
              ha='left',
              va='center',
-             size=15)
+             size=SMALL_FONT_SIZE)
     plt.text(plt.xlim()[0] - (plt.xlim()[1] - plt.xlim()[0]) * 0.003,
-             algo_hline_pos[1],
+             -1 - (-1 - algo_hline_pos[1]) * 1,
              "{} faster".format(algo_names[1]),
              ha='right',
              va='top',
-             size=15,
-             rotation=45)
+             size=SMALL_FONT_SIZE,
+             rotation=35)
     plt.text(plt.xlim()[1] + (plt.xlim()[1] - plt.xlim()[0]) * 0.005,
-             algo_hline_pos[1],
+             -1 - (-1 - algo_hline_pos[1]) * 1.2,
              "{} apps".format(algo_better_nums[1]),
              ha='left',
              va='center',
-             size=15)
+             size=SMALL_FONT_SIZE)
 
     # adjust the ticks after finishing the size, before using plt.ylim(), because ticks will change plt.ylim()
 
@@ -307,7 +310,7 @@ def draw_dots_chart(algo_to_data: dict[str, list[data_types.ResultData]],
     plt.yticks(ticks=y_ticks, labels=y_tick_labels)
 
     plt.ylabel(metric_name, loc="top")
-    plt.xlabel('Applications accepted by both {} and {}'.format(
+    plt.xlabel('Services accepted by both\n{} and {}'.format(
         algo_names[0], algo_names[1]))
 
     # the vertical lines to split different priorities
@@ -352,8 +355,8 @@ def draw_dots_chart(algo_to_data: dict[str, list[data_types.ResultData]],
                  ha='center')
 
     plt.text(plt.xlim()[0] + (plt.xlim()[1] - plt.xlim()[0]) / 2,
-             plt.ylim()[1] + (plt.ylim()[1] - plt.ylim()[0]) * 0.07,
-             "Application priorities",
+             plt.ylim()[1] + (plt.ylim()[1] - plt.ylim()[0]) * 0.08,
+             "Service priorities",
              ha='center')
 
     plt.grid(True, axis="y")
@@ -392,6 +395,7 @@ def draw_dots(algo_name: str, algo_data: list[data_types.ResultData],
     y_regression_line = slope * x_values + intercept
     plt.plot(x_values,
              y_regression_line,
+             linewidth=2,
              linestyle=linestype,
              color=linecolor,
              zorder=6,

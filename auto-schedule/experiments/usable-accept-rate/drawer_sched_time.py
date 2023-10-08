@@ -63,11 +63,12 @@ def main():
                 label=ALGO_NAMES[i],
                 hatch=hatches[i])
 
-    plt.xlabel("Number of applications")
+    plt.xlabel("Number of services")
     plt.ylabel("Maximum scheduling time (s)")
-    plt.title("Time of scheduling different numbers of applications")
+    # plt.title("Time of scheduling different numbers of applications")
     plt.xticks(x_pos, common.APP_COUNTS)
     plt.legend()
+    # plt.legend(fontsize=25)
     plt.grid(True, axis='y')
     plt.show()
 

@@ -92,11 +92,12 @@ def main():
                     label=ALGO_NAMES_TO_DRAW[i],
                     hatch=hatches[i])
 
-        plt.xlabel("Application priority")
+        plt.xlabel("Service priority")
         plt.ylabel("Acceptance rate")
-        plt.title(
-            "Acceptance rate of {} applications with different priorities".
-            format(app_count))
+        plt.title("{} services".format(app_count))
+        # plt.title(
+        #     "Acceptance rate of {} applications with different priorities".
+        #     format(app_count))
         plt.xticks(x_pos, range(MIN_PRI, MAX_PRI + 1))
         plt.legend()
         plt.grid(True, axis='y')
