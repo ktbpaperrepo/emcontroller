@@ -284,6 +284,9 @@ func MakeExperimentApps(namePrefix string, count int, fastMode bool) ([]models.K
 		// according to an existing paper, I use 16/196=0.0816 as the possibility that one application depends on another.
 		depPoss := float64(16) / float64(196)
 		for j := i + 1; j < len(depHelpers); j++ {
+			//if depHelpers[j].priority <= depHelpers[i].priority { // if we need to disable apps to depend on those with the equal priority with it, we can uncomment this if.
+			//	continue
+			//}
 			if random.RandomFloat64(0, 1) < depPoss {
 				depPoss /= depDivisor // the more dependencies an app has, the lower possibility it can have more deps.
 				// this will be read by the scheduling algorithm.

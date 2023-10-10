@@ -6,7 +6,7 @@ Automatic experiments of response time.
 
 Currently, if we want the experiments automatic, `device count` should be `1`. 
 
-After deciding them, we should set them in the related files including `init.go`, `auto_deploy_call.sh`, `caller.py`, `deleter.py`, `charts_drawer.py`, `http_api.py`.
+After deciding them, we should set them in the related files including `init.go`, `auto_deploy_call.sh`, `caller.py`, `deleter.py`, `charts_drawer.py`, `http_api.py`, and `auto-schedule/experiments/applications-generator/generator_test.go`.
 
 #### repeat count
 We should repeat the experiment multiple times to reduce the impact of random factors.
