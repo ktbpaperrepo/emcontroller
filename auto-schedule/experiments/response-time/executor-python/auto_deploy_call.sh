@@ -9,7 +9,7 @@ PY_CMD_FILE="python3.11" # In the caller.py, there are multiprocessing and concu
 
 MCM_EP="172.27.15.31:20000" # endpoint of multi-cloud manager
 
-declare -i REPEAT_COUNT=30 # use declare to define an integer
+declare -i REPEAT_COUNT=60 # use declare to define an integer
 ALGO_NAMES=("BERand" "Amaga" "Ampga" "Diktyoga" "Mcssga")
 #declare -i REPEAT_COUNT=1 # use declare to define an integer
 #ALGO_NAMES=("BERand")
