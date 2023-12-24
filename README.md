@@ -32,3 +32,9 @@ Multi-cloud Manager enables the scheduling of applications, as detailed in the p
 The code for automatic scheduling can be found in the `auto-schedule` folder. In particular, the scheduling algorithms used in the "Evaluation section" of the paper are implemented in the following files within the `auto-schedule/algorithms` folder: `mcssga.go`, `for_cmp_amaga.go`, `for_cmp_ampga.go`, `for_cmp_best_effort_rand.go`, and `for_cmp_diktyo_ga.go`.
 
 For the "Dummy Service" discussed in the paper, you can find its code located in the `auto-schedule/experiments/server` folder. Furthermore, the services parameters (e.g., requirements and others) employed in the paper's experiments are generated using the code available in the `auto-schedule/experiments/applications-generator` directory. To access the specific code for two experiments, please navigate to the `auto-schedule/experiments/usable-accept-rate` and `auto-schedule/experiments/response-time` folders. You'll find detailed information provided in the `README.md` file within each respective folder.
+
+## Data of the experiments in paper "_Multi-cloud Containerized Service Scheduling Optimizing Computation and Communication_"
+- The data of experiments about Scheduling Time, Usable Solution Rate,and Service Acceptance Rate are the `.csv` files in the folder `auto-schedule/experiments/usable-accept-rate`.
+- The data and service groups of experiments about Response Time are in the folder `auto-schedule/experiments/response-time/executor-python/data`.
+  - The service groups are `request_applications.json` files.
+  - The data are `.csv` files.
